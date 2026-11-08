@@ -277,3 +277,14 @@ button:disabled{transform:none}
  .toolbar>.identity{flex-shrink:0}
  #cloudUserBar #cloudUser{font-size:12px}
 }
+
+/* V0.9.28: compact gear navigation; legacy tab nodes remain hidden for existing routing. */
+.navigation-gear{width:38px;min-width:38px;height:36px;display:inline-flex;align-items:center;justify-content:center;font-size:23px;line-height:1;border:1px solid #b18a55!important;border-radius:11px;background:#1c2930!important;color:#f2d5a7!important;padding:0!important;cursor:pointer}
+#cloudUserBar .navigation-gear{min-height:36px;padding:0!important}
+.navigation-menu-panel{width:min(410px,calc(100vw - 32px));max-height:85dvh}
+.navigation-menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.navigation-menu-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:105px;padding:14px 8px;border:1px solid #705433;border-radius:13px;background:linear-gradient(145deg,#25323a,#111c23);color:#ecd8b9;font-size:18px;font-weight:700;cursor:pointer}
+.navigation-menu-item span{font-size:28px;line-height:1}
+.navigation-menu-item:active,.navigation-menu-item:focus-visible{background:#53391f;border-color:#d8aa6e}
+.system-switch-employee{margin-inline-end:10px;min-height:44px}
+@media(max-width:430px){.navigation-menu-panel{width:calc(100vw - 32px)}.navigation-menu-grid{gap:9px}.navigation-menu-item{min-height:96px;font-size:16px}.navigation-gear{width:35px;min-width:35px}}
