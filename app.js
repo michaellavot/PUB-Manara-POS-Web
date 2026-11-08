@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='0.9.21';
+const APP_VERSION='0.9.22';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -68,7 +68,7 @@ function renderCatalogSelection(){
  el('catalogBulkDelete').classList.toggle('hidden',!(RemotePos.active&&RemotePos.employee?.is_owner===true));
  el('catalogBulkDelete').disabled=state.catalogSelections.size===0;
 }
-const POS_STAFF_PERMISSIONS=['create_products','change_prices','toggle_products','create_customers','toggle_customers','full_reports'];
+const POS_STAFF_PERMISSIONS=['create_products','change_prices','toggle_products','create_customers','toggle_customers','full_reports','manage_system'];
 function canViewFullReports(){return RemotePos.active&&RemotePos.authenticated===true&&(RemotePos.employee?.owner_terminal===true||RemotePos.employee?.is_owner===true||RemotePos.employee?.permissions?.full_reports===true);}
 function assertFullReportAccess(){if(!canViewFullReports())throw new Error('ייצוא ודוחות מלאים מחייבים הרשאה מתאימה');}
 function canManage(permission){return RemotePos.active&&RemotePos.authenticated===true&&(RemotePos.employee?.is_owner===true||RemotePos.employee?.permissions?.[permission]===true);}
@@ -299,6 +299,15 @@ function showCloudDataError(error){
 function renderPermissions(){
  const auth=RemotePos.employee||{};
  const owner=RemotePos.active&&auth.is_owner===true;
+ const ownerTerminal=RemotePos.active&&auth.owner_terminal===true;
+ const limitedAdmin=RemotePos.active&&!ownerTerminal&&auth.permissions?.manage_system===true;
+ el('ownerAdminBox').classList.toggle('hidden',!ownerTerminal);
+ el('staffAdminBox').classList.toggle('hidden',!limitedAdmin);
+ el('staffAdminContent').classList.toggle('hidden',!(limitedAdmin&&RemotePos.staffAdminUnlocked===true));
+ el('staffAdminEntryBtn').classList.toggle('hidden',limitedAdmin&&RemotePos.staffAdminUnlocked===true);
+ el('staffAdminProductsBtn').classList.toggle('hidden',!['create_products','change_prices','toggle_products'].some(canManage));
+ el('staffAdminCustomersBtn').classList.toggle('hidden',!['create_customers','toggle_customers'].some(canManage));
+ el('staffAdminReportsBtn').classList.toggle('hidden',!canViewFullReports());
  const fullReports=canViewFullReports();
  el('reportControls').classList.toggle('hidden',!fullReports);
  el('reportAccessNote').textContent=fullReports?'כולל חיובים וזיכויים':'תנועות הקופה ב־24 השעות האחרונות בלבד';
@@ -415,6 +424,23 @@ async function setupOwner(event){
   el('loginMessage').textContent=e.message;
  }finally{btn.disabled=false;}
 }
+async function unlockStaffAdmin(event){
+ event.preventDefault();
+ if(RemotePos.employee?.owner_terminal===true||RemotePos.employee?.permissions?.manage_system!==true)throw new Error('אין הרשאה לניהול מוגבל');
+ const btn=el('staffAdminUnlockBtn');btn.disabled=true;el('staffAdminLoginMessage').textContent='מאמת מול Supabase…';
+ try{
+  await RemotePos.elevateStaffAdmin(el('staffAdminLoginEmail').value,el('staffAdminLoginPassword').value);
+  el('staffAdminLoginPassword').value='';
+  el('staffAdminLogin').classList.add('hidden');
+  renderPermissions();status('ניהול מוגבל אומת ל־30 דקות','success');
+ }catch(e){el('staffAdminLoginPassword').value='';el('staffAdminLoginMessage').textContent=e.message;}
+ finally{btn.disabled=false;}
+}
+async function lockStaffAdmin(){
+ await RemotePos.lockStaffAdmin();
+ renderPermissions();
+ status('ניהול העובד ננעל; הכניסה לקופה נשארה פעילה','');
+}
 async function unlockAdmin(event){
  event.preventDefault();
  const btn=el('adminUnlockBtn');btn.disabled=true;
@@ -460,6 +486,8 @@ function openEmployeePermissions(employee){
  state.permissionEmployee=employee;
  const form=el('employeePermissionsForm');
  for(const key of POS_STAFF_PERMISSIONS)form.elements.namedItem(key).checked=employee.permissions?.[key]===true;
+ el('staffAdminEmail').value=employee.admin_email||'';
+ el('staffAdminEmailField').classList.toggle('hidden',employee.permissions?.manage_system!==true);
  el('employeePermissionsName').textContent='עובד: '+employee.username;
  el('employeePermissionsMessage').textContent='';
  el('employeePermissionsModal').classList.remove('hidden');
@@ -473,9 +501,10 @@ async function saveEmployeePermissions(e){
  if(!state.permissionEmployee||RemotePos.employee?.is_owner!==true)throw new Error('נדרש אימות בעלים');
  const employee=state.permissionEmployee,button=el('employeePermissionsSave');
  const permissions=Object.fromEntries(POS_STAFF_PERMISSIONS.map(key=>[key,el('employeePermissionsForm').elements.namedItem(key).checked]));
+ const admin_email=permissions.manage_system?el('staffAdminEmail').value.trim():'';
  button.disabled=true;
  try{
-  const result=await RemotePos.manageStaff('set_permissions',{user_id:employee.user_id,permissions});
+  const result=await RemotePos.manageStaff('set_permissions',{user_id:employee.user_id,permissions,admin_email});
   el('employeeMessage').textContent=result.message||'ההרשאות נשמרו';
   closeEmployeePermissions();
   await renderEmployeeList();
@@ -562,6 +591,19 @@ async function migrateCloud(){
 }
 function remoteEvents(){
  el('employeePermissionsForm').addEventListener('submit',saveEmployeePermissions);
+ on('manageSystemPermission','change',e=>el('staffAdminEmailField').classList.toggle('hidden',!e.target.checked));
+ el('staffAdminUnlockForm').addEventListener('submit',unlockStaffAdmin);
+ on('staffAdminEntryBtn','click',()=>{
+  if(RemotePos.employee?.permissions?.manage_system!==true||RemotePos.employee?.owner_terminal===true)throw new Error('אין הרשאה');
+  el('staffAdminLoginMessage').textContent='';
+  el('staffAdminLogin').classList.remove('hidden');
+  el('staffAdminLoginEmail').focus();
+ });
+ on('staffAdminCancelBtn','click',()=>{el('staffAdminLoginPassword').value='';el('staffAdminLogin').classList.add('hidden');});
+ on('staffAdminLockBtn','click',lockStaffAdmin);
+ on('staffAdminProductsBtn','click',()=>openCatalogManager('product'));
+ on('staffAdminCustomersBtn','click',()=>openCatalogManager('customer'));
+ on('staffAdminReportsBtn','click',()=>document.querySelector('.tab[data-page="reportsPage"]')?.click());
  on('employeePermissionsClose','click',closeEmployeePermissions);
  on('employeePermissionsCancel','click',closeEmployeePermissions);
  on('employeePermissionsBackdrop','click',closeEmployeePermissions);
