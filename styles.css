@@ -99,3 +99,24 @@ body.staff-mode #productForm,body.staff-mode #manageProducts button,body.staff-m
 #archiveImportPanel{grid-column:1/-1}
 #archiveImportPanel button{width:auto;max-width:100%}
 @media(max-width:650px){#trialToggleBtn{padding:5px 8px;font-size:11px}.manage-head .small-note{width:100%}}
+
+/* V0.9.6 — staff PIN login and owner-only system management.
+   Reuse the existing pub palette and panels. */
+#adminLogin{z-index:2200}
+#ownerSetupToggle{font-size:13px}
+#ownerSetupForm{margin-top:14px;padding-top:13px;border-top:1px solid #5e462e}
+.admin-box{margin-top:12px}
+.admin-panel-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.admin-panel-header strong{color:var(--gold)}
+#adminPanel h3{color:var(--pale);font-size:15px;margin:16px 0 10px}
+#employeeCreateForm label{display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:13px}
+#employeeCreateForm .field{min-width:145px}
+#employeeCreateForm button{align-self:end}
+#employeeRows button{margin:2px}
+#employeeMessage{padding-top:7px}
+body.staff-mode #adminPanel{display:none!important}
+@media(max-width:650px){
+ #adminPanel .inline-form{display:flex;flex-wrap:wrap}
+ #adminPanel .inline-form label{width:100%}
+ .admin-panel-header{flex-wrap:wrap}
+}
