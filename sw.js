@@ -1,8 +1,8 @@
-/* PUB Manara POS Web V0.9.22 — network-first, safe offline cache fallback.
+/* PUB Manara POS Web V0.9.23 — network-first, safe offline cache fallback.
    Do not clear IndexedDB or localStorage: they contain the original POS archive.
    Waiting workers activate only after explicit approval through the updater UI. */
-const CACHE='manara-pos-web-v0.9.22-20261108';
-const PRECACHE=["./","./index.html","./styles.css?v=0.9.22","./app.js?v=0.9.22","./updater.js?v=0.9.22","./db.js","./xlsx.js","./manifest.webmanifest","./assets/main_logo.gif","./assets/billing_left_texture.gif","./assets/beer_icon.gif","./assets/app_icon_192.png","./assets/app_icon_512.png","./assets/rubik-variable.ttf","./remote.js?v=0.9.22"];
+const CACHE='manara-pos-web-v0.9.23-20261108';
+const PRECACHE=["./","./index.html","./styles.css?v=0.9.23","./app.js?v=0.9.23","./updater.js?v=0.9.23","./db.js","./xlsx.js","./manifest.webmanifest","./assets/main_logo.gif","./assets/billing_left_texture.gif","./assets/beer_icon.gif","./assets/app_icon_192.png","./assets/app_icon_512.png","./assets/rubik-variable.ttf","./remote.js?v=0.9.23"];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(PRECACHE)));
 });
