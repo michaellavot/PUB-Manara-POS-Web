@@ -136,13 +136,13 @@ const RemotePos={
  async loadAll(){
     if(!this.authenticated)throw new Error('נדרשת התחברות');
     const [customerRows,productRows,transactionRows,settingsRows]=await Promise.all([
-      this.rows('customers','id,name,name_key,active'),
-      this.rows('products','id,name,name_key,category,product_type,price,active,price_history'),
+      this.rows('customers','id,name,name_key,active,is_test_created'),
+      this.rows('products','id,name,name_key,category,product_type,price,active,price_history,is_test_created'),
       this.rows('transactions','id,client_operation_id,customer_name,kind,created_at,is_test,transaction_items!transaction_items_transaction_id_fkey(id,product_name,quantity,line_total,is_test,test_code)','created_at.asc'),
       this.request('/rest/v1/pos_settings',{query:{select:'archive_imported',id:'eq.1'}})
     ]);
-    this.customers=customerRows.map(c=>({id:c.id,name:c.name,normalized:c.name_key,active:c.active}));
-    this.products=productRows.map(p=>({id:p.id,name:p.name,normalized:p.name_key,category:p.category,type:p.product_type,price:Number(p.price),active:p.active}));
+    this.customers=customerRows.map(c=>({id:c.id,name:c.name,normalized:c.name_key,active:c.active,isTestCreated:c.is_test_created===true}));
+    this.products=productRows.map(p=>({id:p.id,name:p.name,normalized:p.name_key,category:p.category,type:p.product_type,price:Number(p.price),active:p.active,isTestCreated:p.is_test_created===true}));
     this.priceHistory=productRows.flatMap(p=>Array.isArray(p.price_history)?p.price_history:[]);
     this.archive=transactionRows.flatMap(tx=>{
       const d=new Date(tx.created_at);
@@ -179,23 +179,32 @@ const RemotePos={
  },
  async saveCustomer(row){
    const existing=this.customers.some(c=>c.id===row.id);
-   const payload={name:row.name,active:row.active!==false};
+   if(!existing)return this.request('/rest/v1/rpc/pos_create_catalog_v098',{
+     method:'POST',body:{p_entity:'customer',p_name:row.name,p_is_test:this.testMode===true}
+   });
    return this.request('/rest/v1/customers',{
-      method:existing?'PATCH':'POST',
-      query:existing?{id:`eq.${row.id}`}:{},
-      body:payload,headers:{Prefer:'return=minimal'}
+     method:'PATCH',query:{id:`eq.${row.id}`},
+     body:{name:row.name,active:row.active!==false},headers:{Prefer:'return=minimal'}
    });
  },
  async saveProduct(row,historyRecord=null){
    const existing=this.products.some(p=>p.id===row.id);
+   if(!existing)return this.request('/rest/v1/rpc/pos_create_catalog_v098',{
+     method:'POST',body:{p_entity:'product',p_name:row.name,
+      p_category:row.category,p_product_type:row.type,p_price:row.price,p_is_test:this.testMode===true}
+   });
    const history=historyRecord?[...this.priceHistory.filter(h=>h.productName===row.name),historyRecord]:null;
    const payload={name:row.name,category:row.category,product_type:row.type,price:row.price,
       active:row.active!==false,...(history?{price_history:history}:{})};
-   return this.request('/rest/v1/products',{
-     method:existing?'PATCH':'POST',
-     query:existing?{id:`eq.${row.id}`}:{},
-     body:payload,headers:{Prefer:'return=minimal'}
-   });
+   return this.request('/rest/v1/products',{method:'PATCH',query:{id:`eq.${row.id}`},
+     body:payload,headers:{Prefer:'return=minimal'}});
+ },
+ async deleteCatalog(entity,id,execute=false){
+    if(!this.active||this.employee?.is_owner!==true)
+      throw new Error('מחיקה לצמיתות זמינה רק לאחר אימות הבעלים בניהול מערכת');
+    return this.request('/rest/v1/rpc/pos_delete_catalog_v098',{
+     method:'POST',body:{p_entity:entity,p_entity_id:id,p_execute:execute===true}
+    });
  },
  async submit({operationId,customerId,kind,items,deviceId}){
     return this.request('/rest/v1/rpc/submit_pos_transaction_v094',{
