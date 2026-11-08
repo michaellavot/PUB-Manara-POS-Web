@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='0.9';
+const APP_VERSION='0.9.1';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -85,14 +85,38 @@ function getDeviceId(){let id=localStorage.getItem('manara_device_id');if(!id){i
 function showCloudGate(message){el('cloudGate').classList.remove('hidden');el('cloudGateMessage').textContent=message;}
 function showCloudLogin(message=''){el('cloudLogin').classList.remove('hidden');el('loginMessage').textContent=message;}
 function leaveCloudLogin(){el('cloudLogin').classList.add('hidden');}
-async function activateCloud(){await RemotePos.start();await refresh();el('cloudGate').classList.add('hidden');el('storageLabel').textContent='ענן · Supabase';el('cloudUser').textContent=RemotePos.employee?.display_name||'עובד';el('cloudUserBar').classList.remove('hidden');el('remoteSystemNotice').textContent='הלקוחות והעסקאות משותפים לכל המכשירים. גיבוי JSON מוריד עותק מהשרת; שחזור לענן דורש תהליך נפרד.';el('migrationPanel').classList.add('hidden');const manager=RemotePos.employee.role==='manager';document.querySelectorAll('#productForm input,#productForm button,#manageProducts button,#manageCustomers button').forEach(input=>input.disabled=!manager);RemotePos.onChange=async()=>{await refresh();};RemotePos.statusCallback=(msg,kind)=>{el('cloudSync').textContent=msg;el('cloudSync').className='sync-msg '+(kind||'');};RemotePos.setStatus('מסונכרן עם כל הקופות','success');}
-async function cloudAfterAuthentication(){leaveCloudLogin();const info=await RemotePos.remoteCount();if(info.hasData){await activateCloud();return;}
+async function activateCloud(){await RemotePos.start();await refresh();el('cloudGate').classList.add('hidden');el('storageLabel').textContent=RemotePos.environment==='development'?'ענן · ניסוי':'ענן · עבודה';el('cloudUser').textContent=RemotePos.employee?.display_name||'עובד';el('cloudUserBar').classList.remove('hidden');renderModeControls();el('remoteSystemNotice').textContent=RemotePos.environment==='development'?'מצב ניסיון — הלקוחות, המשקאות והעסקאות כאן נפרדים מנתוני העבודה. גיבוי JSON מוריד את נתוני הניסיון בלבד.':'מצב עבודה — עסקאות אמיתיות משותפות לכל העובדים. גיבוי JSON מוריד עותק מהשרת; שחזור לענן דורש תהליך נפרד.';el('migrationPanel').classList.add('hidden');const manager=RemotePos.employee.role==='manager';document.querySelectorAll('#productForm input,#productForm button,#manageProducts button,#manageCustomers button').forEach(input=>input.disabled=!manager);RemotePos.onChange=async()=>{await refresh();};RemotePos.statusCallback=(msg,kind)=>{el('cloudSync').textContent=msg;el('cloudSync').className='sync-msg '+(kind||'');};RemotePos.setStatus('מסונכרן עם כל הקופות','success');}
+function renderModeControls(){
+ const owner=RemotePos.employee?.is_owner===true;
+ const dev=RemotePos.environment==='development';
+ el('modeSwitchBtn').classList.toggle('hidden',!owner);
+ el('modeSwitchBtn').textContent=dev?'מעבר למצב עבודה':'מעבר למצב ניסיון';
+ el('modeBanner').classList.toggle('hidden',!RemotePos.authenticated);
+ el('modeBanner').textContent=dev?'מצב ניסיון / פיתוח — העסקאות אינן חלק מארכיון העבודה':'מצב עבודה — עסקאות אמת';
+ el('modeBanner').classList.toggle('development-banner',dev);
+ el('modeBanner').classList.toggle('live-banner',!dev);
+ el('cloudBackToTest').classList.toggle('hidden',!owner||!dev&&el('cloudGate').classList.contains('hidden'));
+}
+async function switchCloudMode(target){
+ if(RemotePos.employee?.is_owner!==true)throw new Error('רק בעל החשבון יכול להחליף מצב');
+ if(state.busy)throw new Error('ממתינים לסיום הפעולה הנוכחית');
+ if(target===RemotePos.environment)return;
+ if(state.cart.length&&!confirm('יש חיוב פתוח. מעבר מצב ימחק את סל החיוב הנוכחי. להמשיך?'))return;
+ if(target==='live'&&!confirm('מעבר למצב עבודה: החיובים יירשמו בארכיון האמיתי. אם טרם העברת את נתוני מחשב הפאב, תוצג הודעת ייבוא. להמשיך?'))return;
+ state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;state.pendingOperation=null;
+ RemotePos.setEnvironment(target);
+ el('cloudGate').classList.add('hidden');
+ renderModeControls();
+ await cloudAfterAuthentication();
+ status(target==='development'?'עברת למצב ניסיון. הנתונים מופרדים מהפאב.':'עברת למצב עבודה.','success');
+}
+async function cloudAfterAuthentication(){leaveCloudLogin();renderModeControls();if(RemotePos.environment==='development'){await activateCloud();return;}const info=await RemotePos.remoteCount();if(info.hasData){await activateCloud();return;}
   const backup=await dbSnapshot();const n=backup.stores.archive.length,c=backup.stores.customers.length,p=backup.stores.products.length;
   el('cloudGateCounts').textContent=`נתונים במחשב הזה: ${c} לקוחות, ${p} מוצרים, ${n} שורות ארכיון. סכום היסטורי ${currency(backup.stores.archive.reduce((sum,r)=>sum+Number(r.price||0),0))}.`;
-  showCloudGate('הענן עדיין ריק. בצע את המעבר רק ממחשב הפאב שבו נמצאים נתוני המקור. הנתונים המקומיים לא יימחקו.');
+  el('migrationPanel').classList.toggle('hidden',RemotePos.employee?.is_owner!==true);el('cloudBackToTest').classList.toggle('hidden',RemotePos.employee?.is_owner!==true);showCloudGate('מצב עבודה עדיין ריק. את הייבוא מבצעים רק ממחשב הפאב המקורי. עד אז ניתן לחזור למצב ניסיון בלי להעביר נתונים.');
 }
 async function loginCloud(event){event.preventDefault();const btn=el('cloudLoginBtn');btn.disabled=true;el('loginMessage').textContent='מתחבר…';try{await RemotePos.login(el('cloudEmail').value.trim(),el('cloudPassword').value);el('cloudPassword').value='';await cloudAfterAuthentication();}catch(e){showCloudLogin(e.message);}finally{btn.disabled=false;}}
-async function migrateCloud(){const btn=el('cloudMigrateBtn');btn.disabled=true;try{if(!navigator.onLine)throw new Error('חיבור אינטרנט נדרש כדי להעביר נתונים');if(RemotePos.employee?.role!=='manager')throw new Error('רק מנהל רשאי להעביר ארכיון');
+async function migrateCloud(){const btn=el('cloudMigrateBtn');btn.disabled=true;try{if(RemotePos.environment!=='live'||RemotePos.employee?.is_owner!==true)throw new Error('ייבוא מותר רק לבעל החשבון במצב עבודה');if(!navigator.onLine)throw new Error('חיבור אינטרנט נדרש כדי להעביר נתונים');if(RemotePos.employee?.role!=='manager')throw new Error('רק מנהל רשאי להעביר ארכיון');
   const snapshot=await dbSnapshot();downloadBlob(new Blob([JSON.stringify(snapshot,null,2)],{type:'application/json'}),`Manara_BEFORE_CLOUD_${nowIso()}.json`);
   if(!confirm(`הורד גיבוי למחשב. להעביר עכשיו לענן ${snapshot.stores.archive.length} שורות ארכיון, ${snapshot.stores.customers.length} לקוחות ו-${snapshot.stores.products.length} מוצרים? הפעולה אינה מוחקת נתונים מקומיים.`))return;
   const imported=await RemotePos.importLocal(snapshot);
@@ -101,7 +125,7 @@ async function migrateCloud(){const btn=el('cloudMigrateBtn');btn.disabled=true;
   if(Math.abs(Number(imported?.archive_sum)-localSum)>0.009)throw new Error('סכום הארכיון בשרת אינו תואם לגיבוי המקורי — יש לבדוק');
   await activateCloud();alert('המעבר לענן הושלם והארכיון אומת. העותק המקומי נשמר.');
  }catch(e){el('cloudGateMessage').textContent='המעבר נעצר: '+e.message;}finally{btn.disabled=false;}}
-function remoteEvents(){el('cloudLoginForm').addEventListener('submit',loginCloud);on('cloudMigrateBtn','click',migrateCloud);on('cloudRetryBtn','click',async()=>{try{const found=await RemotePos.remoteCount();if(found.hasData)await activateCloud();else showCloudGate('הענן ריק. יש להתחיל במחשב מקור נתוני הפאב.');}catch(e){el('cloudGateMessage').textContent=e.message;}});on('cloudSignOut','click',()=>{if(state.cart.length&&!confirm('התנתקות תבטל את החיוב הפתוח. להמשיך?'))return;RemotePos.signOut();location.reload();});}
+function remoteEvents(){el('cloudLoginForm').addEventListener('submit',loginCloud);on('modeSwitchBtn','click',()=>switchCloudMode(RemotePos.environment==='development'?'live':'development'));on('cloudBackToTest','click',()=>switchCloudMode('development'));on('cloudMigrateBtn','click',migrateCloud);on('cloudRetryBtn','click',async()=>{try{const found=await RemotePos.remoteCount();if(found.hasData)await activateCloud();else await cloudAfterAuthentication();}catch(e){el('cloudGateMessage').textContent=e.message;}});on('cloudSignOut','click',()=>{if(state.cart.length&&!confirm('התנתקות תבטל את החיוב הפתוח. להמשיך?'))return;RemotePos.signOut();location.reload();});}
 async function init(){el('versionLabel').textContent='V'+APP_VERSION;const stamp=()=>el('clock').textContent=`${nowDisplay()} · ${clockTime().slice(0,5)}`;stamp();setInterval(stamp,30000);events();const today=nowIso();el('fromDate').value=today.slice(0,8)+'01';el('toDate').value=today;await openDatabase();await seedFirstTime();await refresh();remoteEvents();showCloudLogin('יש להתחבר כדי לעבוד על הארכיון המשותף.');if(navigator.onLine){const valid=await RemotePos.restoreSession();if(valid)try{await cloudAfterAuthentication();}catch(e){showCloudLogin(e.message);}}else el('loginMessage').textContent='אין אינטרנט — הנתונים המקומיים נשמרים, אך חיובים בענן דורשים חיבור.';el('installedVersion').textContent='V'+APP_VERSION;if('serviceWorker' in navigator&&location.protocol!=='file:')setupSoftwareUpdater().catch(console.warn);}
 
 
