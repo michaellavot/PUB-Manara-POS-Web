@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='0.9.5';
+const APP_VERSION='0.9.6';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -73,11 +73,12 @@ function renderManage(){
 }
 function renderAudit(){
  const panel=el('auditPanel'),tbody=el('auditRows');
- const manager=RemotePos.active&&RemotePos.employee?.role==='manager';
+ const manager=RemotePos.active&&RemotePos.employee?.is_owner===true;
  panel.classList.toggle('hidden',!manager);
  tbody.replaceChildren();
  if(!manager)return;
- const actions={created:'נוסף',activated:'הופעל',deactivated:'הושבת',renamed:'שינוי שם',repriced:'שינוי מחיר',edited:'עודכן'};
+ const actions={created:'נוסף',activated:'הופעל',deactivated:'הושבת',renamed:'שינוי שם',repriced:'שינוי מחיר',edited:'עודכן',
+  disabled:'עובד הושבת',enabled:'עובד הופעל',pin_reset:'איפוס קוד עובד',owner_pin_bootstrap:'הוגדרה כניסת בעלים',owner_pin_reset:'שוחזר קוד בעלים'};
  const logs=Array.isArray(RemotePos.audit)?RemotePos.audit:[];
  for(const entry of logs){
    const old=entry.old_values||{},newer=entry.new_values||{};
@@ -87,6 +88,7 @@ function renderAudit(){
    else if(entry.action==='created')details=entry.entity_type==='product'?`מחיר ${currency(newer.price)}`:'לקוח חדש';
    else if(entry.action==='activated')details='הוחזר לרשימות הפעילות';
    else if(entry.action==='deactivated')details='הוסר ממסכי המכירה';
+   else if(entry.entity_type==='employee')details='פעולת ניהול עובדים';
    else details='פרטי הפריט עודכנו';
    const tr=document.createElement('tr');
    const values=[new Date(entry.changed_at).toLocaleString('he-IL'),entry.actor_name||'מערכת',entry.entity_name||'',
@@ -143,6 +145,22 @@ function showCloudDataError(error){
  showCloudGate('ההתחברות הצליחה, אבל טעינת נתוני הענן נכשלה: '+(error?.message||'שגיאת שרת')+'. הנתונים לא שונו. אפשר לנסות שוב.');
  el('cloudBackToTest').classList.add('hidden');
 }
+function renderPermissions(){
+ const auth=RemotePos.employee||{};
+ const owner=RemotePos.active&&auth.is_owner===true;
+ document.body.classList.toggle('staff-mode',!owner);
+ document.querySelectorAll('#productForm input,#productForm button,#manageProducts button,#manageCustomers button')
+  .forEach(input=>input.disabled=!owner);
+ el('adminEntryBtn').classList.toggle('hidden',!(RemotePos.active&&auth.owner_terminal));
+ el('adminEntryBtn').textContent=owner?'ניהול מערכת פתוח · אמת מחדש':'פתח ניהול מערכת';
+ el('adminPanel').classList.toggle('hidden',!owner);
+ el('archiveImportPanel').classList.toggle('hidden',!owner||RemotePos.isImported);
+ if(!RemotePos.isImported&&owner)
+  el('archiveImportNotice').textContent='ארכיון הפאב טרם יובא. במצב הרגיל החיובים חסומים עד לייבוא מהמחשב המקורי. אפשר לבצע ניסיונות D לאחר אימות בעלים.';
+ renderModeControls();
+ renderManage();
+ renderAudit();
+}
 async function activateCloud(){
  await RemotePos.start();
  await refresh();
@@ -150,24 +168,16 @@ async function activateCloud(){
  el('storageLabel').textContent=RemotePos.isImported?'ענן · עבודה':'ענן · ממתין לייבוא';
  el('cloudUser').textContent=RemotePos.employee?.display_name||'עובד';
  el('cloudUserBar').classList.remove('hidden');
- renderModeControls();
  el('remoteSystemNotice').textContent='קופה אחת וארכיון משותף. עסקאות ניסיון מסוג D אינן נכללות בדוחות העבודה. נתונים מקומיים נשמרים עד ייבוא מאושר מהמחשב המקורי.';
  el('migrationPanel').classList.add('hidden');
- const manager=RemotePos.employee?.role==='manager';
- document.body.classList.toggle('staff-mode',!manager);
- document.querySelectorAll('#productForm input,#productForm button,#manageProducts button,#manageCustomers button')
-  .forEach(input=>input.disabled=!manager);
- el('archiveImportPanel').classList.toggle('hidden',RemotePos.employee?.is_owner!==true||RemotePos.isImported);
- if(!RemotePos.isImported&&RemotePos.employee?.is_owner===true)
-   el('archiveImportNotice').textContent='הארכיון האמיתי טרם יובא. ניתן לבצע ניסיונות באמצעות הכפתור האישי שלך; חיובי אמת ייפתחו לאחר ייבוא ממחשב הפאב המקורי. הפעולה מחייבת גיבוי ואישור.';
- RemotePos.onChange=async()=>{await refresh();renderModeControls();};
+ RemotePos.onChange=async()=>{await refresh();renderPermissions();};
  RemotePos.statusCallback=(msg,kind)=>{el('cloudSync').textContent=msg;el('cloudSync').className='sync-msg '+(kind||'');};
  RemotePos.setStatus('מסונכרן עם כל הקופות','success');
- if(!RemotePos.isImported)status('ארכיון הפאב טרם יובא. חיובי אמת נעולים עד לייבוא; בעל החשבון יכול לבצע ניסיונות עם סימון D.','');
- renderAudit();
+ if(!RemotePos.isImported)status('ארכיון הפאב טרם יובא. חיובי אמת נעולים עד לייבוא.','');
+ renderPermissions();
 }
 function renderModeControls(){
- const owner=RemotePos.employee?.is_owner===true;
+ const owner=RemotePos.active&&RemotePos.employee?.is_owner===true;
  const trial=owner&&RemotePos.testMode===true;
  const button=el('trialToggleBtn');
  button.classList.toggle('hidden',!owner);
@@ -191,12 +201,119 @@ async function toggleTrialMode(){
  status(newValue?'ניסיון הופעל — חיובים יסומנו D':'מצב ניסיון כבוי — יופיעו רק עסקאות אמת','success');
 }
 async function cloudAfterAuthentication(){leaveCloudLogin();await activateCloud();}
-async function loginCloud(event){event.preventDefault();const btn=el('cloudLoginBtn');btn.disabled=true;el('loginMessage').textContent='מתחבר…';
- try{await RemotePos.login(el('cloudEmail').value.trim(),el('cloudPassword').value);el('cloudPassword').value='';}
- catch(e){showCloudLogin(e.message);btn.disabled=false;return;}
- try{await cloudAfterAuthentication();}
- catch(e){showCloudDataError(e);}
+async function loginCloud(event){
+ event.preventDefault();
+ const btn=el('cloudLoginBtn');btn.disabled=true;el('loginMessage').textContent='מתחבר לקופה…';
+ try{
+  await RemotePos.loginPin(el('cloudUserName').value,el('cloudPin').value);
+  el('cloudPin').value='';
+  await cloudAfterAuthentication();
+ }catch(e){
+  el('cloudPin').value='';
+  showCloudLogin(e.message);
+ }finally{btn.disabled=false;}
+}
+async function setupOwner(event){
+ event.preventDefault();
+ const btn=el('ownerSetupSubmitBtn');btn.disabled=true;
+ try{
+  const username=el('ownerSetupName').value;
+  const result=await RemotePos.bootstrapOwner(username,el('ownerSetupPin').value,
+    el('ownerSetupEmail').value,el('ownerSetupPassword').value);
+  el('ownerSetupPassword').value='';el('ownerSetupPin').value='';
+  el('ownerSetupForm').classList.add('hidden');
+  el('cloudUserName').value=username;
+  el('loginMessage').textContent=result.message||'כניסת הבעלים הוגדרה. התחבר בשם ובקוד שהגדרת.';
+ }catch(e){
+  el('ownerSetupPassword').value='';el('ownerSetupPin').value='';
+  el('loginMessage').textContent=e.message;
+ }finally{btn.disabled=false;}
+}
+async function unlockAdmin(event){
+ event.preventDefault();
+ const btn=el('adminUnlockBtn');btn.disabled=true;
+ el('adminMessage').textContent='מאמת את חשבון הבעלים…';
+ try{
+  await RemotePos.elevateOwner(el('adminEmail').value,el('adminPassword').value);
+  el('adminPassword').value='';
+  el('adminLogin').classList.add('hidden');
+  await refresh();
+  renderPermissions();
+  await renderEmployeeList();
+  status('ניהול מערכת נפתח ל־30 דקות. רק החשבון שלך מורשה לניסיון ולפעולות ניהול.','success');
+ }catch(e){el('adminPassword').value='';el('adminMessage').textContent=e.message;}
  finally{btn.disabled=false;}
+}
+async function renderEmployeeList(){
+ const host=el('employeeRows');host.replaceChildren();
+ if(RemotePos.employee?.is_owner!==true)return;
+ const result=await RemotePos.manageStaff('list');
+ for(const employee of (result.employees||[])){
+   const tr=document.createElement('tr');
+   const name=document.createElement('td');name.textContent=employee.username;
+   const condition=document.createElement('td');condition.textContent=employee.active?'פעיל':'לא פעיל';
+   const actions=document.createElement('td');
+   if(employee.owner_terminal){
+    actions.textContent='חשבון בעלים · איפוס דרך מסך הכניסה';
+   }else{
+    const toggle=document.createElement('button');toggle.type='button';toggle.className='tiny-btn';
+    toggle.textContent=employee.active?'השבת':'הפעל';toggle.onclick=()=>editEmployee(employee,employee.active?'disable':'enable');
+    const reset=document.createElement('button');reset.type='button';reset.className='tiny-btn';
+    reset.textContent='שנה קוד';reset.onclick=()=>editEmployee(employee,'reset_pin');
+    actions.append(toggle,reset);
+   }
+   tr.append(name,condition,actions);host.append(tr);
+ }
+ if(!host.childNodes.length){
+  const row=document.createElement('tr');row.innerHTML='<td colspan="3" class="empty">עדיין לא הוגדרו עובדים</td>';host.append(row);
+ }
+}
+async function editEmployee(employee,operation){
+ if(RemotePos.employee?.is_owner!==true)throw new Error('ניהול עובדים דורש אימות בעלים');
+ const details={user_id:employee.user_id};
+ if(operation==='reset_pin'){
+  const pin=prompt('סיסמה חדשה בת ארבעה תווים עבור '+employee.username);
+  if(pin===null)return;
+  if(Array.from(pin).length!==4)throw new Error('יש להזין בדיוק ארבעה תווים');
+  details.pin=pin;
+ }else if(!confirm((operation==='disable'?'להשבית את ':'להפעיל את ')+employee.username+'?'))return;
+ const response=await RemotePos.manageStaff(operation,details);
+ el('employeeMessage').textContent=response.message||'פרטי העובד עודכנו';
+ await renderEmployeeList();await refresh();
+}
+async function createEmployee(event){
+ event.preventDefault();
+ if(RemotePos.employee?.is_owner!==true)throw new Error('ניהול עובדים דורש אימות בעלים');
+ const name=el('employeeCreateName').value,pin=el('employeeCreatePin').value;
+ if(Array.from(pin).length!==4)throw new Error('יש להזין סיסמה בת ארבעה תווים');
+ const submit=event.target.querySelector('button[type="submit"]');
+ submit.disabled=true;
+ try{
+  await RemotePos.manageStaff('create',{username:name,pin});
+  el('employeeCreatePin').value='';el('employeeCreateName').value='';
+  el('employeeMessage').textContent='העובד נוסף ויכול להתחבר לקופה באמצעות השם והסיסמה שהוגדרו.';
+  await renderEmployeeList();await refresh();
+ }finally{submit.disabled=false;}
+}
+async function lockAdmin(){
+ if(RemotePos.employee?.is_owner!==true)return;
+ if(RemotePos.testMode)RemotePos.setTestMode(false);
+ await RemotePos.lockAdmin();
+ await refresh();renderPermissions();
+ status('ניהול מערכת ננעל. כניסת העובד נותרה פעילה.','');
+}
+async function enforceShiftExpiry(){
+ if(!RemotePos.session?.pos_valid_until||Date.now()<RemotePos.session.pos_valid_until)return;
+ await RemotePos.signOut();
+ state.cart=[];state.cartHistory=[];state.selectedCustomer=null;state.pendingOperation=null;
+ RemotePos.onChange=null;
+ el('cloudUserBar').classList.add('hidden');
+ el('adminLogin').classList.add('hidden');
+ el('adminPanel').classList.add('hidden');
+ el('trialToggleBtn').classList.add('hidden');
+ el('modeBanner').classList.add('hidden');
+ document.body.classList.add('staff-mode');
+ showCloudLogin('חלפו 24 שעות מתחילת המשמרת. יש להיכנס שוב בשם ובסיסמה.');
 }
 async function migrateCloud(){
  const btn=el('cloudImportFromSystemBtn');btn.disabled=true;
@@ -225,13 +342,34 @@ async function migrateCloud(){
 }
 function remoteEvents(){
  el('cloudLoginForm').addEventListener('submit',loginCloud);
+ el('ownerSetupForm').addEventListener('submit',setupOwner);
+ on('ownerSetupToggle','click',()=>{
+  el('ownerSetupForm').classList.toggle('hidden');
+  el('loginMessage').textContent='';
+ });
+ el('adminUnlockForm').addEventListener('submit',unlockAdmin);
+ on('adminEntryBtn','click',()=>{
+  if(RemotePos.employee?.owner_terminal!==true)throw new Error('ניהול מערכת שמור לחשבון הבעלים');
+  el('adminMessage').textContent='';
+  el('adminLogin').classList.remove('hidden');
+  el('adminEmail').focus();
+ });
+ on('adminCancelBtn','click',()=>{el('adminPassword').value='';el('adminLogin').classList.add('hidden');});
+ on('adminLockBtn','click',lockAdmin);
+ el('employeeCreateForm').addEventListener('submit',e=>Promise.resolve(createEmployee(e)).catch(err=>{el('employeeMessage').textContent=err.message;}));
  on('trialToggleBtn','click',toggleTrialMode);
  on('cloudImportFromSystemBtn','click',migrateCloud);
  on('cloudMigrateBtn','click',migrateCloud);
  on('cloudRetryBtn','click',async()=>{try{await cloudAfterAuthentication();}catch(e){showCloudDataError(e);}});
- on('cloudSignOut','click',()=>{if(state.cart.length&&!confirm('התנתקות תבטל את החיוב הפתוח. להמשיך?'))return;RemotePos.signOut();location.reload();});
+ on('cloudSignOut','click',async()=>{
+  if(state.cart.length&&!confirm('התנתקות תבטל את החיוב הפתוח. להמשיך?'))return;
+  await RemotePos.signOut();
+  location.reload();
+ });
 }
-async function init(){el('versionLabel').textContent='V'+APP_VERSION;const stamp=()=>el('clock').textContent=`${nowDisplay()} · ${clockTime().slice(0,5)}`;stamp();setInterval(stamp,30000);events();const today=nowIso();el('fromDate').value=today.slice(0,8)+'01';el('toDate').value=today;await openDatabase();await seedFirstTime();await refresh();remoteEvents();showCloudLogin('יש להתחבר כדי לעבוד על הארכיון המשותף.');if(navigator.onLine){const valid=await RemotePos.restoreSession();if(valid)try{await cloudAfterAuthentication();}catch(e){showCloudDataError(e);}}else el('loginMessage').textContent='אין אינטרנט — הנתונים המקומיים נשמרים, אך חיובים בענן דורשים חיבור.';el('installedVersion').textContent='V'+APP_VERSION;if('serviceWorker' in navigator&&location.protocol!=='file:')setupSoftwareUpdater().catch(console.warn);}
+async function init(){el('versionLabel').textContent='V'+APP_VERSION;const stamp=()=>el('clock').textContent=`${nowDisplay()} · ${clockTime().slice(0,5)}`;stamp();setInterval(stamp,30000);events();const today=nowIso();el('fromDate').value=today.slice(0,8)+'01';el('toDate').value=today;await openDatabase();await seedFirstTime();await refresh();remoteEvents();showCloudLogin('יש להתחבר כדי לעבוד על הארכיון המשותף.');if(navigator.onLine){const valid=await RemotePos.restoreSession();if(valid)try{await cloudAfterAuthentication();}catch(e){showCloudDataError(e);}}else el('loginMessage').textContent='אין אינטרנט — הנתונים המקומיים נשמרים, אך חיובים בענן דורשים חיבור.';el('installedVersion').textContent='V'+APP_VERSION;setInterval(()=>enforceShiftExpiry().catch(console.error),30000);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)enforceShiftExpiry().catch(console.error);});
+ if('serviceWorker' in navigator&&location.protocol!=='file:')setupSoftwareUpdater().catch(console.warn);}
 
 
 init().catch(e=>{console.error(e);alert('שגיאת פתיחת קופה: '+e.message);});
