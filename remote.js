@@ -199,6 +199,12 @@ const RemotePos={
    return this.request('/rest/v1/products',{method:'PATCH',query:{id:`eq.${row.id}`},
      body:payload,headers:{Prefer:'return=minimal'}});
  },
+ async bulkDeleteCatalog(entity,ids,execute=false){
+   if(!this.active||this.employee?.is_owner!==true)throw new Error('נדרש אימות בעלים לניהול מערכת');
+   return this.request('/rest/v1/rpc/pos_bulk_delete_catalog_v0911',{
+    method:'POST',body:{p_entity:entity,p_ids:ids,p_execute:execute===true}
+   });
+ },
  async deleteCatalog(entity,id,execute=false){
     if(!this.active||this.employee?.is_owner!==true)
       throw new Error('מחיקה לצמיתות זמינה רק לאחר אימות הבעלים בניהול מערכת');
