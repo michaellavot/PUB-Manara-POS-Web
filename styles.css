@@ -206,3 +206,14 @@ body.staff-mode #adminPanel{display:none!important}
 @keyframes chargeSuccessGlow{0%{background:linear-gradient(#237451,#145439);box-shadow:0 0 0 0 #61eaaa00}22%{background:#2aa96a;box-shadow:0 0 0 3px #6ce6ad66,0 0 21px #41dc8866}65%{background:#22865b;box-shadow:0 0 14px #41dc8833}100%{background:linear-gradient(#237451,#145439);box-shadow:none}}
 @keyframes chargeSuccessCheck{0%,12%{opacity:0;transform:scale(.76)}28%,56%{opacity:1;transform:scale(1.06)}85%,100%{opacity:0;transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){.button.charge.charge-success{animation:none;background:#22865b}.button.charge.charge-success::after{animation:none;opacity:0}}
+
+/* V0.9.15: subtle native press feedback on every enabled button.
+   CSS :active requires no JS touch listeners and keeps Android scroll gestures native. */
+button{transform-origin:center center;transition:transform 120ms ease-out,filter 120ms ease-out}
+.button{transition:background .16s,border-color .16s,transform 120ms ease-out,filter 120ms ease-out}
+button:not(:disabled):not(.charge-success):active{transform:scale(.97);filter:brightness(1.10)}
+button:disabled{transform:none}
+@media(prefers-reduced-motion:reduce){
+ button,.button{transition:none}
+ button:not(:disabled):not(.charge-success):active{transform:none;filter:brightness(1.06)}
+}
