@@ -10,14 +10,14 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/app_icon_192.png">
   <link rel="apple-touch-icon" href="assets/app_icon_192.png">
-  <link rel="stylesheet" href="styles.css?v=0.9.21">
+  <link rel="stylesheet" href="styles.css?v=0.9.22">
 </head>
 <body>
   <div class="app-shell">
     <header class="hero" aria-label="PUB Manara POS"><img src="assets/main_logo.gif" alt="PUB Manara POS" /></header>
-    <div class="toolbar"><div class="identity"><strong>PUB MANARA <span>WEB</span></strong><small id="versionLabel">V0.9.21</small><button id="updateBadge" class="update-badge hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button></div><div class="toolbar-meta"><span id="clock" class="chip">--:--</span><span class="chip" id="storageLabel">מתחבר לשרת…</span><span id="cloudUserBar" class="hidden"><span id="cloudUser"></span> · <button id="trialToggleBtn" type="button" class="button mode-switch hidden" aria-pressed="false">ניסיון: כבוי</button> · <button type="button" id="cloudSignOut" class="button ghost">החלף עובד</button></span><button id="installBtn" type="button" class="button install hidden">התקן אפליקציה</button></div></div>
+    <div class="toolbar"><div class="identity"><strong>PUB MANARA <span>WEB</span></strong><small id="versionLabel">V0.9.22</small><button id="updateBadge" class="update-badge hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button></div><div class="toolbar-meta"><span id="clock" class="chip">--:--</span><span class="chip" id="storageLabel">מתחבר לשרת…</span><span id="cloudUserBar" class="hidden"><span id="cloudUser"></span> · <button id="trialToggleBtn" type="button" class="button mode-switch hidden" aria-pressed="false">ניסיון: כבוי</button> · <button type="button" id="cloudSignOut" class="button ghost">החלף עובד</button></span><button id="installBtn" type="button" class="button install hidden">התקן אפליקציה</button></div></div>
     <div id="modeBanner" class="mode-banner hidden" role="status"></div>
-    <nav class="tabs" aria-label="ניווט ראשי"><button class="tab active" data-page="posPage">קופה</button><button class="tab" data-page="managePage">ניהול</button><button class="tab" data-page="reportsPage">דוחות</button><button class="tab" data-page="systemPage">מערכת וגיבוי</button></nav>
+    <nav class="tabs" aria-label="ניווט ראשי"><button class="tab active" data-page="posPage">קופה</button><button class="tab" data-page="managePage">ניהול</button><button class="tab" data-page="reportsPage">דוחות</button><button class="tab" data-page="systemPage">מערכת ועדכון</button></nav>
     <main>
       <section id="posPage" class="page active">
         <section class="customer-strip panel customer-choice-bar"><div class="customer-select-wrap" id="customerSelectWrap"><button id="customerInput" type="button" class="button customer-main-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="customerDropdown"><span id="customerSelectedText">לקוח</span><span aria-hidden="true">⌄</span></button></div><div class="strip-counter">פריטים בחיוב <strong id="countItems">0</strong></div></section>
@@ -53,7 +53,7 @@
             <p id="catalogManagerMessage" class="small-note" role="status"></p>
           </section>
         </div>
-        <div class="panel admin-box"><div class="panel-head"><h2>ניהול מערכת</h2>
+        <div class="panel admin-box hidden" id="ownerAdminBox"><div class="panel-head"><h2>ניהול מערכת</h2>
          <button id="adminEntryBtn" type="button" class="button primary hidden">פתח ניהול מערכת</button></div>
          <p class="small-note">הרשאות בעלים, מצב ניסיון, ניהול עובדים ושינויים רגישים נפתחים רק לאחר אימות המייל והסיסמה האישיים שלך.</p>
          <div id="adminPanel" class="hidden">
@@ -69,6 +69,19 @@
            <p class="small-note" id="employeeMessage" role="status"></p>
          </div>
        </div>
+        <div class="panel hidden" id="staffAdminBox">
+          <div class="panel-head"><h2>ניהול מורשה</h2><button type="button" id="staffAdminEntryBtn" class="button primary">אימות ניהול</button></div>
+          <p class="small-note">ניהול מוגבל לעובד עם הרשאה אישית. הכניסה דורשת מייל וסיסמה נפרדים ב־Supabase Auth.</p>
+          <div id="staffAdminContent" class="hidden">
+            <div class="admin-panel-header"><strong>ניהול מוגבל מאומת</strong><button id="staffAdminLockBtn" type="button" class="button secondary">נעל ניהול</button></div>
+            <p class="small-note">אפשרויות הניהול נקבעות לפי ההרשאות האישיות שלך. ניהול עובדים, גיבויים, מחיקה לצמיתות ומצב ניסיון שמורים לבעלים.</p>
+            <div class="stack-buttons">
+              <button id="staffAdminProductsBtn" class="button secondary" type="button">ניהול מוצרים מורשים</button>
+              <button id="staffAdminCustomersBtn" class="button secondary" type="button">ניהול לקוחות מורשים</button>
+              <button id="staffAdminReportsBtn" class="button secondary" type="button">דוחות מורשים</button>
+            </div>
+          </div>
+        </div>
        <div class="panel" id="auditPanel"><div class="panel-head"><h2>יומן שינויים</h2><button class="button secondary" type="button" id="refreshAuditBtn">רענן</button></div>
           <p class="small-note">שינויים בלקוחות ובמשקאות: מי ביצע, מה שונה ומתי. זמין למנהלים בלבד.</p>
           <div class="scroll-table audit-table"><table class="data-table"><thead><tr><th>תאריך ושעה</th><th>מבצע</th><th>פריט/לקוח</th><th>שינוי</th><th>פרטים</th></tr></thead><tbody id="auditRows"></tbody></table></div>
@@ -78,7 +91,7 @@
       <div id="archiveImportPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא הארכיון ממחשב הפאב המקורי</h2></div>
         <p class="small-note" id="archiveImportNotice">העבר את הנתונים רק לאחר פתיחת הקופה במחשב הפאב המקורי. לפני ההעברה ירד קובץ גיבוי.</p>
         <button type="button" class="button primary" id="cloudImportFromSystemBtn">גבה וייבא ארכיון מהמחשב הזה</button>
-      </div><div id="ownerBackupPanel" class="panel hidden"><div class="panel-head"><h2>גיבוי ושחזור</h2></div><p id="remoteSystemNotice">העותק המקומי נשאר במכשיר. אחרי מעבר לענן, כל הקופות משתמשות במסד המשותף.</p><div class="stack-buttons"><button id="downloadBackup" class="button primary">הורד גיבוי JSON</button><label class="file-input">שחזור גיבוי מלא (מחליף נתונים) <input id="restoreFile" type="file" accept=".json,application/json"></label></div><p class="small-note">הורד גיבוי בתחילת ובסיום משמרת. אין למחוק את נתוני הדפדפן לפני סיום העברת הארכיון.</p><p id="cloudSync" class="sync-msg"></p></div><div id="ownerLegacyPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא מהקופה הישנה</h2></div><p>ייבוא CSV מהארכיון הישן או JSON שנוצר מקובץ SQLite באמצעות הכלי המצורף. חשבונות כרדיט ישנים מסוג C0001 או C-0001 אינם מיובאים.</p><label class="file-input">בחר ארכיון CSV או JSON <input id="legacyInput" type="file" accept=".csv,.json,text/csv,application/json"></label><div class="import-preview hidden" id="importPreview"></div><div id="legacyNotice" class="small-note"></div></div><div class="panel"><div class="panel-head"><h2>התקנה ועבודה ללא אינטרנט</h2></div><p>פתח ב־Chrome או Edge דרך כתובת HTTPS, או במחשב דרך השרת המקומי שבחבילה. לאחר ההתקנה ניתן לפתוח גם ללא אינטרנט, כל עוד המידע והקבצים נשמרים במכשיר.</p><p class="small-note">העיצוב והקוד של פרויקט ה־Web נפרדים לחלוטין מהתוכנה ל־Windows.</p><button id="installBtnSystem" class="button primary" type="button">התקן כאפליקציה</button><div class="updater-system"><strong>עדכוני תוכנה</strong><p class="small-note">גרסה מותקנת: <span id="installedVersion">V0.9.21</span> · <span id="updateStatus">אין עדכון ידוע</span></p><button id="checkUpdatesBtn" class="button secondary" type="button">בדוק עדכונים</button></div></div></div></section>
+      </div><div id="ownerBackupPanel" class="panel hidden"><div class="panel-head"><h2>גיבוי ושחזור</h2></div><p id="remoteSystemNotice">העותק המקומי נשאר במכשיר. אחרי מעבר לענן, כל הקופות משתמשות במסד המשותף.</p><div class="stack-buttons"><button id="downloadBackup" class="button primary">הורד גיבוי JSON</button><label class="file-input">שחזור גיבוי מלא (מחליף נתונים) <input id="restoreFile" type="file" accept=".json,application/json"></label></div><p class="small-note">הורד גיבוי בתחילת ובסיום משמרת. אין למחוק את נתוני הדפדפן לפני סיום העברת הארכיון.</p><p id="cloudSync" class="sync-msg"></p></div><div id="ownerLegacyPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא מהקופה הישנה</h2></div><p>ייבוא CSV מהארכיון הישן או JSON שנוצר מקובץ SQLite באמצעות הכלי המצורף. חשבונות כרדיט ישנים מסוג C0001 או C-0001 אינם מיובאים.</p><label class="file-input">בחר ארכיון CSV או JSON <input id="legacyInput" type="file" accept=".csv,.json,text/csv,application/json"></label><div class="import-preview hidden" id="importPreview"></div><div id="legacyNotice" class="small-note"></div></div><div class="panel"><div class="panel-head"><h2>התקנה ועבודה ללא אינטרנט</h2></div><p>פתח ב־Chrome או Edge דרך כתובת HTTPS, או במחשב דרך השרת המקומי שבחבילה. לאחר ההתקנה ניתן לפתוח גם ללא אינטרנט, כל עוד המידע והקבצים נשמרים במכשיר.</p><p class="small-note">העיצוב והקוד של פרויקט ה־Web נפרדים לחלוטין מהתוכנה ל־Windows.</p><button id="installBtnSystem" class="button primary" type="button">התקן כאפליקציה</button><div class="updater-system"><strong>עדכוני תוכנה</strong><p class="small-note">גרסה מותקנת: <span id="installedVersion">V0.9.22</span> · <span id="updateStatus">אין עדכון ידוע</span></p><button id="checkUpdatesBtn" class="button secondary" type="button">בדוק עדכונים</button></div></div></div></section>
     </main>
   </div>
 
@@ -108,6 +121,8 @@
         <label><input type="checkbox" name="create_customers"> הקמת לקוחות חדשים</label>
         <label><input type="checkbox" name="toggle_customers"> הפעלה והשבתה של לקוחות</label>
         <label><input type="checkbox" name="full_reports"> גישה לדוחות מלאים, תאריכים וייצוא</label>
+        <label><input type="checkbox" name="manage_system" id="manageSystemPermission"> ניהול מערכת מוגבל (באימות נוסף)</label>
+        <label id="staffAdminEmailField" class="hidden">מייל ניהול ב־Supabase Auth <input id="staffAdminEmail" type="email" class="field" autocomplete="off" placeholder="כתובת מייל של העובד"></label>
       </div>
       <p class="small-note permissions-employee-name">גיבויים, מחיקה לצמיתות, מצב ניסיון וניהול הרשאות נשארים לבעלים בלבד.</p>
       <p class="small-note permissions-employee-name" id="employeePermissionsMessage" role="status"></p>
@@ -135,6 +150,18 @@
       <p class="small-note">משמרת מסתיימת אוטומטית לאחר 24 שעות. חיובים דורשים חיבור מאומת; נתוני הארכיון המקומי לא נמחקים.</p>
     </div>
   </div>
+  <div id="staffAdminLogin" class="cloud-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="staffAdminLoginTitle">
+    <div class="cloud-card"><h2 id="staffAdminLoginTitle">אימות ניהול מוגבל</h2>
+      <p>הזן את המייל והסיסמה האישיים שהוגדרו לעובד ב־Supabase Auth.</p>
+      <form id="staffAdminUnlockForm" class="cloud-form">
+        <label>מייל עובד <input id="staffAdminLoginEmail" class="field" type="email" autocomplete="username" required></label>
+        <label>סיסמת עובד ב־Supabase <input id="staffAdminLoginPassword" class="field" type="password" autocomplete="current-password" required></label>
+        <button type="submit" id="staffAdminUnlockBtn" class="button primary">פתח ניהול מוגבל</button>
+      </form>
+      <button type="button" id="staffAdminCancelBtn" class="button secondary">ביטול</button>
+      <p id="staffAdminLoginMessage" role="status" class="small-note"></p>
+    </div>
+  </div>
   <div id="adminLogin" class="cloud-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="adminLoginTitle">
     <div class="cloud-card"><h2 id="adminLoginTitle">פתיחת ניהול מערכת</h2>
       <p>הזן את המייל והסיסמה של חשבון הבעלים הקיים, לקבלת הרשאות ניהול אישיות.</p>
@@ -153,5 +180,5 @@
     <div id="migrationPanel"><button id="cloudMigrateBtn" class="button primary">גבה והעבר את כל הארכיון לענן</button><p class="small-note">תתבצע הורדת גיבוי לפני אישור העלאה. הייבוא יתבצע רק כשהענן ריק ובאישור המנהל.</p></div>
     <button id="cloudRetryBtn" class="button secondary" type="button">בדוק אם הארכיון כבר נמצא בענן</button><button id="cloudBackToTest" class="button secondary hidden" type="button">חזרה למצב ניסיון — ללא ייבוא</button></div>
   </div>
-  <script src="db.js"></script><script src="remote.js?v=0.9.21"></script><script src="xlsx.js"></script><script src="updater.js?v=0.9.21"></script><script src="app.js?v=0.9.21"></script>
+  <script src="db.js"></script><script src="remote.js?v=0.9.22"></script><script src="xlsx.js"></script><script src="updater.js?v=0.9.22"></script><script src="app.js?v=0.9.22"></script>
 </body></html>
