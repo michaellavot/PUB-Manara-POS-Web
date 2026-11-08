@@ -10,12 +10,12 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/app_icon_192.png">
   <link rel="apple-touch-icon" href="assets/app_icon_192.png">
-  <link rel="stylesheet" href="styles.css?v=0.9.4">
+  <link rel="stylesheet" href="styles.css?v=0.9.6">
 </head>
 <body>
   <div class="app-shell">
     <header class="hero" aria-label="PUB Manara POS"><img src="assets/main_logo.gif" alt="PUB Manara POS" /></header>
-    <div class="toolbar"><div class="identity"><strong>PUB MANARA <span>WEB</span></strong><small id="versionLabel">V0.9.5</small><button id="updateBadge" class="update-badge hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button></div><div class="toolbar-meta"><span id="clock" class="chip">--:--</span><span class="chip" id="storageLabel">מתחבר לשרת…</span><span id="cloudUserBar" class="hidden"><span id="cloudUser"></span> · <button id="trialToggleBtn" type="button" class="button mode-switch hidden" aria-pressed="false">ניסיון: כבוי</button> · <button type="button" id="cloudSignOut" class="button ghost">התנתק</button></span><button id="installBtn" type="button" class="button install hidden">התקן אפליקציה</button></div></div>
+    <div class="toolbar"><div class="identity"><strong>PUB MANARA <span>WEB</span></strong><small id="versionLabel">V0.9.6</small><button id="updateBadge" class="update-badge hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button></div><div class="toolbar-meta"><span id="clock" class="chip">--:--</span><span class="chip" id="storageLabel">מתחבר לשרת…</span><span id="cloudUserBar" class="hidden"><span id="cloudUser"></span> · <button id="trialToggleBtn" type="button" class="button mode-switch hidden" aria-pressed="false">ניסיון: כבוי</button> · <button type="button" id="cloudSignOut" class="button ghost">התנתק</button></span><button id="installBtn" type="button" class="button install hidden">התקן אפליקציה</button></div></div>
     <div id="modeBanner" class="mode-banner hidden" role="status"></div>
     <nav class="tabs" aria-label="ניווט ראשי"><button class="tab active" data-page="posPage">קופה</button><button class="tab" data-page="managePage">ניהול</button><button class="tab" data-page="reportsPage">דוחות</button><button class="tab" data-page="systemPage">מערכת וגיבוי</button></nav>
     <main>
@@ -27,7 +27,23 @@
         </div>
       </section>
       <section id="managePage" class="page"><div class="manage-grid"><div class="panel"><div class="panel-head manage-head"><h2>ניהול מוצרים</h2><button class="button secondary inactive-toggle" type="button" id="showInactiveProductsBtn" aria-pressed="false">הצג לא פעילים</button><span class="small-note">מוצרים לא פעילים נשמרים בהיסטוריה</span></div><form id="productForm" class="inline-form"><input class="field" name="category" placeholder="קטגוריה" required><input class="field" name="type" placeholder="סוג משקה" required><input class="field" name="price" inputmode="decimal" placeholder="מחיר ₪" required><button class="button primary" type="submit">הוסף משקה</button></form><div class="scroll-table"><table class="data-table"><thead><tr><th>משקה</th><th>מחיר</th><th>מצב</th><th>פעולות</th></tr></thead><tbody id="manageProducts"></tbody></table></div></div><div class="panel"><div class="panel-head manage-head"><h2>ניהול לקוחות</h2><button class="button secondary inactive-toggle" type="button" id="showInactiveCustomersBtn" aria-pressed="false">הצג לא פעילים</button><span class="small-note">סוג אחד · זיהוי לפי שם</span></div><form id="customerForm" class="inline-form"><input class="field" name="name" placeholder="שם לקוח" required><button class="button primary" type="submit">הוסף לקוח</button></form><div class="scroll-table"><table class="data-table"><thead><tr><th>שם</th><th>מצב</th><th>פעולות</th></tr></thead><tbody id="manageCustomers"></tbody></table></div></div></div>
-        <div class="panel" id="auditPanel"><div class="panel-head"><h2>יומן שינויים</h2><button class="button secondary" type="button" id="refreshAuditBtn">רענן</button></div>
+        <div class="panel admin-box"><div class="panel-head"><h2>ניהול מערכת</h2>
+         <button id="adminEntryBtn" type="button" class="button primary hidden">פתח ניהול מערכת</button></div>
+         <p class="small-note">הרשאות בעלים, מצב ניסיון, ניהול עובדים ושינויים רגישים נפתחים רק לאחר אימות המייל והסיסמה האישיים שלך.</p>
+         <div id="adminPanel" class="hidden">
+           <div class="admin-panel-header"><strong>ניהול מתקדם פעיל</strong><button type="button" class="button secondary" id="adminLockBtn">נעל ניהול מערכת</button></div>
+           <h3>הוספת עובד</h3>
+           <form id="employeeCreateForm" class="inline-form">
+             <label>שם עובד <input id="employeeCreateName" class="field" type="text" required minlength="2" maxlength="80" autocomplete="off"></label>
+             <label>סיסמה בת 4 תווים <input id="employeeCreatePin" class="field" type="password" required maxlength="4" minlength="4" autocomplete="new-password" inputmode="text"></label>
+             <button class="button primary" type="submit">הוסף עובד</button>
+           </form>
+           <h3>עובדים קיימים</h3>
+           <div class="scroll-table"><table class="data-table"><thead><tr><th>שם עובד</th><th>מצב</th><th>פעולות</th></tr></thead><tbody id="employeeRows"></tbody></table></div>
+           <p class="small-note" id="employeeMessage" role="status"></p>
+         </div>
+       </div>
+       <div class="panel" id="auditPanel"><div class="panel-head"><h2>יומן שינויים</h2><button class="button secondary" type="button" id="refreshAuditBtn">רענן</button></div>
           <p class="small-note">שינויים בלקוחות ובמשקאות: מי ביצע, מה שונה ומתי. זמין למנהלים בלבד.</p>
           <div class="scroll-table audit-table"><table class="data-table"><thead><tr><th>תאריך ושעה</th><th>מבצע</th><th>פריט/לקוח</th><th>שינוי</th><th>פרטים</th></tr></thead><tbody id="auditRows"></tbody></table></div>
         </div></section>
@@ -53,14 +69,43 @@
   </div>
   
   <div id="cloudLogin" class="cloud-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="cloudLoginTitle">
-    <div class="cloud-card"><h2 id="cloudLoginTitle">כניסה לקופת מנרה</h2><p>התחבר עם חשבון העובד של הפאב כדי להשתמש בלקוחות ובארכיון המשותפים.</p>
-      <form id="cloudLoginForm" class="cloud-form"><label>דוא״ל<input id="cloudEmail" type="email" autocomplete="username" required class="field"></label><label>סיסמה<input id="cloudPassword" type="password" autocomplete="current-password" required class="field"></label><button id="cloudLoginBtn" class="button primary" type="submit">התחבר לקופה</button></form>
-      <p id="loginMessage" role="status" class="small-note"></p><p class="small-note">אין אפשרות לבצע חיובים ללא חיבור מאומת לשרת. הארכיון הקודם לא נמחק.</p></div>
+    <div class="cloud-card"><h2 id="cloudLoginTitle">כניסה לקופת מנרה</h2>
+      <p>כניסת עובד באמצעות שם וסיסמה בת ארבעה תווים.</p>
+      <form id="cloudLoginForm" class="cloud-form">
+        <label>שם עובד <input id="cloudUserName" type="text" autocomplete="username" required minlength="2" maxlength="80" class="field"></label>
+        <label>סיסמה אישית — 4 תווים <input id="cloudPin" type="password" autocomplete="current-password" required minlength="4" maxlength="4" class="field"></label>
+        <button id="cloudLoginBtn" class="button primary" type="submit">כניסה לקופה</button>
+      </form>
+      <p id="loginMessage" role="status" class="small-note"></p>
+      <button id="ownerSetupToggle" type="button" class="button secondary">הגדרת כניסת בעלים / שחזור קוד</button>
+      <form id="ownerSetupForm" class="cloud-form hidden">
+        <p class="small-note">הגדרה ראשונית: אמת את חשבון הבעלים הקיים שלך והגדר שם כניסה וקוד בן 4 תווים. בהמשך ניהול המערכת ייפתח באמצעות המייל והסיסמה הקיימים.</p>
+        <label>שם כניסה לבעלים <input id="ownerSetupName" class="field" type="text" minlength="2" maxlength="80" required autocomplete="off"></label>
+        <label>קוד כניסה חדש — 4 תווים <input id="ownerSetupPin" class="field" type="password" minlength="4" maxlength="4" required autocomplete="new-password"></label>
+        <label>מייל חשבון הבעלים <input id="ownerSetupEmail" class="field" type="email" required autocomplete="username"></label>
+        <label>סיסמת חשבון הבעלים <input id="ownerSetupPassword" class="field" type="password" required autocomplete="current-password"></label>
+        <button id="ownerSetupSubmitBtn" type="submit" class="button primary">אמת והגדר כניסה</button>
+      </form>
+      <p class="small-note">משמרת מסתיימת אוטומטית לאחר 24 שעות. חיובים דורשים חיבור מאומת; נתוני הארכיון המקומי לא נמחקים.</p>
+    </div>
+  </div>
+  <div id="adminLogin" class="cloud-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="adminLoginTitle">
+    <div class="cloud-card"><h2 id="adminLoginTitle">פתיחת ניהול מערכת</h2>
+      <p>הזן את המייל והסיסמה של חשבון הבעלים הקיים, לקבלת הרשאות ניהול אישיות.</p>
+      <form id="adminUnlockForm" class="cloud-form">
+        <label>מייל הבעלים <input id="adminEmail" type="email" class="field" autocomplete="username" required></label>
+        <label>סיסמת הבעלים <input id="adminPassword" type="password" class="field" autocomplete="current-password" required></label>
+        <button id="adminUnlockBtn" type="submit" class="button primary">פתח ניהול מערכת</button>
+      </form>
+      <button id="adminCancelBtn" type="button" class="button secondary">ביטול</button>
+      <p id="adminMessage" class="small-note" role="status"></p>
+      <p class="small-note">הרשאות הניהול יינעלו שוב לאחר 30 דקות. כניסת העובד תישאר בתוקף עד 24 שעות.</p>
+    </div>
   </div>
   <div id="cloudGate" class="cloud-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="cloudGateTitle">
     <div class="cloud-card"><h2 id="cloudGateTitle">מעבר הארכיון לענן</h2><p id="cloudGateMessage"></p><p id="cloudGateCounts" class="cloud-counts"></p>
     <div id="migrationPanel"><button id="cloudMigrateBtn" class="button primary">גבה והעבר את כל הארכיון לענן</button><p class="small-note">תתבצע הורדת גיבוי לפני אישור העלאה. הייבוא יתבצע רק כשהענן ריק ובאישור המנהל.</p></div>
     <button id="cloudRetryBtn" class="button secondary" type="button">בדוק אם הארכיון כבר נמצא בענן</button><button id="cloudBackToTest" class="button secondary hidden" type="button">חזרה למצב ניסיון — ללא ייבוא</button></div>
   </div>
-  <script src="db.js"></script><script src="remote.js?v=0.9.5"></script><script src="xlsx.js"></script><script src="updater.js?v=0.9.5"></script><script src="app.js?v=0.9.5"></script>
+  <script src="db.js"></script><script src="remote.js?v=0.9.6"></script><script src="xlsx.js"></script><script src="updater.js?v=0.9.6"></script><script src="app.js?v=0.9.6"></script>
 </body></html>
