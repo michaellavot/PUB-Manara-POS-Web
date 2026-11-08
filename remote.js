@@ -62,7 +62,7 @@ const RemotePos={
    const [customerRows,productRows,transactionRows]=await Promise.all([
      this.rows('customers','id,name,name_key,active'),
      this.rows('products','id,name,name_key,category,product_type,price,active,price_history'),
-     this.rows('transactions','id,client_operation_id,customer_name,kind,created_at,transaction_items(id,product_name,quantity,line_total)','created_at.asc')
+     this.rows('transactions','id,client_operation_id,customer_name,kind,created_at,transaction_items!transaction_items_transaction_id_fkey(id,product_name,quantity,line_total)','created_at.asc')
    ]);
    this.customers=customerRows.map(c=>({id:c.id,name:c.name,normalized:c.name_key,active:c.active}));
    this.products=productRows.map(p=>({id:p.id,name:p.name,normalized:p.name_key,category:p.category,type:p.product_type,price:Number(p.price),active:p.active}));
