@@ -83,7 +83,7 @@
 .sync-msg{font-size:12px;color:#bda078}.sync-msg.success{color:#8bcfa3}.sync-msg.error{color:#f59b90}
 #cloudUserBar{font-size:12px;color:#d3bd9c}#cloudUserBar .button{min-height:29px;padding:5px 8px}
 .cloud-overlay.hidden{display:none}
-body.staff-mode #productForm,body.staff-mode #manageProducts button,body.staff-mode #manageCustomers button{display:none!important}
+/* V0.9.19: product and customer actions use individual permissions in JS. */
 
 /* Owner-only mode switch: a prominent indication, no layout rearrangement */
 #trialToggleBtn{margin-inline:7px;padding:5px 12px;min-height:29px;border:1px solid #e3ac58;background:#322919;color:#ffe3ac;font-size:12px;font-weight:700}
@@ -243,3 +243,11 @@ button:disabled{transform:none}
 .employee-picker-results .button{width:100%;min-height:51px;text-align:center;white-space:normal;font-size:17px;background:linear-gradient(#433221,#2b2520)}
 .employee-picker-message{margin:0 16px 14px}
 @media(max-width:730px){.customer-choice-bar{min-height:65px;flex-direction:row;align-items:center}.customer-choice-bar .strip-counter{display:none}.customer-main-button{min-height:54px}.employee-picker-overlay,#customerDropdown{padding:10px}}
+
+/* V0.9.19: employee-specific catalog permissions */
+.permissions-panel{max-width:560px}
+.permissions-employee-name{padding:0 19px;margin:12px 0 0}
+.permissions-options{display:flex;flex-direction:column;gap:10px;padding:16px 19px;overflow-y:auto}
+.permissions-options label{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid #6b4c30;border-radius:9px;background:#1a262c;color:#f3ddbb;cursor:pointer}
+.permissions-options input{accent-color:#3caa78;width:20px;height:20px;flex:none}
+#employeePermissionsSave:disabled{opacity:.65}
