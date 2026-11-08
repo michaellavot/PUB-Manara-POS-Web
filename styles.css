@@ -43,3 +43,24 @@
 .bill-table tbody tr{background:transparent}
 .product-footer{padding-right:0}
 @media(max-width:730px){.customer-select-wrap{flex:1 1 100%}.customer-dropdown .customer-dialog-results{max-height:40dvh}}
+
+/* V0.6 — nonintrusive PWA updater */
+.identity{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.identity>small{white-space:nowrap}
+.update-badge{background:#523f23;color:#f2c575;border:1px solid #a87f43;border-radius:9px;padding:6px 11px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap}
+.update-badge:hover,.update-badge:focus-visible{background:#69502a}
+.updater-system{border-top:1px solid var(--line);margin-top:18px;padding-top:16px}
+.updater-system strong{color:var(--gold)}
+.update-modal{position:fixed;inset:0;z-index:1800;display:grid;place-items:center;padding:18px}
+.update-modal-shade{position:absolute;inset:0;background:#01090cdd;backdrop-filter:blur(4px)}
+.update-modal-card{position:relative;width:min(450px,100%);max-height:88dvh;overflow-y:auto;border:1px solid #986d3d;border-radius:16px;background:#10191f;box-shadow:0 25px 70px #000b;padding:22px}
+.update-modal-title{display:flex;align-items:center;gap:14px;border-bottom:1px solid #55432e;padding-bottom:16px}
+.update-modal-title h2{margin:0 0 4px;font-size:22px;color:#f3d9b0}
+.update-modal-title span:not(.update-modal-icon){color:#aeb6b9;font-size:13px}
+.update-modal-icon{display:grid;place-items:center;width:54px;height:54px;background:#3b3023;color:#e8ba73;border-radius:12px;font-size:31px}
+.update-modal-card h3{font-size:15px;margin:20px 0 9px}
+.update-modal-card ul{padding-right:22px;margin:0 0 17px;line-height:1.8;color:#d4d8d8}
+.update-modal-safety{background:#18282b;color:#c4d7ce;border-radius:9px;font-size:13px;padding:13px;line-height:1.6}
+.update-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.update-modal-actions .button{min-height:44px}
+@media(max-width:600px){.update-modal-card{padding:15px}.update-modal-title h2{font-size:20px}}
