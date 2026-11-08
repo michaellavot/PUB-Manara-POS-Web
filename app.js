@@ -309,6 +309,7 @@ async function enforceShiftExpiry(){
  RemotePos.onChange=null;
  el('cloudUserBar').classList.add('hidden');
  el('adminLogin').classList.add('hidden');
+ el('cloudGate').classList.add('hidden');
  el('adminPanel').classList.add('hidden');
  el('trialToggleBtn').classList.add('hidden');
  el('modeBanner').classList.add('hidden');
