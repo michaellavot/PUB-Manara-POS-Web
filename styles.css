@@ -257,3 +257,10 @@ button:disabled{transform:none}
 .cloud-login-close{position:absolute;top:13px;left:13px;z-index:1;display:grid;place-items:center;width:43px;height:43px;min-height:43px;border:1px solid #af834e;border-radius:10px;color:#ffe3b5;background:#28333a;font-size:30px;line-height:1;cursor:pointer}
 .cloud-login-close:disabled{opacity:.55;cursor:wait}
 #cloudLoginTitle{padding-left:46px}
+
+/* V0.9.22: owner-only system window and separate limited employee portal. */
+#ownerAdminBox.hidden,#staffAdminBox.hidden,#staffAdminContent.hidden,#staffAdminEmailField.hidden{display:none!important}
+#staffAdminEmailField{display:flex;flex-direction:column;align-items:stretch;gap:7px}
+#staffAdminEmailField .field{width:100%;min-height:45px}
+#staffAdminBox .stack-buttons{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
+#staffAdminBox .stack-buttons .button{flex:1;min-width:145px}
