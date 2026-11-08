@@ -1,12 +1,12 @@
 'use strict';
-const APP_VERSION='0.9.18';
+const APP_VERSION='0.9.19';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
  ['וודקה (צ\'ייסר)',10],['ויסקי (צ\'ייסר)',10],['ערק (צ\'ייסר)',10],["ג'ין (צ\'ייסר)",10],['טקילה (צ\'ייסר)',10],
  ['וודקה (מנה)',25],['ויסקי (מנה)',25],['ערק (מנה)',25],["ג'ין (מנה)",25],['טקילה (מנה)',25],['גינס',1]
 ];
-const state={pendingOperation:null,customers:[],products:[],archive:[],priceHistory:[],showInactiveProducts:false,showInactiveCustomers:false,selectedCustomer:null,category:null,cart:[],selectedRow:-1,cartHistory:[],busy:false,installPrompt:null,currentReport:{headers:[],rows:[],title:'דוח תנועות'},pendingImport:null,catalogDialog:null,catalogSearch:'',catalogSelections:new Set(),availableEmployees:[]};
+const state={pendingOperation:null,customers:[],products:[],archive:[],priceHistory:[],showInactiveProducts:false,showInactiveCustomers:false,selectedCustomer:null,category:null,cart:[],selectedRow:-1,cartHistory:[],busy:false,installPrompt:null,currentReport:{headers:[],rows:[],title:'דוח תנועות'},pendingImport:null,catalogDialog:null,catalogSearch:'',catalogSelections:new Set(),availableEmployees:[],permissionEmployee:null};
 const el=id=>document.getElementById(id);
 const norm=s=>String(s||'').normalize('NFKC').replace(/\s+/g,' ').trim().toLocaleLowerCase('he-IL');
 const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -35,7 +35,7 @@ function renderCustomerResults(){const search=norm(el('customerSearch').value);c
 function selectCustomer(match){if(state.cart.length&&state.selectedCustomer?.id!==match.id&&!confirm('מעבר לקוח ינקה את החיוב הנוכחי. להמשיך?'))return;state.selectedCustomer=match;state.cart=[];state.cartHistory=[];state.selectedRow=-1;renderCustomer();renderBill();closeCustomerDialog();status('נבחר לקוח: '+match.name,'success');}
 
 
-async function addCustomer(name,select=true){name=String(name||'').trim().replace(/\s+/g,' ');if(!name)throw new Error('יש להזין שם לקוח');const key=norm(name),old=state.customers.find(c=>c.normalized===key);if(old){if(old.active)throw new Error('לקוח בשם זה כבר קיים');if(!confirm(`הלקוח ${old.name} אינו פעיל. להפעיל אותו מחדש?`))return;if(RemotePos.active)await RemotePos.saveCustomer({...old,active:true,name,normalized:key});else await putRow('customers',{...old,active:true,name,normalized:key});}else{const row={id:uuid(),name,normalized:key,active:true};if(RemotePos.active)await RemotePos.saveCustomer(row);else await putRow('customers',row);}await refresh();if(select){state.selectedCustomer=state.customers.find(c=>c.normalized===key);renderCustomer();renderBill();}status('הלקוח נשמר','success');}
+async function addCustomer(name,select=true){assertManage('create_customers');name=String(name||'').trim().replace(/\s+/g,' ');if(!name)throw new Error('יש להזין שם לקוח');const key=norm(name),old=state.customers.find(c=>c.normalized===key);if(old){if(old.active)throw new Error('לקוח בשם זה כבר קיים');if(!confirm(`הלקוח ${old.name} אינו פעיל. להפעיל אותו מחדש?`))return;if(RemotePos.active)await RemotePos.saveCustomer({...old,active:true,name,normalized:key});else await putRow('customers',{...old,active:true,name,normalized:key});}else{const row={id:uuid(),name,normalized:key,active:true};if(RemotePos.active)await RemotePos.saveCustomer(row);else await putRow('customers',row);}await refresh();if(select){state.selectedCustomer=state.customers.find(c=>c.normalized===key);renderCustomer();renderBill();}status('הלקוח נשמר','success');}
 function activeProducts(){return state.products.filter(p=>p.active);}
 function renderProducts(){const cats=[...new Set(activeProducts().map(p=>p.category))];if(!cats.includes(state.category))state.category=cats[0]||null;const host=el('categories');host.replaceChildren();for(const c of cats){const b=document.createElement('button');b.className='button'+(state.category===c?' active':'');b.type='button';b.textContent=c;b.onclick=()=>{state.category=c;renderProducts();};host.append(b);}const products=activeProducts().filter(p=>p.category===state.category);const box=el('products');box.replaceChildren();for(const p of products){const b=document.createElement('button');b.type='button';b.className='button';const name=document.createElement('span'),price=document.createElement('span');name.textContent=p.type;price.className='product-price';price.textContent=currency(p.price);b.append(name,price);b.onclick=()=>addProductToCart(p);box.append(b);}if(!products.length)box.textContent='אין משקאות להצגה';el('productCounter').textContent=products.length+' פריטים';}
 function addProductToCart(p){if(!state.selectedCustomer){toastCustomer();status('צריך לבחור לקוח לפני הוספת משקה','error');return;}const qty=1;let index=state.cart.findIndex(r=>r.productId===p.id&&r.unitPrice===p.price);if(index>=0){const row=state.cart[index];if(row.qty+qty>999){status('לא ניתן לחרוג מכמות 999 למשקה','error');return;}row.qty+=qty;row.price=Math.round(row.unitPrice*row.qty*100)/100;}else{state.cart.push({id:uuid(),productId:p.id,drink:p.name,qty,unitPrice:p.price,price:Math.round(p.price*qty*100)/100});index=state.cart.length-1;}state.cartHistory.push({id:state.cart[index].id,qty});state.selectedRow=index;renderBill();pulseTotal();status('נוסף: '+p.name,'success');}
@@ -49,7 +49,7 @@ async function completeSale(refund=false){if(state.busy)return;if(!state.selecte
   await RemotePos.submit({operationId:state.pendingOperation.op,customerId:state.selectedCustomer.id,kind:refund?'refund':'sale',items:state.cart,deviceId:getDeviceId()});
   state.pendingOperation=null;
 }else await saveSaleAtomic(rows);const total=rows.reduce((s,r)=>s+r.price,0),name=state.selectedCustomer.name;state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;await refresh();if(refund){status(`${RemotePos.active&&RemotePos.testMode?'[ניסיון D] ':''}זיכוי נשמר עבור ${name}: ${currency(total)}`,'success');el('billTag').textContent='זיכוי נשמר';}else{status('');const button=el('chargeBtn');button.classList.remove('charge-success');void button.offsetWidth;button.classList.add('charge-success');}}catch(e){const message='שמירת העסקה נכשלה: '+e.message+' — לא הוצג אישור שהעסקה נשמרה. בדוק את הארכיון לפני ניסיון חוזר.';status(message,'error');alert(message);}finally{setTimeout(()=>{state.busy=false;el('chargeBtn').disabled=false;el('refundBtn').disabled=false;},1050);}}
-async function productSubmit(event){event.preventDefault();const f=new FormData(event.target),category=String(f.get('category')||'').trim(),type=String(f.get('type')||'').trim(),price=amount(f.get('price'));if(!category||!type||price<0)throw new Error('יש למלא קטגוריה, משקה ומחיר תקין');const name=productLabel(category,type),existing=state.products.find(p=>p.normalized===norm(name));if(existing){if(existing.active)throw new Error('משקה בשם זה כבר קיים');if(!confirm('המשקה לא פעיל. להפעיל אותו מחדש?'))return;if(RemotePos.active)await RemotePos.saveProduct({...existing,active:true,category,type,price},{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:'הפעלה מחדש'});else await putRow('products',{...existing,active:true,category,type,price});}else{const row={id:uuid(),category,type,name,normalized:norm(name),price,active:true};if(RemotePos.active)await RemotePos.saveProduct(row,{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:'הוספת משקה'});else await putRow('products',row);}if(!RemotePos.active)await putRow('priceHistory',{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:existing?'הפעלה מחדש':'הוספת משקה'});event.target.reset();await refresh();status('מוצר נשמר','success');}
+async function productSubmit(event){event.preventDefault();assertManage('create_products');const f=new FormData(event.target),category=String(f.get('category')||'').trim(),type=String(f.get('type')||'').trim(),price=amount(f.get('price'));if(!category||!type||price<0)throw new Error('יש למלא קטגוריה, משקה ומחיר תקין');const name=productLabel(category,type),existing=state.products.find(p=>p.normalized===norm(name));if(existing){if(existing.active)throw new Error('משקה בשם זה כבר קיים');if(!confirm('המשקה לא פעיל. להפעיל אותו מחדש?'))return;if(RemotePos.active)await RemotePos.saveProduct({...existing,active:true,category,type,price},{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:'הפעלה מחדש'});else await putRow('products',{...existing,active:true,category,type,price});}else{const row={id:uuid(),category,type,name,normalized:norm(name),price,active:true};if(RemotePos.active)await RemotePos.saveProduct(row,{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:'הוספת משקה'});else await putRow('products',row);}if(!RemotePos.active)await putRow('priceHistory',{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:existing?'הפעלה מחדש':'הוספת משקה'});event.target.reset();await refresh();status('מוצר נשמר','success');}
 function catalogVisibleRows(){
  const entity=state.catalogDialog;
  if(!entity)return [];
@@ -68,6 +68,9 @@ function renderCatalogSelection(){
  el('catalogBulkDelete').classList.toggle('hidden',!(RemotePos.active&&RemotePos.employee?.is_owner===true));
  el('catalogBulkDelete').disabled=state.catalogSelections.size===0;
 }
+const POS_STAFF_PERMISSIONS=['create_products','change_prices','toggle_products','create_customers','toggle_customers'];
+function canManage(permission){return RemotePos.active&&RemotePos.authenticated===true&&(RemotePos.employee?.is_owner===true||RemotePos.employee?.permissions?.[permission]===true);}
+function assertManage(permission){if(!canManage(permission))throw new Error('אין לעובד הרשאה לפעולה זו');}
 function renderManage(){
  const productsHost=el('manageProducts'),customersHost=el('manageCustomers');
  productsHost.replaceChildren();customersHost.replaceChildren();
@@ -76,12 +79,12 @@ function renderManage(){
  const owner=RemotePos.active&&RemotePos.employee?.is_owner===true;
  for(const p of products){
   const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input class="catalog-select-row" type="checkbox" data-catalog-id="${escapeHtml(p.id)}" aria-label="בחר ${escapeHtml(p.name)}" ${state.catalogSelections.has(p.id)?'checked':''} ${owner?'':'disabled'}></td><td>${escapeHtml(p.name)}</td><td>${escapeHtml(currency(p.price))}</td><td>${p.active?'פעיל':'לא פעיל'}</td><td><button class="tiny-btn" data-product="${escapeHtml(p.id)}" data-action="edit">ערוך</button><button class="tiny-btn ${p.active?'danger':''}" data-product="${escapeHtml(p.id)}" data-action="toggle">${p.active?'השבת':'הפעל'}</button>${owner?`<button class="tiny-btn danger" data-product="${escapeHtml(p.id)}" data-action="delete">מחק לצמיתות</button>`:''}</td>`;
+  tr.innerHTML=`<td><input class="catalog-select-row" type="checkbox" data-catalog-id="${escapeHtml(p.id)}" aria-label="בחר ${escapeHtml(p.name)}" ${state.catalogSelections.has(p.id)?'checked':''} ${owner?'':'disabled'}></td><td>${escapeHtml(p.name)}</td><td>${escapeHtml(currency(p.price))}</td><td>${p.active?'פעיל':'לא פעיל'}</td><td>${canManage('change_prices')?`<button class="tiny-btn" data-product="${escapeHtml(p.id)}" data-action="edit">ערוך מחיר</button>`:''}${canManage('toggle_products')?`<button class="tiny-btn ${p.active?'danger':''}" data-product="${escapeHtml(p.id)}" data-action="toggle">${p.active?'השבת':'הפעל'}</button>`:''}${owner?`<button class="tiny-btn danger" data-product="${escapeHtml(p.id)}" data-action="delete">מחק לצמיתות</button>`:''}</td>`;
   productsHost.append(tr);
  }
  for(const c of customers){
   const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input class="catalog-select-row" type="checkbox" data-catalog-id="${escapeHtml(c.id)}" aria-label="בחר ${escapeHtml(c.name)}" ${state.catalogSelections.has(c.id)?'checked':''} ${owner?'':'disabled'}></td><td>${escapeHtml(c.name)}</td><td>${c.active?'פעיל':'לא פעיל'}</td><td><button class="tiny-btn" data-customer="${escapeHtml(c.id)}" data-action="rename">שנה שם</button><button class="tiny-btn ${c.active?'danger':''}" data-customer="${escapeHtml(c.id)}" data-action="toggle">${c.active?'השבת':'הפעל'}</button>${owner?`<button class="tiny-btn danger" data-customer="${escapeHtml(c.id)}" data-action="delete">מחק לצמיתות</button>`:''}</td>`;
+  tr.innerHTML=`<td><input class="catalog-select-row" type="checkbox" data-catalog-id="${escapeHtml(c.id)}" aria-label="בחר ${escapeHtml(c.name)}" ${state.catalogSelections.has(c.id)?'checked':''} ${owner?'':'disabled'}></td><td>${escapeHtml(c.name)}</td><td>${c.active?'פעיל':'לא פעיל'}</td><td>${owner?`<button class="tiny-btn" data-customer="${escapeHtml(c.id)}" data-action="rename">שנה שם</button>`:''}${canManage('toggle_customers')?`<button class="tiny-btn ${c.active?'danger':''}" data-customer="${escapeHtml(c.id)}" data-action="toggle">${c.active?'השבת':'הפעל'}</button>`:''}${owner?`<button class="tiny-btn danger" data-customer="${escapeHtml(c.id)}" data-action="delete">מחק לצמיתות</button>`:''}</td>`;
   customersHost.append(tr);
  }
  for(const [id,on] of [['showInactiveProductsBtn',state.showInactiveProducts],['showInactiveCustomersBtn',state.showInactiveCustomers]]){
@@ -92,6 +95,8 @@ function renderManage(){
 }
 function openCatalogManager(entity){
  if(!['product','customer'].includes(entity))return;
+ const permissions=entity==='product'?['create_products','change_prices','toggle_products']:['create_customers','toggle_customers'];
+ if(!permissions.some(canManage)&&RemotePos.employee?.is_owner!==true)return;
  state.catalogDialog=entity;state.catalogSearch='';state.catalogSelections.clear();
  el('catalogManagerTitle').textContent=entity==='product'?'ניהול מוצרים':'ניהול לקוחות';
  el('catalogSearch').value='';
@@ -188,8 +193,8 @@ async function deleteCatalogRecord(entity,record){
  await refresh();
  status(`נמחק לצמיתות: ${record.name}. נמחקו ${lineCount} שורות ניסיון. הפעולה נרשמה ביומן.`,'success');
 }
-async function manageProductClick(e){const b=e.target.closest('button[data-product]');if(!b)return;const p=state.products.find(p=>p.id===b.dataset.product);if(!p)return;if(b.dataset.action==='delete'){await deleteCatalogRecord('product',p);return;}if(b.dataset.action==='toggle'){if(!confirm(`${p.active?'להסתיר את המשקה':'להחזיר את המשקה'} ${p.name}?`))return;if(RemotePos.active)await RemotePos.saveProduct({...p,active:!p.active});else await putRow('products',{...p,active:!p.active});}else{const val=prompt('מחיר חדש עבור '+p.name,String(p.price));if(val===null)return;const price=amount(val);if(price<0)throw new Error('מחיר לא יכול להיות שלילי');if(RemotePos.active)await RemotePos.saveProduct({...p,price},{id:uuid(),productName:p.name,oldPrice:p.price,newPrice:price,changedAt:new Date().toISOString(),note:'שינוי מחיר'});else{await putRow('products',{...p,price});await putRow('priceHistory',{id:uuid(),productName:p.name,oldPrice:p.price,newPrice:price,changedAt:new Date().toISOString(),note:'שינוי מחיר'});}}await refresh();}
-async function manageCustomerClick(e){const b=e.target.closest('button[data-customer]');if(!b)return;const c=state.customers.find(c=>c.id===b.dataset.customer);if(!c)return;if(b.dataset.action==='delete'){await deleteCatalogRecord('customer',c);return;}if(b.dataset.action==='toggle'){if(!confirm(`${c.active?'למחוק את הלקוח מהרשימה הפעילה':'לשחזר את הלקוח'} ${c.name}?\nהיסטוריית המכירות תישמר.`))return;if(RemotePos.active)await RemotePos.saveCustomer({...c,active:!c.active});else await putRow('customers',{...c,active:!c.active});}else{const next=prompt('שם לקוח חדש',c.name);if(next===null)return;const newName=next.trim();if(!newName)throw new Error('שם לקוח לא יכול להיות ריק');if(state.customers.some(x=>x.id!==c.id&&x.normalized===norm(newName)))throw new Error('שם לקוח כבר קיים');if(RemotePos.active)await RemotePos.saveCustomer({...c,name:newName,normalized:norm(newName)});else await putRow('customers',{...c,name:newName,normalized:norm(newName)}); /* historical transaction name remains unchanged for audit */}await refresh();}
+async function manageProductClick(e){const b=e.target.closest('button[data-product]');if(!b)return;if(b.dataset.action==='edit')assertManage('change_prices');if(b.dataset.action==='toggle')assertManage('toggle_products');const p=state.products.find(p=>p.id===b.dataset.product);if(!p)return;if(b.dataset.action==='delete'){await deleteCatalogRecord('product',p);return;}if(b.dataset.action==='toggle'){if(!confirm(`${p.active?'להסתיר את המשקה':'להחזיר את המשקה'} ${p.name}?`))return;if(RemotePos.active)await RemotePos.saveProduct({...p,active:!p.active});else await putRow('products',{...p,active:!p.active});}else{const val=prompt('מחיר חדש עבור '+p.name,String(p.price));if(val===null)return;const price=amount(val);if(price<0)throw new Error('מחיר לא יכול להיות שלילי');if(RemotePos.active)await RemotePos.saveProduct({...p,price},{id:uuid(),productName:p.name,oldPrice:p.price,newPrice:price,changedAt:new Date().toISOString(),note:'שינוי מחיר'});else{await putRow('products',{...p,price});await putRow('priceHistory',{id:uuid(),productName:p.name,oldPrice:p.price,newPrice:price,changedAt:new Date().toISOString(),note:'שינוי מחיר'});}}await refresh();}
+async function manageCustomerClick(e){const b=e.target.closest('button[data-customer]');if(!b)return;if(b.dataset.action==='rename'&&RemotePos.employee?.is_owner!==true)throw new Error('שינוי שם לקוח שמור לבעלים');if(b.dataset.action==='toggle')assertManage('toggle_customers');const c=state.customers.find(c=>c.id===b.dataset.customer);if(!c)return;if(b.dataset.action==='delete'){await deleteCatalogRecord('customer',c);return;}if(b.dataset.action==='toggle'){if(!confirm(`${c.active?'למחוק את הלקוח מהרשימה הפעילה':'לשחזר את הלקוח'} ${c.name}?\nהיסטוריית המכירות תישמר.`))return;if(RemotePos.active)await RemotePos.saveCustomer({...c,active:!c.active});else await putRow('customers',{...c,active:!c.active});}else{const next=prompt('שם לקוח חדש',c.name);if(next===null)return;const newName=next.trim();if(!newName)throw new Error('שם לקוח לא יכול להיות ריק');if(state.customers.some(x=>x.id!==c.id&&x.normalized===norm(newName)))throw new Error('שם לקוח כבר קיים');if(RemotePos.active)await RemotePos.saveCustomer({...c,name:newName,normalized:norm(newName)});else await putRow('customers',{...c,name:newName,normalized:norm(newName)}); /* historical transaction name remains unchanged for audit */}await refresh();}
 function fillReportCustomers(){const field=el('reportCustomer'),prior=field.value;field.replaceChildren();const all=new Set([...state.customers.map(c=>c.name),...state.archive.filter(r=>Boolean(r.isTest)===(RemotePos.active&&RemotePos.testMode===true)).map(r=>r.customer)]);const blank=document.createElement('option');blank.value='';blank.textContent='כל הלקוחות';field.append(blank);for(const name of [...all].sort((a,b)=>a.localeCompare(b,'he'))){const opt=document.createElement('option');opt.value=name;opt.textContent=name;field.append(opt);}if([...field.options].some(x=>x.value===prior))field.value=prior;}
 function reportRowsRaw(){const from=el('fromDate').value,to=el('toDate').value,customer=el('reportCustomer').value;if(from&&to&&from>to)throw new Error('תאריך התחלה גדול מתאריך סיום');return state.archive.filter(r=>Boolean(r.isTest)===(RemotePos.active&&RemotePos.testMode===true)&&(!from||r.dateIso>=from)&&(!to||r.dateIso<=to)&&(!customer||r.customer===customer));}
 function prepareReport(){const raw=reportRowsRaw(),kind=el('reportType').value;let headers=[],rows=[],title='';if(kind==='byCustomer'){title='סיכום לפי לקוח';headers=['לקוח','מספר תנועות','סה״כ ₪'];const sums=new Map();for(const r of raw){const s=sums.get(r.customer)||{n:0,total:0};s.n++;s.total+=Number(r.price);sums.set(r.customer,s);}rows=[...sums.entries()].map(([k,s])=>[k,s.n,Math.round(s.total*100)/100]);}else if(kind==='byProduct'){title='סיכום לפי משקה';headers=['משקה','כמות נטו','סה״כ ₪'];const sums=new Map();for(const r of raw){const s=sums.get(r.drink)||{q:0,total:0};s.q+=Number(r.qty)*(r.price<0?-1:1);s.total+=Number(r.price);sums.set(r.drink,s);}rows=[...sums.entries()].map(([k,s])=>[k,s.q,Math.round(s.total*100)/100]);}else{title=kind==='endDay'?'דוח סגירת יום':'דוח תנועות';headers=['תאריך','שעה','לקוח','משקה','כמות','מחיר ₪','סוג'];rows=raw.map(r=>[legacyDate(r.dateIso),r.time,r.customer,r.drink,Number(r.qty),Number(r.price),r.kind==='refund'||r.price<0?'זיכוי':'חיוב']);if(RemotePos.active&&RemotePos.testMode){headers.push('מזהה ניסיון');rows=rows.map((row,i)=>[...row,raw[i].testCode||'D']);}}return {headers,rows,title,raw};}
@@ -260,8 +265,14 @@ function renderPermissions(){
  const auth=RemotePos.employee||{};
  const owner=RemotePos.active&&auth.is_owner===true;
  document.body.classList.toggle('staff-mode',!owner);
- document.querySelectorAll('#productForm input,#productForm button,#manageProducts button,#manageCustomers button,#manageCustomers input[type=checkbox],#manageProducts input[type=checkbox]')
-  .forEach(input=>input.disabled=!owner);
+ el('productForm').classList.toggle('hidden',!canManage('create_products'));
+ el('customerForm').classList.toggle('hidden',!canManage('create_customers'));
+ el('quickAddCustomerBtn').classList.toggle('hidden',!canManage('create_customers'));
+ el('openProductManager').classList.toggle('hidden',!['create_products','change_prices','toggle_products'].some(canManage));
+ el('openCustomerManager').classList.toggle('hidden',!['create_customers','toggle_customers'].some(canManage));
+ el('catalogSelectAll').disabled=!owner;
+ el('catalogSelectAll').closest('label').classList.toggle('hidden',!owner);
+ el('catalogSelectionCount').classList.toggle('hidden',!owner);
  el('adminEntryBtn').classList.toggle('hidden',!(RemotePos.active&&auth.owner_terminal));
  el('adminEntryBtn').textContent=owner?'ניהול מערכת פתוח · אמת מחדש':'פתח ניהול מערכת';
  el('adminPanel').classList.toggle('hidden',!owner);
@@ -376,13 +387,41 @@ async function renderEmployeeList(){
     toggle.textContent=employee.active?'השבת':'הפעל';toggle.onclick=()=>editEmployee(employee,employee.active?'disable':'enable');
     const reset=document.createElement('button');reset.type='button';reset.className='tiny-btn';
     reset.textContent='שנה קוד';reset.onclick=()=>editEmployee(employee,'reset_pin');
-    actions.append(toggle,reset);
+    const permissions=document.createElement('button');permissions.type='button';permissions.className='tiny-btn';permissions.textContent='הרשאות';permissions.onclick=()=>openEmployeePermissions(employee);
+    actions.append(toggle,reset,permissions);
    }
    tr.append(name,condition,actions);host.append(tr);
  }
  if(!host.childNodes.length){
   const row=document.createElement('tr');row.innerHTML='<td colspan="3" class="empty">עדיין לא הוגדרו עובדים</td>';host.append(row);
  }
+}
+function openEmployeePermissions(employee){
+ if(!RemotePos.active||RemotePos.employee?.is_owner!==true||employee.owner_terminal)throw new Error('ניהול הרשאות שמור לבעלים');
+ state.permissionEmployee=employee;
+ const form=el('employeePermissionsForm');
+ for(const key of POS_STAFF_PERMISSIONS)form.elements.namedItem(key).checked=employee.permissions?.[key]===true;
+ el('employeePermissionsName').textContent='עובד: '+employee.username;
+ el('employeePermissionsMessage').textContent='';
+ el('employeePermissionsModal').classList.remove('hidden');
+}
+function closeEmployeePermissions(){
+ el('employeePermissionsModal').classList.add('hidden');
+ state.permissionEmployee=null;
+}
+async function saveEmployeePermissions(e){
+ e.preventDefault();
+ if(!state.permissionEmployee||RemotePos.employee?.is_owner!==true)throw new Error('נדרש אימות בעלים');
+ const employee=state.permissionEmployee,button=el('employeePermissionsSave');
+ const permissions=Object.fromEntries(POS_STAFF_PERMISSIONS.map(key=>[key,el('employeePermissionsForm').elements.namedItem(key).checked]));
+ button.disabled=true;
+ try{
+  const result=await RemotePos.manageStaff('set_permissions',{user_id:employee.user_id,permissions});
+  el('employeeMessage').textContent=result.message||'ההרשאות נשמרו';
+  closeEmployeePermissions();
+  await renderEmployeeList();
+ }catch(err){el('employeePermissionsMessage').textContent=err.message;}
+ finally{button.disabled=false;}
 }
 async function editEmployee(employee,operation){
  if(RemotePos.employee?.is_owner!==true)throw new Error('ניהול עובדים דורש אימות בעלים');
@@ -427,6 +466,7 @@ async function enforceShiftExpiry(){
  el('adminLogin').classList.add('hidden');
  el('cloudGate').classList.add('hidden');
  el('adminPanel').classList.add('hidden');
+ closeEmployeePermissions();
  el('trialToggleBtn').classList.add('hidden');
  el('modeBanner').classList.add('hidden');
  document.body.classList.add('staff-mode');
@@ -461,6 +501,10 @@ async function migrateCloud(){
  }finally{btn.disabled=false;}
 }
 function remoteEvents(){
+ el('employeePermissionsForm').addEventListener('submit',saveEmployeePermissions);
+ on('employeePermissionsClose','click',closeEmployeePermissions);
+ on('employeePermissionsCancel','click',closeEmployeePermissions);
+ on('employeePermissionsBackdrop','click',closeEmployeePermissions);
  on('employeePickerBtn','click',openEmployeePicker);
  on('employeePickerBackdrop','click',closeEmployeePicker);
  on('employeePickerClose','click',closeEmployeePicker);
@@ -493,6 +537,7 @@ function remoteEvents(){
   el('cloudUserBar').classList.add('hidden');
   el('adminLogin').classList.add('hidden');
   el('adminPanel').classList.add('hidden');
+  closeEmployeePermissions();
   el('archiveImportPanel').classList.add('hidden');
   el('ownerBackupPanel').classList.add('hidden');el('ownerLegacyPanel').classList.add('hidden');state.pendingImport=null;el('importPreview').classList.add('hidden');
   el('trialToggleBtn').classList.add('hidden');
