@@ -190,7 +190,7 @@ const RemotePos={
         id:item.id,operationId:tx.client_operation_id,customer:tx.customer_name,
         customerKey:String(tx.customer_name||'').toLocaleLowerCase('he-IL').trim(),
         dateIso,time,drink:item.product_name,qty:item.quantity,price:Number(item.line_total),
-        kind:tx.kind,legacyNumber:'',isTest:tx.is_test===true||item.is_test===true,testCode:item.test_code||''
+        kind:tx.kind,legacyNumber:'',createdAt:tx.created_at,isTest:tx.is_test===true||item.is_test===true,testCode:item.test_code||''
       }));
     });
     this.isImported=settingsRows?.[0]?.archive_imported===true;
