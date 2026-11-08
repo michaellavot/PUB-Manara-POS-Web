@@ -1,12 +1,12 @@
 'use strict';
-const APP_VERSION='0.9.10';
+const APP_VERSION='0.9.11';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
  ['וודקה (צ\'ייסר)',10],['ויסקי (צ\'ייסר)',10],['ערק (צ\'ייסר)',10],["ג'ין (צ\'ייסר)",10],['טקילה (צ\'ייסר)',10],
  ['וודקה (מנה)',25],['ויסקי (מנה)',25],['ערק (מנה)',25],["ג'ין (מנה)",25],['טקילה (מנה)',25],['גינס',1]
 ];
-const state={pendingOperation:null,customers:[],products:[],archive:[],priceHistory:[],showInactiveProducts:false,showInactiveCustomers:false,selectedCustomer:null,category:null,cart:[],selectedRow:-1,cartHistory:[],busy:false,installPrompt:null,currentReport:{headers:[],rows:[],title:'דוח תנועות'},pendingImport:null};
+const state={pendingOperation:null,customers:[],products:[],archive:[],priceHistory:[],showInactiveProducts:false,showInactiveCustomers:false,selectedCustomer:null,category:null,cart:[],selectedRow:-1,cartHistory:[],busy:false,installPrompt:null,currentReport:{headers:[],rows:[],title:'דוח תנועות'},pendingImport:null,catalogDialog:null,catalogSearch:'',catalogSelections:new Set()};
 const el=id=>document.getElementById(id);
 const norm=s=>String(s||'').normalize('NFKC').replace(/\s+/g,' ').trim().toLocaleLowerCase('he-IL');
 const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -50,26 +50,89 @@ async function completeSale(refund=false){if(state.busy)return;if(!state.selecte
   state.pendingOperation=null;
 }else await saveSaleAtomic(rows);const total=rows.reduce((s,r)=>s+r.price,0),name=state.selectedCustomer.name;state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;await refresh();status(`${RemotePos.active&&RemotePos.testMode?'[ניסיון D] ':''}${refund?'זיכוי':'חיוב'} נשמר עבור ${name}: ${currency(total)}`,'success');el('billTag').textContent=refund?'זיכוי נשמר':'נשמר';}catch(e){const message='שמירת העסקה נכשלה: '+e.message+' — לא הוצג אישור שהעסקה נשמרה. בדוק את הארכיון לפני ניסיון חוזר.';status(message,'error');alert(message);}finally{setTimeout(()=>{state.busy=false;el('chargeBtn').disabled=false;el('refundBtn').disabled=false;},1050);}}
 async function productSubmit(event){event.preventDefault();const f=new FormData(event.target),category=String(f.get('category')||'').trim(),type=String(f.get('type')||'').trim(),price=amount(f.get('price'));if(!category||!type||price<0)throw new Error('יש למלא קטגוריה, משקה ומחיר תקין');const name=productLabel(category,type),existing=state.products.find(p=>p.normalized===norm(name));if(existing){if(existing.active)throw new Error('משקה בשם זה כבר קיים');if(!confirm('המשקה לא פעיל. להפעיל אותו מחדש?'))return;if(RemotePos.active)await RemotePos.saveProduct({...existing,active:true,category,type,price},{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:'הפעלה מחדש'});else await putRow('products',{...existing,active:true,category,type,price});}else{const row={id:uuid(),category,type,name,normalized:norm(name),price,active:true};if(RemotePos.active)await RemotePos.saveProduct(row,{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:'הוספת משקה'});else await putRow('products',row);}if(!RemotePos.active)await putRow('priceHistory',{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:existing?'הפעלה מחדש':'הוספת משקה'});event.target.reset();await refresh();status('מוצר נשמר','success');}
+function catalogVisibleRows(){
+ const entity=state.catalogDialog;
+ if(!entity)return [];
+ const rows=entity==='product'?state.products:state.customers;
+ const inactive=entity==='product'?state.showInactiveProducts:state.showInactiveCustomers;
+ const search=norm(state.catalogSearch);
+ return rows.filter(r=>(inactive?!r.active:r.active)&&(!search||norm(r.name).includes(search)));
+}
+function renderCatalogSelection(){
+ const rows=catalogVisibleRows(),ids=new Set(rows.map(r=>r.id));
+ const selected=rows.filter(r=>state.catalogSelections.has(r.id)).length;
+ const all=el('catalogSelectAll');
+ all.checked=rows.length>0&&selected===rows.length;
+ all.indeterminate=selected>0&&selected<rows.length;
+ el('catalogSelectionCount').textContent=`${state.catalogSelections.size} נבחרו · ${rows.length} מוצגים`;
+ el('catalogBulkDelete').classList.toggle('hidden',!(RemotePos.active&&RemotePos.employee?.is_owner===true));
+ el('catalogBulkDelete').disabled=state.catalogSelections.size===0;
+}
 function renderManage(){
- const productHost=el('manageProducts'),customerHost=el('manageCustomers');
- productHost.replaceChildren();customerHost.replaceChildren();
- const products=state.products.filter(p=>state.showInactiveProducts?!p.active:p.active);
- const customers=state.customers.filter(c=>state.showInactiveCustomers?!c.active:c.active);
+ const productsHost=el('manageProducts'),customersHost=el('manageCustomers');
+ productsHost.replaceChildren();customersHost.replaceChildren();
+ const products=state.catalogDialog==='product'?catalogVisibleRows():[];
+ const customers=state.catalogDialog==='customer'?catalogVisibleRows():[];
+ const owner=RemotePos.active&&RemotePos.employee?.is_owner===true;
  for(const p of products){
   const tr=document.createElement('tr');
-  tr.innerHTML=`<td>${escapeHtml(p.name)}</td><td>${escapeHtml(currency(p.price))}</td><td>${p.active?'פעיל':'לא פעיל'}</td><td><button class="tiny-btn" data-product="${escapeHtml(p.id)}" data-action="edit">ערוך</button><button class="tiny-btn ${p.active?'danger':''}" data-product="${escapeHtml(p.id)}" data-action="toggle">${p.active?'השבת':'הפעל'}</button>${RemotePos.active&&RemotePos.employee?.is_owner===true?`<button class="tiny-btn danger" data-product="${escapeHtml(p.id)}" data-action="delete">מחק לצמיתות</button>`:''}</td>`;
-  productHost.append(tr);
+  tr.innerHTML=`<td><input class="catalog-select-row" type="checkbox" data-catalog-id="${escapeHtml(p.id)}" aria-label="בחר ${escapeHtml(p.name)}" ${state.catalogSelections.has(p.id)?'checked':''} ${owner?'':'disabled'}></td><td>${escapeHtml(p.name)}</td><td>${escapeHtml(currency(p.price))}</td><td>${p.active?'פעיל':'לא פעיל'}</td><td><button class="tiny-btn" data-product="${escapeHtml(p.id)}" data-action="edit">ערוך</button><button class="tiny-btn ${p.active?'danger':''}" data-product="${escapeHtml(p.id)}" data-action="toggle">${p.active?'השבת':'הפעל'}</button>${owner?`<button class="tiny-btn danger" data-product="${escapeHtml(p.id)}" data-action="delete">מחק לצמיתות</button>`:''}</td>`;
+  productsHost.append(tr);
  }
  for(const c of customers){
   const tr=document.createElement('tr');
-  tr.innerHTML=`<td>${escapeHtml(c.name)}</td><td>${c.active?'פעיל':'לא פעיל'}</td><td><button class="tiny-btn" data-customer="${escapeHtml(c.id)}" data-action="rename">שנה שם</button><button class="tiny-btn ${c.active?'danger':''}" data-customer="${escapeHtml(c.id)}" data-action="toggle">${c.active?'השבת':'הפעל'}</button>${RemotePos.active&&RemotePos.employee?.is_owner===true?`<button class="tiny-btn danger" data-customer="${escapeHtml(c.id)}" data-action="delete">מחק לצמיתות</button>`:''}</td>`;
-  customerHost.append(tr);
+  tr.innerHTML=`<td><input class="catalog-select-row" type="checkbox" data-catalog-id="${escapeHtml(c.id)}" aria-label="בחר ${escapeHtml(c.name)}" ${state.catalogSelections.has(c.id)?'checked':''} ${owner?'':'disabled'}></td><td>${escapeHtml(c.name)}</td><td>${c.active?'פעיל':'לא פעיל'}</td><td><button class="tiny-btn" data-customer="${escapeHtml(c.id)}" data-action="rename">שנה שם</button><button class="tiny-btn ${c.active?'danger':''}" data-customer="${escapeHtml(c.id)}" data-action="toggle">${c.active?'השבת':'הפעל'}</button>${owner?`<button class="tiny-btn danger" data-customer="${escapeHtml(c.id)}" data-action="delete">מחק לצמיתות</button>`:''}</td>`;
+  customersHost.append(tr);
  }
- const pToggle=el('showInactiveProductsBtn'),cToggle=el('showInactiveCustomersBtn');
- pToggle.textContent=state.showInactiveProducts?'הצג פעילים':'הצג לא פעילים';
- cToggle.textContent=state.showInactiveCustomers?'הצג פעילים':'הצג לא פעילים';
- pToggle.setAttribute('aria-pressed',String(state.showInactiveProducts));
- cToggle.setAttribute('aria-pressed',String(state.showInactiveCustomers));
+ for(const [id,on] of [['showInactiveProductsBtn',state.showInactiveProducts],['showInactiveCustomersBtn',state.showInactiveCustomers]]){
+  el(id).textContent=on?'הצג פעילים':'הצג לא פעילים';
+  el(id).setAttribute('aria-pressed',String(on));
+ }
+ renderCatalogSelection();
+}
+function openCatalogManager(entity){
+ if(!['product','customer'].includes(entity))return;
+ state.catalogDialog=entity;state.catalogSearch='';state.catalogSelections.clear();
+ el('catalogManagerTitle').textContent=entity==='product'?'ניהול מוצרים':'ניהול לקוחות';
+ el('catalogSearch').value='';
+ el('catalogManagerMessage').textContent='';
+ el('productManagerContent').classList.toggle('hidden',entity!=='product');
+ el('customerManagerContent').classList.toggle('hidden',entity!=='customer');
+ el('manageCatalogModal').classList.remove('hidden');
+ renderManage();
+ el('catalogSearch').focus();
+}
+function closeCatalogManager(){
+ el('manageCatalogModal').classList.add('hidden');
+ state.catalogDialog=null;state.catalogSearch='';state.catalogSelections.clear();
+}
+async function deleteSelectedCatalog(){
+ if(!RemotePos.active||RemotePos.employee?.is_owner!==true)throw new Error('מחיקה מרובה זמינה רק בניהול מערכת לאחר אימות בעלים');
+ if(state.busy||state.cart.length||state.pendingOperation)throw new Error('יש לסיים או לנקות את החיוב לפני מחיקה');
+ const ids=[...state.catalogSelections];
+ if(!ids.length)return;
+ const entity=state.catalogDialog;
+ if(!entity)throw new Error('לא נבחר חלון ניהול');
+ const button=el('catalogBulkDelete');
+ button.disabled=true;
+ try{
+  const preview=await RemotePos.bulkDeleteCatalog(entity,ids,false);
+  const eligible=Number(preview.eligible||0),blocked=Number(preview.blocked||0);
+  const lines=(preview.items||[]).filter(x=>x.allowed).reduce((n,x)=>n+Number(x.test_lines||0),0);
+  if(!eligible){alert(`לא ניתן למחוק אף אחת מ-${ids.length} הרשומות שנבחרו. ניתן להשבית רשומות עם היסטוריית אמת או נתונים ישנים עם עסקאות D.`);return;}
+  const names=(preview.items||[]).filter(x=>!x.allowed).map(x=>x.name).slice(0,8).join(', ');
+  const message=`נבחרו ${ids.length} רשומות.\nניתן למחוק לצמיתות: ${eligible}.\nחסומות למחיקה: ${blocked}${names?' ('+names+')':''}.\nשורות ניסיון D שיוסרו: ${lines}.\n\nרשומות חסומות יישארו ללא שינוי, ועסקאות אמת לא יימחקו. להמשיך?`;
+  if(!confirm(message))return;
+  const typed=prompt(`אישור סופי למחיקה מרובה של ${eligible} רשומות.\nיש להקליד: מחק`);
+  if(typed!=='מחק'){if(typed!==null)alert('המחיקה בוטלה');return;}
+  const done=await RemotePos.bulkDeleteCatalog(entity,ids,true);
+  const removed=(done.items||[]).filter(x=>x.allowed).map(x=>x.id);
+  if(state.selectedCustomer&&removed.includes(state.selectedCustomer.id))state.selectedCustomer=null;
+  state.catalogSelections.clear();
+  await refresh();
+  el('catalogManagerMessage').textContent=`נמחקו ${done.deleted} רשומות, ${done.blocked} נחסמו ושמרו על ההיסטוריה. הוסרו ${done.removed_test_lines} שורות D. הפעולות נרשמו ביומן.`;
+  status(`מחיקה מרובה: ${done.deleted} רשומות נמחקו`,'success');
+ }finally{button.disabled=false;renderCatalogSelection();}
 }
 function renderAudit(){
  const panel=el('auditPanel'),tbody=el('auditRows');
@@ -154,8 +217,16 @@ async function restoreBackup(file){if(RemotePos.active)throw new Error('שחזו
 async function promptInstall(){if(state.installPrompt){await state.installPrompt.prompt();state.installPrompt=null;el('installBtn').classList.add('hidden');}else alert('התקנה זמינה כאשר האפליקציה נפתחת ב־Chrome/Edge דרך HTTPS או localhost. פתח את תפריט הדפדפן ובחר התקנה.');}
 function on(id,event,handler){el(id).addEventListener(event,e=>{try{Promise.resolve(handler(e)).catch(err=>{console.error(err);status(err.message,'error');alert(err.message);});}catch(err){console.error(err);status(err.message,'error');alert(err.message);}});}
 function events(){for(const b of document.querySelectorAll('.tab'))b.onclick=()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));};on('customerInput','click',toggleCustomerDropdown);document.addEventListener('pointerdown',e=>{if(!el('customerSelectWrap').contains(e.target)&&!el('customerDropdown').classList.contains('hidden'))closeCustomerDialog(false);});on('customerSearch','input',renderCustomerResults);on('customerSearch','keydown',e=>{if(e.key==='Enter'){const first=el('customerResults').querySelector('.customer-result');if(first)first.click();}else if(e.key==='ArrowDown'){e.preventDefault();el('customerResults').querySelector('.customer-result')?.focus();}});on('customerResults','keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const opts=[...el('customerResults').querySelectorAll('.customer-result')],i=opts.indexOf(document.activeElement);opts[(i+(e.key==='ArrowDown'?1:-1)+opts.length)%opts.length]?.focus();}});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('customerDropdown').classList.contains('hidden'))closeCustomerDialog();});on('quickAddCustomerBtn','click',async()=>{const name=prompt('שם לקוח חדש');if(name!==null)await addCustomer(name);});on('resetCustomerBtn','click',()=>{if(state.cart.length&&!confirm('ניקוי לקוח יבטל את החיוב הנוכחי. להמשיך?'))return;state.selectedCustomer=null;state.cart=[];state.cartHistory=[];state.selectedRow=-1;renderCustomer();renderBill();});on('removeSelectedBtn','click',removeSelected);on('undoBtn','click',undoLast);on('clearBtn','click',clearBill);on('chargeBtn','click',()=>completeSale(false));on('refundBtn','click',()=>completeSale(true));on('customerForm','submit',async e=>{e.preventDefault();await addCustomer(new FormData(e.target).get('name'),false);e.target.reset();});on('productForm','submit',productSubmit);on('manageProducts','click',manageProductClick);on('manageCustomers','click',manageCustomerClick);
- on('showInactiveProductsBtn','click',()=>{state.showInactiveProducts=!state.showInactiveProducts;renderManage();});
- on('showInactiveCustomersBtn','click',()=>{state.showInactiveCustomers=!state.showInactiveCustomers;renderManage();});
+ on('openProductManager','click',()=>openCatalogManager('product'));
+ on('openCustomerManager','click',()=>openCatalogManager('customer'));
+ on('closeCatalogManager','click',closeCatalogManager);
+ on('catalogSearch','input',e=>{state.catalogSearch=e.target.value;state.catalogSelections.clear();renderManage();});
+ on('catalogSelectAll','change',e=>{for(const r of catalogVisibleRows()){if(e.target.checked)state.catalogSelections.add(r.id);else state.catalogSelections.delete(r.id);}renderManage();});
+ for(const id of ['manageProducts','manageCustomers'])on(id,'change',e=>{const box=e.target.closest('input[data-catalog-id]');if(!box)return;if(box.checked)state.catalogSelections.add(box.dataset.catalogId);else state.catalogSelections.delete(box.dataset.catalogId);renderCatalogSelection();});
+ on('catalogBulkDelete','click',()=>deleteSelectedCatalog().catch(e=>{el('catalogManagerMessage').textContent='מחיקה לא בוצעה: '+e.message;status('מחיקה לא בוצעה: '+e.message,'error');}));
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('manageCatalogModal').classList.contains('hidden'))closeCatalogManager();});
+ on('showInactiveProductsBtn','click',()=>{state.showInactiveProducts=!state.showInactiveProducts;state.catalogSelections.clear();renderManage();});
+ on('showInactiveCustomersBtn','click',()=>{state.showInactiveCustomers=!state.showInactiveCustomers;state.catalogSelections.clear();renderManage();});
  on('refreshAuditBtn','click',async()=>{if(RemotePos.active)await refresh();});
 for(const id of ['fromDate','toDate','reportCustomer','reportType'])on(id,'change',renderReport);on('showReportBtn','click',renderReport);on('exportExcelBtn','click',downloadReportXlsx);on('exportCsvBtn','click',downloadReportCsv);on('printBtn','click',()=>{renderReport();window.print();});on('downloadBackup','click',async()=>downloadBlob(new Blob([JSON.stringify(RemotePos.active?{format:'manara-web-backup-v1',app:'PUB Manara POS Web',version:'0.9-cloud',exportedAt:new Date().toISOString(),stores:{customers:state.customers,products:state.products,archive:state.archive,priceHistory:state.priceHistory,settings:[]}}:await dbSnapshot(),null,2)],{type:'application/json'}),`Manara_${RemotePos.active?'cloud_':''}backup_${nowIso()}.json`));on('restoreFile','change',async e=>{if(e.target.files[0])await restoreBackup(e.target.files[0]);e.target.value='';});on('legacyInput','change',async e=>{if(e.target.files[0])await loadLegacyFile(e.target.files[0]);});on('installBtn','click',promptInstall);on('installBtnSystem','click',promptInstall);on('updateBadge','click',showUpdateDialog);on('laterUpdateBtn','click',hideUpdateDialog);on('applyUpdateBtn','click',applySoftwareUpdate);on('checkUpdatesBtn','click',()=>checkSoftwareUpdates(true));window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();state.installPrompt=e;el('installBtn').classList.remove('hidden');});}
 
@@ -176,7 +247,7 @@ function renderPermissions(){
  const auth=RemotePos.employee||{};
  const owner=RemotePos.active&&auth.is_owner===true;
  document.body.classList.toggle('staff-mode',!owner);
- document.querySelectorAll('#productForm input,#productForm button,#manageProducts button,#manageCustomers button')
+ document.querySelectorAll('#productForm input,#productForm button,#manageProducts button,#manageCustomers button,#manageCustomers input[type=checkbox],#manageProducts input[type=checkbox]')
   .forEach(input=>input.disabled=!owner);
  el('adminEntryBtn').classList.toggle('hidden',!(RemotePos.active&&auth.owner_terminal));
  el('adminEntryBtn').textContent=owner?'ניהול מערכת פתוח · אמת מחדש':'פתח ניהול מערכת';
