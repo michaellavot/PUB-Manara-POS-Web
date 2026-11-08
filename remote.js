@@ -59,6 +59,11 @@ const RemotePos={
    localStorage.setItem(POS_SESSION_KEY,JSON.stringify(this.session));
    return this.session;
  },
+ async listLoginEmployees(){
+   const data=await this.staffAction("list_login_users",{},false);
+   if(!Array.isArray(data?.employees))throw new Error("לא התקבלה רשימת עובדים תקינה");
+   return data.employees.filter(name=>typeof name==="string"&&name.length>=2);
+ },
  async loginPin(username,pin){
    const data=await this.staffAction('login',{username,pin},false);
    if(!data?.access_token||!data?.refresh_token||!data?.user?.id)throw new Error('ההתחברות לא הושלמה');
