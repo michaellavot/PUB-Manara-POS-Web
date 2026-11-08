@@ -251,3 +251,9 @@ button:disabled{transform:none}
 .permissions-options label{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid #6b4c30;border-radius:9px;background:#1a262c;color:#f3ddbb;cursor:pointer}
 .permissions-options input{accent-color:#3caa78;width:20px;height:20px;flex:none}
 #employeePermissionsSave:disabled{opacity:.65}
+
+/* V0.9.20: cancel a pending employee switch without ending the active shift. */
+.cloud-login-card{position:relative}
+.cloud-login-close{position:absolute;top:13px;left:13px;z-index:1;display:grid;place-items:center;width:43px;height:43px;min-height:43px;border:1px solid #af834e;border-radius:10px;color:#ffe3b5;background:#28333a;font-size:30px;line-height:1;cursor:pointer}
+.cloud-login-close:disabled{opacity:.55;cursor:wait}
+#cloudLoginTitle{padding-left:46px}
