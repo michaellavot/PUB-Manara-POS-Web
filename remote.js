@@ -6,11 +6,13 @@ const POS_CLOUD_URL='https://vvrilytybmrutxzeknab.supabase.co';
 const POS_PUBLISHABLE_KEY='sb_publishable_igJ3C6h4Mm7qkkBMcj2Qjw_aSZW5z4d';
 const POS_SESSION_KEY='manara-pos-web-supabase-session-v1';
 const POS_TEST_KEY='manara-pos-web-owner-test-toggle-v1';
+const POS_STAFF_ENDPOINT=POS_CLOUD_URL+'/functions/v1/pos-staff-auth';
 const RemotePos={
  active:false,session:null,employee:null,testMode:false,isImported:false,users:[],products:[],customers:[],archive:[],priceHistory:[],audit:[],poll:null,socket:null,reconnect:null,loading:false,onChange:null,statusCallback:null,seq:0,authenticated:false,
  setStatus(message,kind=''){if(typeof this.statusCallback==='function')this.statusCallback(message,kind);},
  apiHeaders(jwt=this.session?.access_token){return {apikey:POS_PUBLISHABLE_KEY,Authorization:'Bearer '+(jwt||POS_PUBLISHABLE_KEY),'Content-Type':'application/json'};},
  async request(path,{method='GET',body,query,headers={}}={}){
+   this.assertShift();
    if(this.session&&this.session.expires_at-Date.now()<75000)await this.refreshSession();
    const url=new URL(path,POS_CLOUD_URL);
    if(query)for(const [key,value] of Object.entries(query))url.searchParams.set(key,value);
@@ -21,35 +23,105 @@ const RemotePos={
    if(response.status===204)return null;
    const text=await response.text();return text?JSON.parse(text):null;
  },
- async authRequest(grant,details){
+ assertShift(){
+   if(this.session&&(!this.session.pos_valid_until||Date.now()>=this.session.pos_valid_until))
+      throw new Error('חלפו 24 שעות מתחילת המשמרת. יש להיכנס מחדש בשם ובסיסמה.');
+ },
+ async staffAction(action,details={},requiresLogin=true){
+   if(requiresLogin)this.assertShift();
    let response;
-   try{response=await fetch(`${POS_CLOUD_URL}/auth/v1/token?grant_type=${grant}`,{method:'POST',cache:'no-store',headers:{apikey:POS_PUBLISHABLE_KEY,'Content-Type':'application/json'},body:JSON.stringify(details)});}catch{throw new Error('לא ניתן להתחבר לשרת. בדוק את האינטרנט.');}
+   try{
+    response=await fetch(POS_STAFF_ENDPOINT,{
+      method:'POST',cache:'no-store',headers:{
+       apikey:POS_PUBLISHABLE_KEY,'Content-Type':'application/json',
+       ...(requiresLogin&&this.session?.access_token?{Authorization:'Bearer '+this.session.access_token}:{})
+      },body:JSON.stringify({action,...details})
+    });
+   }catch{throw new Error('אין חיבור לשרת ההתחברות. בדוק את האינטרנט.');}
    const data=await response.json().catch(()=>({}));
-   if(!response.ok)throw new Error(response.status===400?'כתובת הדוא״ל או הסיסמה אינם נכונים':data.msg||data.error_description||'ההתחברות נכשלה');
+   if(!response.ok)throw new Error(data.error||'פעולת ניהול נכשלה');
+   return data;
+ },
+ async authRequest(grant,details){
+   this.assertShift();
+   let response;
+   try{response=await fetch(POS_CLOUD_URL+'/auth/v1/token?grant_type='+grant,{
+     method:'POST',cache:'no-store',
+     headers:{apikey:POS_PUBLISHABLE_KEY,'Content-Type':'application/json'},body:JSON.stringify(details)
+   });}catch{throw new Error('לא ניתן להתחבר לשרת. בדוק את האינטרנט.');}
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok)throw new Error('יש להתחבר מחדש לקופה');
    if(!data.access_token||!data.refresh_token)throw new Error('השרת לא החזיר פרטי התחברות תקינים');
-   this.session={...data,user:data.user||this.session?.user,expires_at:Date.now()+Number(data.expires_in||3600)*1000};
+   const validUntil=this.session?.pos_valid_until;
+   this.session={...data,user:data.user||this.session?.user,
+     expires_at:Date.now()+Number(data.expires_in||3600)*1000,
+     pos_valid_until:validUntil};
    localStorage.setItem(POS_SESSION_KEY,JSON.stringify(this.session));
    return this.session;
  },
- async login(email,password){await this.authRequest('password',{email,password});return this.authorize();},
- async refreshSession(){if(!this.session?.refresh_token)throw new Error('יש להתחבר מחדש');await this.authRequest('refresh_token',{refresh_token:this.session.refresh_token});},
+ async loginPin(username,pin){
+   const data=await this.staffAction('login',{username,pin},false);
+   if(!data?.access_token||!data?.refresh_token||!data?.user?.id)throw new Error('ההתחברות לא הושלמה');
+   this.session={access_token:data.access_token,refresh_token:data.refresh_token,
+     user:data.user,expires_at:Date.now()+Number(data.expires_in||3600)*1000,
+     pos_valid_until:Date.parse(data.pos_valid_until)};
+   localStorage.setItem(POS_SESSION_KEY,JSON.stringify(this.session));
+   return this.authorize();
+ },
+ async bootstrapOwner(username,pin,email,password){
+   return this.staffAction('bootstrap_owner',{username,pin,email,password},false);
+ },
+ async elevateOwner(email,password){
+   await this.staffAction('elevate',{email,password});
+   await this.authorize();
+   return this.employee;
+ },
+ async manageStaff(operation,details={}){
+   return this.staffAction('manage',{operation,...details});
+ },
+ async lockAdmin(){
+   await this.staffAction('lock_admin');
+   this.testMode=false;localStorage.removeItem(POS_TEST_KEY);
+   await this.authorize();
+ },
+ async refreshSession(){
+   if(!this.session?.refresh_token)throw new Error('יש להתחבר מחדש');
+   this.assertShift();
+   await this.authRequest('refresh_token',{refresh_token:this.session.refresh_token});
+ },
  async restoreSession(){
    try{this.session=JSON.parse(localStorage.getItem(POS_SESSION_KEY)||'null');}catch{this.session=null;}
    if(!this.session)return false;
-   try{if(this.session.expires_at-Date.now()<75000)await this.refreshSession();await this.authorize();return true;}
-   catch(e){this.session=null;localStorage.removeItem(POS_SESSION_KEY);this.setStatus('נדרשת התחברות מחדש','error');return false;}
+   try{
+    this.assertShift();
+    if(this.session.expires_at-Date.now()<75000)await this.refreshSession();
+    await this.authorize();return true;
+   }catch(error){
+    this.session=null;this.employee=null;this.authenticated=false;this.active=false;
+    localStorage.removeItem(POS_SESSION_KEY);
+    this.setStatus('נדרשת כניסה מחדש','error');
+    return false;
+   }
  },
  async authorize(){
-   const id=this.session?.user?.id;
-   if(!id)throw new Error('פרטי ההתחברות אינם תקינים');
-   const rows=await this.request('/rest/v1/employees',{query:{select:'user_id,display_name,role,active,is_owner',user_id:`eq.${id}`}});
-   const entry=rows?.[0];
-   if(!entry?.active){this.active=false;throw new Error('החשבון אינו מורשה לעבוד בקופה. פנה למנהל.');}
+   if(!this.session?.user?.id)throw new Error('פרטי ההתחברות אינם תקינים');
+   const entry=await this.request('/rest/v1/rpc/pos_session_profile',{method:'POST',body:{}});
+   if(!entry?.active||!entry.pin_login){
+     this.authenticated=false;this.active=false;
+     throw new Error('יש להגדיר כניסת עובד בקוד בן ארבעה תווים');
+   }
    this.employee=entry;this.authenticated=true;
    this.testMode=entry.is_owner===true&&localStorage.getItem(POS_TEST_KEY)==='on';
    return entry;
  },
- signOut(){this.stop();this.session=null;this.employee=null;this.authenticated=false;this.active=false;this.testMode=false;localStorage.removeItem(POS_SESSION_KEY);},
+ async signOut(){
+   if(this.session?.pos_valid_until>Date.now()){
+     try{await this.staffAction('logout');}catch{}
+   }
+   this.stop();this.session=null;this.employee=null;this.authenticated=false;
+   this.active=false;this.testMode=false;
+   localStorage.removeItem(POS_SESSION_KEY);localStorage.removeItem(POS_TEST_KEY);
+ },
  setTestMode(enabled){
    if(this.employee?.is_owner!==true)throw new Error('רק בעל החשבון רשאי להפעיל ניסיון');
    this.testMode=enabled===true;
@@ -85,10 +157,21 @@ const RemotePos={
       }));
     });
     this.isImported=settingsRows?.[0]?.archive_imported===true;
-    if(this.employee?.role==='manager'){
-      this.audit=await this.request('/rest/v1/pos_audit_log',{
-        query:{select:'id,entity_type,entity_name,action,actor_name,changed_at,old_values,new_values',order:'changed_at.desc,id.desc',limit:'250'}
-      });
+    if(this.employee?.is_owner===true){
+      const [catalogLog,staffLog]=await Promise.all([
+       this.request('/rest/v1/pos_audit_log',{query:{
+        select:'id,entity_type,entity_name,action,actor_name,changed_at,old_values,new_values',
+        order:'changed_at.desc,id.desc',limit:'250'
+       }}),
+       this.request('/rest/v1/pos_employee_audit',{query:{
+        select:'id,actor_name,target_name,action,occurred_at',order:'occurred_at.desc,id.desc',limit:'250'
+       }})
+      ]);
+      this.audit=[...catalogLog,...staffLog.map(x=>({
+       id:'staff-'+x.id,entity_type:'employee',entity_name:x.target_name,
+       action:x.action,actor_name:x.actor_name,changed_at:x.occurred_at,
+       old_values:null,new_values:null
+      }))].sort((a,b)=>new Date(b.changed_at)-new Date(a.changed_at)).slice(0,350);
     }else this.audit=[];
     this.active=true;
     return {customers:this.customers,products:this.products,archive:this.archive,priceHistory:this.priceHistory,audit:this.audit};
@@ -130,7 +213,7 @@ const RemotePos={
     return {hasData:this.isImported,archiveImported:this.isImported};
  },
  async start(){await this.loadAll();this.stop();this.watchRealtime();this.poll=setInterval(()=>{if(navigator.onLine&&this.active)this.refreshQuietly();},12000);window.addEventListener('online',this._online=()=>{this.refreshQuietly();this.watchRealtime();});},
- async refreshQuietly(){if(this.loading||!this.active)return;this.loading=true;try{await this.loadAll();if(this.onChange)await this.onChange();this.setStatus('מסונכרן עם כל הקופות','success');}catch(e){this.setStatus('לא ניתן לסנכרן: '+e.message,'error');}finally{this.loading=false;}},
+ async refreshQuietly(){if(this.loading||!this.active)return;this.loading=true;try{await this.authorize();await this.loadAll();if(this.onChange)await this.onChange();this.setStatus('מסונכרן עם כל הקופות','success');}catch(e){this.setStatus('לא ניתן לסנכרן: '+e.message,'error');}finally{this.loading=false;}},
  watchRealtime(){
    if(!navigator.onLine||!this.session?.access_token||this.socket&&this.socket.readyState<2)return;
    const url=`${POS_CLOUD_URL.replace('https','wss')}/realtime/v1/websocket?apikey=${encodeURIComponent(POS_PUBLISHABLE_KEY)}&vsn=1.0.0`;
