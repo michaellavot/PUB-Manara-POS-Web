@@ -82,8 +82,20 @@
 body.staff-mode #productForm,body.staff-mode #manageProducts button,body.staff-mode #manageCustomers button{display:none!important}
 
 /* Owner-only mode switch: a prominent indication, no layout rearrangement */
-#modeSwitchBtn{margin-inline:7px;padding:5px 12px;min-height:29px;border:1px solid #e3ac58;background:#322919;color:#ffe3ac;font-size:12px;font-weight:700}
+#trialToggleBtn{margin-inline:7px;padding:5px 12px;min-height:29px;border:1px solid #e3ac58;background:#322919;color:#ffe3ac;font-size:12px;font-weight:700}
 .mode-banner{padding:7px 12px;text-align:center;font-size:13px;font-weight:700;letter-spacing:.1px}
 .mode-banner.development-banner{background:#5a3714;color:#ffe6a9;border-bottom:2px solid #f0ab4e}
 .mode-banner.live-banner{background:#173c2e;color:#c3f8dc;border-bottom:1px solid #448d70}
-.mode-banner.hidden,#modeSwitchBtn.hidden,#cloudBackToTest.hidden{display:none!important}
+.mode-banner.hidden,#trialToggleBtn.hidden,#cloudBackToTest.hidden{display:none!important}
+/* V0.9.4: same pub workspace, unobtrusive owner-only trial toggle. */
+#trialToggleBtn[aria-pressed="true"]{border-color:#f0ab4e;background:#6b3819;color:#fff2d3;box-shadow:0 0 0 1px #f0ab4e44}
+.manage-head{flex-wrap:wrap;gap:8px}
+.inactive-toggle{font-size:12px;min-height:30px;padding:4px 11px;white-space:nowrap}
+.inactive-toggle[aria-pressed="true"]{border-color:#bd9662;color:#ffe3b8}
+#auditPanel{margin-top:12px}
+.audit-table{max-height:390px;overflow:auto}
+#auditPanel .data-table{min-width:570px}
+#auditPanel .data-table td{line-height:1.45;white-space:normal}
+#archiveImportPanel{grid-column:1/-1}
+#archiveImportPanel button{width:auto;max-width:100%}
+@media(max-width:650px){#trialToggleBtn{padding:5px 8px;font-size:11px}.manage-head .small-note{width:100%}}
