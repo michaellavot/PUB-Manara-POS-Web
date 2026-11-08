@@ -111,6 +111,7 @@ const RemotePos={
      throw new Error('יש להגדיר כניסת עובד בקוד בן ארבעה תווים');
    }
    this.employee=entry;this.authenticated=true;
+   if(entry.is_owner!==true)localStorage.removeItem(POS_TEST_KEY);
    this.testMode=entry.is_owner===true&&localStorage.getItem(POS_TEST_KEY)==='on';
    return entry;
  },
