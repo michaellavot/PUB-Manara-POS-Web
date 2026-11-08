@@ -132,3 +132,38 @@ body.staff-mode #adminPanel{display:none!important}
 .bill-table tbody tr{height:38px;max-height:38px}
 .bill-table td{height:38px;padding:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bill-table td.empty{white-space:normal}
+
+/* V0.9.11: four fixed rows with independent vertical scrolling. */
+.category-grid{height:202px;max-height:none;min-height:202px;grid-auto-rows:46px;align-content:start;overflow-y:auto;overflow-x:hidden;flex:none;overscroll-behavior:contain}
+.product-visual-region{flex:none;height:266px;min-height:266px;max-height:266px}
+.product-visual-region>.products-grid{height:100%;min-height:0;flex:1;grid-auto-rows:58px;align-content:start;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+.product-panel{min-height:565px}
+.work-grid{min-height:565px}
+@media(max-width:730px){.product-panel{height:auto;min-height:565px}.work-grid{min-height:0}}
+/* V0.9.11: accessible, larger catalog management dialog. */
+.catalog-launchers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;flex:none;margin-bottom:14px}
+.catalog-launch-button{display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:145px;gap:10px;cursor:pointer;color:var(--text);text-align:center}
+.catalog-launch-button:hover{border-color:var(--gold);filter:brightness(1.1)}
+.catalog-launch-button strong{font-size:22px;color:var(--pale)}
+.catalog-launch-button span:last-child{font-size:13px;color:var(--muted)}
+.catalog-launch-icon{font-size:33px}
+.catalog-manager-overlay{position:fixed;inset:0;background:#020609d9;display:flex;justify-content:center;align-items:center;padding:clamp(10px,3vw,35px);z-index:1200}
+.catalog-manager-panel{width:min(1180px,100%);height:min(850px,94dvh);display:flex;flex-direction:column;min-height:0;padding:clamp(13px,2vw,25px);gap:10px}
+.catalog-manager-header{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.catalog-manager-header h2{font-size:23px;color:var(--pale);margin:0}
+.catalog-manager-controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.catalog-search-label{display:flex;align-items:center;gap:9px;flex:1 1 220px}
+.catalog-search-label .field{flex:1}
+.catalog-select-label{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.catalog-select-label input,.catalog-select-row{accent-color:#cf9e65;width:19px;height:19px;cursor:pointer}
+.catalog-manager-content{display:flex;flex-direction:column;gap:10px;min-height:0;flex:1}
+.catalog-manager-content.hidden{display:none}
+.catalog-manager-subhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.catalog-manager-content .inline-form{flex:none;margin-bottom:0}
+.catalog-manager-table{flex:1;min-height:0;overflow:auto;border:1px solid var(--line);border-radius:9px}
+.catalog-manager-table .data-table{min-width:560px}
+.catalog-manager-table th:first-child,.catalog-manager-table td:first-child{width:56px;text-align:center}
+.catalog-manager-table .data-table td{font-size:15px;padding:12px 9px}
+.catalog-manager-table .data-table th{font-size:14px;padding:12px 9px}
+#catalogManagerMessage{min-height:18px}
+@media(max-width:650px){.catalog-launchers{grid-template-columns:1fr}.catalog-launch-button{min-height:95px}.catalog-manager-panel{height:96dvh}.catalog-manager-overlay{padding:5px}.catalog-manager-controls{gap:8px}.catalog-manager-header h2{font-size:19px}}
