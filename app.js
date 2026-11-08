@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='0.9.6';
+const APP_VERSION='0.9.7';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -363,9 +363,24 @@ function remoteEvents(){
  on('cloudMigrateBtn','click',migrateCloud);
  on('cloudRetryBtn','click',async()=>{try{await cloudAfterAuthentication();}catch(e){showCloudDataError(e);}});
  on('cloudSignOut','click',async()=>{
-  if(state.cart.length&&!confirm('התנתקות תבטל את החיוב הפתוח. להמשיך?'))return;
+  if(state.cart.length&&!confirm('החלפת עובד תבטל את החיוב הפתוח. להמשיך?'))return;
   await RemotePos.signOut();
-  location.reload();
+  state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;state.pendingOperation=null;
+  RemotePos.onChange=null;
+  el('cloudUserBar').classList.add('hidden');
+  el('adminLogin').classList.add('hidden');
+  el('adminPanel').classList.add('hidden');
+  el('archiveImportPanel').classList.add('hidden');
+  el('trialToggleBtn').classList.add('hidden');
+  el('modeBanner').classList.add('hidden');
+  el('cloudGate').classList.add('hidden');
+  el('ownerSetupForm').classList.add('hidden');
+  document.body.classList.add('staff-mode');
+  el('cloudUserName').value='';
+  el('cloudPin').value='';
+  el('storageLabel').textContent='ממתין לכניסת עובד';
+  showCloudLogin('העובד הקודם התנתק. הזן שם עובד וקוד בן 4 תווים כדי להיכנס.');
+  el('cloudUserName').focus();
  });
 }
 async function init(){el('versionLabel').textContent='V'+APP_VERSION;const stamp=()=>el('clock').textContent=`${nowDisplay()} · ${clockTime().slice(0,5)}`;stamp();setInterval(stamp,30000);events();const today=nowIso();el('fromDate').value=today.slice(0,8)+'01';el('toDate').value=today;await openDatabase();await seedFirstTime();await refresh();remoteEvents();showCloudLogin('יש להתחבר כדי לעבוד על הארכיון המשותף.');if(navigator.onLine){const valid=await RemotePos.restoreSession();if(valid)try{await cloudAfterAuthentication();}catch(e){showCloudDataError(e);}}else el('loginMessage').textContent='אין אינטרנט — הנתונים המקומיים נשמרים, אך חיובים בענן דורשים חיבור.';el('installedVersion').textContent='V'+APP_VERSION;setInterval(()=>enforceShiftExpiry().catch(console.error),30000);
