@@ -1,8 +1,8 @@
-/* PUB Manara POS Web V0.9.27 — network-first, safe offline cache fallback.
+/* PUB Manara POS Web V0.9.28 — network-first, safe offline cache fallback.
    Do not clear IndexedDB or localStorage: they contain the original POS archive.
    Waiting workers activate only after explicit approval through the updater UI. */
-const CACHE='manara-pos-web-v0.9.27-20261108';
-const PRECACHE=["./","./index.html","./styles.css?v=0.9.27","./app.js?v=0.9.27","./updater.js?v=0.9.27","./db.js","./xlsx.js","./manifest.webmanifest?v=0.9.25","./assets/main_logo.gif","./assets/billing_left_texture.gif","./assets/beer_icon.gif","./assets/app_icon_192.png?v=0.9.25","./assets/app_icon_512.png?v=0.9.25","./assets/app_icon_maskable_192.png?v=0.9.25","./assets/app_icon_maskable_512.png?v=0.9.25","./assets/rubik-variable.ttf","./remote.js?v=0.9.27"];
+const CACHE='manara-pos-web-v0.9.28-20261108';
+const PRECACHE=["./","./index.html","./styles.css?v=0.9.28","./app.js?v=0.9.28","./updater.js?v=0.9.28","./db.js","./xlsx.js","./manifest.webmanifest?v=0.9.25","./assets/main_logo.gif","./assets/billing_left_texture.gif","./assets/beer_icon.gif","./assets/app_icon_192.png?v=0.9.25","./assets/app_icon_512.png?v=0.9.25","./assets/app_icon_maskable_192.png?v=0.9.25","./assets/app_icon_maskable_512.png?v=0.9.25","./assets/rubik-variable.ttf","./remote.js?v=0.9.28"];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(PRECACHE)));
 });
