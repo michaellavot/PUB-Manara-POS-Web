@@ -4,7 +4,7 @@ const softwareUpdate={registration:null,info:null,checking:false,applying:false}
 const versionSegments=v=>String(v||'').replace(/^v/i,'').split('.').map(x=>parseInt(x,10)||0);
 function isNewerVersion(remote,local=APP_VERSION){const a=versionSegments(remote),b=versionSegments(local);for(let i=0;i<Math.max(a.length,b.length);i++){const diff=(a[i]||0)-(b[i]||0);if(diff)return diff>0;}return false;}
 function updateStatus(message){el('updateStatus').textContent=message;}
-function updateUiFromInfo(info){softwareUpdate.info=info;el('updateBadgeVersion').textContent='V'+info.version;el('updateBadge').classList.remove('hidden');updateStatus('זמינה גרסה V'+info.version);}
+function updateUiFromInfo(info){softwareUpdate.info=info;el('updateBadgeVersion').textContent='V'+info.version;el('updateBadge').classList.remove('hidden');updateStatus('זמינה גרסה V'+info.version+' · קוד טעון V'+APP_VERSION);}
 function showUpdateDialog(){if(!softwareUpdate.info)return;const info=softwareUpdate.info;el('updateDialogVersion').textContent='PUB Manara POS Web · V'+info.version;const changes=el('updateChanges');changes.replaceChildren();for(const change of (Array.isArray(info.changes)?info.changes:[])){const li=document.createElement('li');li.textContent=String(change);changes.append(li);}if(!changes.children.length){const li=document.createElement('li');li.textContent='שיפורי תוכנה ותיקוני יציבות';changes.append(li);}el('updateModalMessage').textContent=state.cart.length?'יש חיוב פתוח — סיים או נקה אותו לפני העדכון.':'';el('applyUpdateBtn').disabled=!!state.cart.length||state.busy;el('updateDialog').classList.remove('hidden');}
 function hideUpdateDialog(){if(!softwareUpdate.applying)el('updateDialog').classList.add('hidden');}
 async function checkSoftwareUpdates(manual=false){
@@ -20,7 +20,7 @@ async function checkSoftwareUpdates(manual=false){
   const info=await response.json();
   if(!info||!/^\d+(\.\d+)*$/.test(String(info.version)))throw new Error('גרסה לא תקינה');
   if(isNewerVersion(info.version)){updateUiFromInfo(info);await registration.update();}
-  else{softwareUpdate.info=null;el('updateBadge').classList.add('hidden');updateStatus('מעודכן — V'+APP_VERSION);}
+  else{softwareUpdate.info=null;el('updateBadge').classList.add('hidden');updateStatus('מעודכן — קוד טעון V'+APP_VERSION);}
  }catch(e){if(manual)updateStatus('לא ניתן לבדוק כרגע — '+e.message);}
  finally{softwareUpdate.checking=false;}
 }
@@ -42,7 +42,21 @@ async function applySoftwareUpdate(){
   await r.update();
   let waiting=r.waiting;
   if(!waiting){waiting=await new Promise(resolve=>{const timeout=setTimeout(()=>resolve(null),12000);function ready(){if(r.waiting){clearTimeout(timeout);resolve(r.waiting);}}function listen(worker){if(worker)worker.addEventListener('statechange',ready);}listen(r.installing);r.addEventListener('updatefound',()=>{listen(r.installing);ready();},{once:true});ready();});}
-  if(!waiting)throw new Error('העדכון עדיין לא מוכן. נסה שוב לאחר מספר שניות.');
+  if(!waiting){
+    // A worker may already have activated while we were waiting. Attempt one safe
+    // cache-busting navigation before reporting a stalled installation.
+    const next=softwareUpdate.info?.version||'unknown';
+    const recoveryKey='manara-pos-update-retry-'+next;
+    if(sessionStorage.getItem(recoveryKey)!=='done'){
+      sessionStorage.setItem(recoveryKey,'done');
+      el('updateModalMessage').textContent='בודק אם הגרסה החדשה כבר הופעלה…';
+      const recovery=new URL('./index.html',location.href);
+      recovery.searchParams.set('refresh',next);
+      location.replace(recovery.toString());
+      return;
+    }
+    throw new Error('העדכון עדיין לא מוכן. ודא שאתה מחובר לאינטרנט ונסה שוב.');
+  }
   el('updateModalMessage').textContent='מפעיל את הגרסה החדשה…';
   waiting.postMessage({type:'SKIP_WAITING'});
   setTimeout(()=>{if(softwareUpdate.applying&&state.cart.length===0&&!state.busy)location.reload();},3500);
