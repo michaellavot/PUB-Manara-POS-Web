@@ -15,7 +15,7 @@
 <body>
   <div class="app-shell">
     <header class="hero" aria-label="PUB Manara POS"><img src="assets/main_logo.gif" alt="PUB Manara POS" /></header>
-    <div class="toolbar"><div class="identity"><strong>PUB MANARA <span>WEB</span></strong><small id="versionLabel">V0.9.2</small><button id="updateBadge" class="update-badge hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button></div><div class="toolbar-meta"><span id="clock" class="chip">--:--</span><span class="chip" id="storageLabel">מתחבר לשרת…</span><span id="cloudUserBar" class="hidden"><span id="cloudUser"></span> · <button id="modeSwitchBtn" type="button" class="button mode-switch hidden">מעבר למצב עבודה</button> · <button type="button" id="cloudSignOut" class="button ghost">התנתק</button></span><button id="installBtn" type="button" class="button install hidden">התקן אפליקציה</button></div></div>
+    <div class="toolbar"><div class="identity"><strong>PUB MANARA <span>WEB</span></strong><small id="versionLabel">V0.9.3</small><button id="updateBadge" class="update-badge hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button></div><div class="toolbar-meta"><span id="clock" class="chip">--:--</span><span class="chip" id="storageLabel">מתחבר לשרת…</span><span id="cloudUserBar" class="hidden"><span id="cloudUser"></span> · <button id="modeSwitchBtn" type="button" class="button mode-switch hidden">מעבר למצב עבודה</button> · <button type="button" id="cloudSignOut" class="button ghost">התנתק</button></span><button id="installBtn" type="button" class="button install hidden">התקן אפליקציה</button></div></div>
     <div id="modeBanner" class="mode-banner hidden" role="status"></div>
     <nav class="tabs" aria-label="ניווט ראשי"><button class="tab active" data-page="posPage">קופה</button><button class="tab" data-page="managePage">ניהול</button><button class="tab" data-page="reportsPage">דוחות</button><button class="tab" data-page="systemPage">מערכת וגיבוי</button></nav>
     <main>
@@ -54,5 +54,5 @@
     <div id="migrationPanel"><button id="cloudMigrateBtn" class="button primary">גבה והעבר את כל הארכיון לענן</button><p class="small-note">תתבצע הורדת גיבוי לפני אישור העלאה. הייבוא יתבצע רק כשהענן ריק ובאישור המנהל.</p></div>
     <button id="cloudRetryBtn" class="button secondary" type="button">בדוק אם הארכיון כבר נמצא בענן</button><button id="cloudBackToTest" class="button secondary hidden" type="button">חזרה למצב ניסיון — ללא ייבוא</button></div>
   </div>
-  <script src="db.js"></script><script src="remote.js"></script><script src="xlsx.js"></script><script src="updater.js"></script><script src="app.js"></script>
+  <script src="db.js"></script><script src="remote.js?v=0.9.3"></script><script src="xlsx.js"></script><script src="updater.js?v=0.9.3"></script><script src="app.js?v=0.9.3"></script>
 </body></html>
