@@ -8,7 +8,7 @@ const POS_SESSION_KEY='manara-pos-web-supabase-session-v1';
 const POS_TEST_KEY='manara-pos-web-owner-test-toggle-v1';
 const POS_STAFF_ENDPOINT=POS_CLOUD_URL+'/functions/v1/pos-staff-auth';
 const RemotePos={
- active:false,session:null,employee:null,testMode:false,isImported:false,users:[],products:[],customers:[],archive:[],priceHistory:[],audit:[],poll:null,socket:null,reconnect:null,loading:false,onChange:null,statusCallback:null,seq:0,authenticated:false,
+ active:false,session:null,employee:null,testMode:false,isImported:false,users:[],products:[],customers:[],archive:[],priceHistory:[],audit:[],poll:null,socket:null,reconnect:null,loading:false,onChange:null,statusCallback:null,seq:0,authenticated:false,staffAdminUnlocked:false,
  setStatus(message,kind=''){if(typeof this.statusCallback==='function')this.statusCallback(message,kind);},
  apiHeaders(jwt=this.session?.access_token){return {apikey:POS_PUBLISHABLE_KEY,Authorization:'Bearer '+(jwt||POS_PUBLISHABLE_KEY),'Content-Type':'application/json'};},
  async request(path,{method='GET',body,query,headers={}}={}){
@@ -112,6 +112,18 @@ const RemotePos={
    await this.authorize();
    return this.employee;
  },
+ async elevateStaffAdmin(email,password){
+   const r=await this.staffAction('elevate_staff_admin',{email,password});
+   this.staffAdminUnlocked=r.unlocked===true;return r;
+ },
+ async lockStaffAdmin(){
+   await this.staffAction('lock_staff_admin');this.staffAdminUnlocked=false;
+ },
+ async refreshStaffAdminStatus(){
+   if(!this.authenticated||this.employee?.permissions?.manage_system!==true||this.employee?.owner_terminal===true){this.staffAdminUnlocked=false;return;}
+   const r=await this.staffAction('staff_admin_status');
+   this.staffAdminUnlocked=r.unlocked===true;
+ },
  async manageStaff(operation,details={}){
    return this.staffAction('manage',{operation,...details});
  },
@@ -147,6 +159,7 @@ const RemotePos={
      throw new Error('יש להגדיר כניסת עובד בקוד בן ארבעה תווים');
    }
    this.employee=entry;this.authenticated=true;
+   try{await this.refreshStaffAdminStatus();}catch{this.staffAdminUnlocked=false;}
    if(entry.is_owner!==true)localStorage.removeItem(POS_TEST_KEY);
    this.testMode=entry.is_owner===true&&localStorage.getItem(POS_TEST_KEY)==='on';
    return entry;
@@ -156,7 +169,7 @@ const RemotePos={
      try{await this.staffAction('logout');}catch{}
    }
    this.stop();this.session=null;this.employee=null;this.authenticated=false;
-   this.active=false;this.testMode=false;
+   this.active=false;this.testMode=false;this.staffAdminUnlocked=false;
    localStorage.removeItem(POS_SESSION_KEY);localStorage.removeItem(POS_TEST_KEY);
  },
  setTestMode(enabled){
