@@ -37,8 +37,10 @@
 .customer-strip{position:relative;z-index:3}
 /* V0.9.9: animated beer artwork now fills the drink-selection panel behind all controls. */
 .product-panel{position:relative;isolation:isolate;overflow:hidden}
-.product-beer-backdrop{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center center;opacity:.22;pointer-events:none;z-index:0}
-.product-panel>.panel-head,.product-panel>.category-grid,.product-panel>.spark-strip,.product-panel>.products-grid{position:relative;z-index:1}
+.product-visual-region{position:relative;isolation:isolate;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.product-visual-region .product-beer-backdrop{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center center;opacity:.22;pointer-events:none;z-index:0}
+.product-visual-region>.products-grid{position:relative;z-index:1;flex:1;min-height:0}
+.product-panel>.panel-head,.product-panel>.category-grid,.product-panel>.spark-strip{position:relative;z-index:1}
 .bill-table-wrap{position:relative}
 .bill-table{position:relative;background:transparent}
 .bill-table th{background:#2b2119}
@@ -122,3 +124,11 @@ body.staff-mode #adminPanel{display:none!important}
  #adminPanel .inline-form label{width:100%}
  .admin-panel-header{flex-wrap:wrap}
 }
+
+/* V0.9.10: a fixed three-item bill viewport; additional items scroll inside. */
+.bill-table-wrap{flex:none;height:154px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+.bill-table{table-layout:fixed}
+.bill-table th{height:40px;padding:7px}
+.bill-table tbody tr{height:38px;max-height:38px}
+.bill-table td{height:38px;padding:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bill-table td.empty{white-space:normal}
