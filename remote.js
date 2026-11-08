@@ -67,11 +67,42 @@ const RemotePos={
  async loginPin(username,pin){
    const data=await this.staffAction('login',{username,pin},false);
    if(!data?.access_token||!data?.refresh_token||!data?.user?.id)throw new Error('ההתחברות לא הושלמה');
+   const previous=this.captureSwitchSession();
    this.session={access_token:data.access_token,refresh_token:data.refresh_token,
      user:data.user,expires_at:Date.now()+Number(data.expires_in||3600)*1000,
      pos_valid_until:Date.parse(data.pos_valid_until)};
    localStorage.setItem(POS_SESSION_KEY,JSON.stringify(this.session));
-   return this.authorize();
+   try{return await this.authorize();}
+   catch(error){
+     if(previous.session&&previous.authenticated)this.restoreSwitchSession(previous);
+     else{this.session=null;this.employee=null;this.authenticated=false;this.active=false;this.testMode=false;localStorage.removeItem(POS_SESSION_KEY);}
+     throw error;
+   }
+ },
+ captureSwitchSession(){
+   return {session:this.session?{...this.session}:null,employee:this.employee,
+     active:this.active,authenticated:this.authenticated,testMode:this.testMode,
+     storedTestMode:localStorage.getItem(POS_TEST_KEY)};
+ },
+ restoreSwitchSession(saved){
+   if(!saved?.session||!saved?.authenticated)throw new Error('אין התחברות קודמת תקינה לשחזור');
+   this.stop();
+   this.session=saved.session;this.employee=saved.employee;this.active=saved.active;
+   this.authenticated=saved.authenticated;this.testMode=saved.testMode;
+   localStorage.setItem(POS_SESSION_KEY,JSON.stringify(saved.session));
+   if(saved.storedTestMode===null)localStorage.removeItem(POS_TEST_KEY);
+   else localStorage.setItem(POS_TEST_KEY,saved.storedTestMode);
+ },
+ async revokePriorSession(saved){
+   if(!saved?.session?.access_token)return;
+   const response=await fetch(POS_STAFF_ENDPOINT,{
+     method:'POST',cache:'no-store',headers:{
+       apikey:POS_PUBLISHABLE_KEY,
+       'Content-Type':'application/json',
+       Authorization:'Bearer '+saved.session.access_token
+     },body:JSON.stringify({action:'logout'})
+   });
+   if(!response.ok)throw new Error('העובד הוחלף, אך לא ניתן לאמת את ניתוק המשמרת הקודמת');
  },
  async bootstrapOwner(username,pin,email,password){
    return this.staffAction('bootstrap_owner',{username,pin,email,password},false);
