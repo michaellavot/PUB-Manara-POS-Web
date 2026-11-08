@@ -167,3 +167,19 @@ body.staff-mode #adminPanel{display:none!important}
 .catalog-manager-table .data-table th{font-size:14px;padding:12px 9px}
 #catalogManagerMessage{min-height:18px}
 @media(max-width:650px){.catalog-launchers{grid-template-columns:1fr}.catalog-launch-button{min-height:95px}.catalog-manager-panel{height:96dvh}.catalog-manager-overlay{padding:5px}.catalog-manager-controls{gap:8px}.catalog-manager-header h2{font-size:19px}}
+
+/* V0.9.12: use one reliable viewport scroll owner on tablet/mobile.
+   Keep category, drink and bill lists independently scrollable. */
+@media (max-width:1100px){
+  html,body{height:100%;min-height:0;overflow:hidden}
+  .app-shell{height:100dvh;min-height:0;overflow:hidden}
+  main{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+  .page{height:auto;min-height:0}
+  .page.active{height:auto;min-height:100%;flex:none}
+}
+@media (max-width:730px){
+  .work-grid{flex:none;height:auto;min-height:0;overflow:visible}
+  .product-panel{height:auto;min-height:565px;flex:none}
+  .bill-panel{height:auto;min-height:440px;flex:none}
+  #posPage{padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px))}
+}
