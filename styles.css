@@ -183,3 +183,18 @@ body.staff-mode #adminPanel{display:none!important}
   .bill-panel{height:auto;min-height:440px;flex:none}
   #posPage{padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px))}
 }
+
+/* V0.9.13: make the document the sole outer scroll container on touch screens.
+   Avoid a locked body plus nested <main> scrollport, which traps gestures in Android/PWA. */
+@media (max-width:1100px){
+  html{height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto}
+  body{height:auto;min-height:100dvh;overflow-x:hidden;overflow-y:visible}
+  .app-shell{height:auto;min-height:100dvh;overflow:visible}
+  main{flex:1;min-height:0;overflow:visible;touch-action:auto;-webkit-overflow-scrolling:auto}
+  .page.active{height:auto;min-height:0;flex:none}
+  .work-grid{height:auto}
+  /* Let the browser chain a swipe to page scrolling at the end of each list. */
+  .category-grid,
+  .product-visual-region>.products-grid,
+  .bill-table-wrap{overscroll-behavior-y:auto;touch-action:pan-y}
+}
