@@ -264,3 +264,16 @@ button:disabled{transform:none}
 #staffAdminEmailField .field{width:100%;min-height:45px}
 #staffAdminBox .stack-buttons{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
 #staffAdminBox .stack-buttons .button{flex:1;min-width:145px}
+
+/* V0.9.27: right-aligned clock and centered signed-in employee name. */
+.toolbar{position:relative}
+.toolbar>#clock{order:-2;flex-shrink:0;white-space:nowrap}
+.toolbar>.toolbar-meta{order:0;margin-inline-start:auto}
+.toolbar>.identity{order:1}
+#cloudUserBar #cloudUser{position:absolute;inset-inline-start:50%;top:50%;transform:translate(50%,-50%);white-space:nowrap;font-weight:600;pointer-events:none}
+@media(max-width:730px){
+ .toolbar{flex-wrap:nowrap;min-height:44px}
+ .toolbar>.toolbar-meta{min-width:0}
+ .toolbar>.identity{flex-shrink:0}
+ #cloudUserBar #cloudUser{font-size:12px}
+}
