@@ -44,6 +44,7 @@
 .product-footer{padding-right:0}
 @media(max-width:730px){.customer-select-wrap{flex:1 1 100%}.customer-dropdown .customer-dialog-results{max-height:40dvh}}
 
+
 /* V0.6 — nonintrusive PWA updater */
 .identity{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .identity>small{white-space:nowrap}
@@ -64,7 +65,18 @@
 .update-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
 .update-modal-actions .button{min-height:44px}
 @media(max-width:600px){.update-modal-card{padding:15px}.update-modal-title h2{font-size:20px}}
-/* V0.8: retain V0.6 sizing; self-hosted Rubik Bold for drink choices only. */
+
+
 @font-face{font-family:"Rubik Manara";src:url("./assets/rubik-variable.ttf") format("truetype");font-style:normal;font-weight:300 900;font-display:swap}
 .category-grid .button,.products-grid .button{font-family:"Rubik Manara","Segoe UI",Arial,sans-serif;font-weight:700}
 .status:empty{display:none}
+/* V0.9 auth/migration gate */
+.cloud-overlay{position:fixed;inset:0;z-index:2100;background:rgba(3,9,13,.95);display:grid;place-items:center;padding:17px;overflow:auto}
+.cloud-card{direction:rtl;background:linear-gradient(160deg,#1c2a32,#10181e);border:1px solid #af834e;border-radius:17px;box-shadow:0 25px 80px #000d;padding:28px;width:min(520px,100%);max-height:93dvh;overflow:auto}
+.cloud-card h2{font-size:24px;color:#f1d5a8;margin:0 0 12px}.cloud-card p{line-height:1.65;color:#d6c7af}
+.cloud-form{display:grid;gap:13px;margin:20px 0}.cloud-form label{display:grid;gap:6px;font-size:14px;color:#dbc29d}
+.cloud-form input{height:47px}.cloud-card .button{min-height:46px;margin:8px 0;width:100%}.cloud-counts{padding:12px;background:#28323a;border-radius:8px}
+.sync-msg{font-size:12px;color:#bda078}.sync-msg.success{color:#8bcfa3}.sync-msg.error{color:#f59b90}
+#cloudUserBar{font-size:12px;color:#d3bd9c}#cloudUserBar .button{min-height:29px;padding:5px 8px}
+.cloud-overlay.hidden{display:none}
+body.staff-mode #productForm,body.staff-mode #manageProducts button,body.staff-mode #manageCustomers button{display:none!important}
