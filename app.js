@@ -556,6 +556,14 @@ async function openEmployeePicker(){
  await loadEmployeePickerWithRetry();
 }
 function showCloudLogin(message=''){el('cloudLogin').classList.remove('hidden');el('loginMessage').textContent=message;el('cloudLoginTitle').textContent=state.switchingEmployee?'החלפת עובד':'כניסה לקופת מנרה';el('cancelEmployeeSwitch').classList.toggle('hidden',!state.switchingEmployee);}
+function toggleCloudPinKeyboard(){
+ const pin=el('cloudPin'),button=el('cloudPinKeyboardToggle');
+ const regular=pin.getAttribute('inputmode')!=='text';
+ pin.setAttribute('inputmode',regular?'text':'numeric');
+ button.setAttribute('aria-pressed',String(regular));
+ button.textContent=regular?'מקלדת מספרים':'קוד עם אותיות? מקלדת רגילה';
+ // Only change input hints; existing PIN text and server authentication stay intact.
+}
 function resetEmployeeSwitchForm(){
  selectEmployee('');
  el('cloudPin').value='';
@@ -1137,6 +1145,7 @@ function remoteEvents(){
  on('employeePermissionsBackdrop','click',closeEmployeePermissions);
  on('employeePickerBtn','click',openEmployeePicker);
  on('employeePickerRetryBtn','click',loadEmployeePickerWithRetry);
+ on('cloudPinKeyboardToggle','click',toggleCloudPinKeyboard);
  on('employeePickerBackdrop','click',closeEmployeePicker);
  on('employeePickerClose','click',closeEmployeePicker);
  el('cloudLoginForm').addEventListener('submit',loginCloud);
