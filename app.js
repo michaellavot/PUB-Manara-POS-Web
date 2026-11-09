@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='1.0.2';
+const APP_VERSION='1.0.3';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -556,7 +556,7 @@ async function toggleTrialMode(){
  renderCustomer();renderBill();renderReport();renderModeControls();
  status(newValue?'ניסיון הופעל — חיובים יסומנו D':'מצב ניסיון כבוי — יופיעו רק עסקאות אמת','success');
 }
-async function cloudAfterAuthentication(){leaveCloudLogin();await activateCloud();}
+async function cloudAfterAuthentication(){await activateCloud();leaveCloudLogin();}
 async function loginCloud(event){
  event.preventDefault();
  const btn=el('cloudLoginBtn');btn.disabled=true;
@@ -939,9 +939,54 @@ function remoteEvents(){
  on('employeeSignOutBtn','click',employeeSignOut);
  on('cancelEmployeeSwitch','click',cancelEmployeeSwitch);
 }
-async function init(){applyLayoutMode(getSavedLayoutMode());el('versionLabel').textContent='V'+APP_VERSION;const stamp=()=>el('clock').textContent=`${nowDisplay()} · ${clockTime().slice(0,5)}`;stamp();setInterval(stamp,30000);events();const today=nowIso();el('fromDate').value=today.slice(0,8)+'01';el('toDate').value=today;await openDatabase();await seedFirstTime();await refresh();remoteEvents();showCloudLogin('יש להתחבר כדי לעבוד על הארכיון המשותף.');if(navigator.onLine){const valid=await RemotePos.restoreSession();if(valid)try{await cloudAfterAuthentication();}catch(e){showCloudDataError(e);}}else el('loginMessage').textContent='אין אינטרנט — הנתונים המקומיים נשמרים, אך חיובים בענן דורשים חיבור.';el('installedVersion').textContent='V'+APP_VERSION;setInterval(()=>enforceShiftExpiry().catch(console.error),30000);
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)enforceShiftExpiry().catch(console.error);});
- if('serviceWorker' in navigator&&location.protocol!=='file:')setupSoftwareUpdater().catch(console.warn);}
+function setStartupMessage(message){
+ const node=el('startupScreenMessage');
+ if(node)node.textContent=message;
+}
+function finishStartup(){
+ const screen=el('startupScreen');
+ if(screen)screen.hidden=true;
+}
+function failStartup(error){
+ console.error('Failed to initialize POS safely:',error);
+ const screen=el('startupScreen');
+ if(!screen)return;
+ screen.hidden=false;
+ screen.classList.add('is-error');
+ setStartupMessage('פתיחת הקופה נכשלה: '+(error?.message||'שגיאה לא ידועה')+'. יש לבדוק חיבור ולנסות שוב.');
+}
+async function init(){
+ applyLayoutMode(getSavedLayoutMode());
+ el('versionLabel').textContent='V'+APP_VERSION;
+ const stamp=()=>el('clock').textContent=`${nowDisplay()} · ${clockTime().slice(0,5)}`;
+ stamp();setInterval(stamp,30000);
+ setStartupMessage('מכין את מסכי הקופה…');
+ events();
+ const today=nowIso();
+ el('fromDate').value=today.slice(0,8)+'01';el('toDate').value=today;
+ await openDatabase();await seedFirstTime();await refresh();
+ remoteEvents();
+ // Keep the startup overlay visible until an authenticated session is ready
+ // or the employee login screen is ready. Never expose a partially filled POS.
+ showCloudLogin('יש להתחבר כדי לעבוד על הארכיון המשותף.');
+ setStartupMessage('בודק התחברות וטוען נתונים…');
+ if(navigator.onLine){
+  const valid=await RemotePos.restoreSession();
+  if(valid){
+   try{await cloudAfterAuthentication();}
+   catch(error){showCloudDataError(error);}
+  }
+ }else{
+  el('loginMessage').textContent='אין אינטרנט — דרוש חיבור כדי להיכנס ולחייב בענן.';
+ }
+ el('installedVersion').textContent='V'+APP_VERSION;
+ setInterval(()=>enforceShiftExpiry().catch(console.error),30000);
+ document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden)enforceShiftExpiry().catch(console.error);
+ });
+ finishStartup();
+ if('serviceWorker' in navigator&&location.protocol!=='file:')
+  setupSoftwareUpdater().catch(console.warn);
+}
 
-
-init().catch(e=>{console.error(e);alert('שגיאת פתיחת קופה: '+e.message);});
+init().catch(failStartup);
