@@ -595,3 +595,8 @@ body[data-layout-mode="desktop"] #managePage #auditPanel .audit-table{max-height
 #sqliteImportMessage.error{color:#f7a89e}
 #sqliteImportPanel .stack-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 #sqliteImportPanel .stack-buttons .button{min-height:44px}
+
+/* Explicit per-product price choice in the manual import preview. */
+#sqliteImportPanel .sqlite-price-decision{display:flex;flex-wrap:wrap;align-items:center;gap:10px;border:1px solid #755634;border-radius:8px;padding:9px 12px}
+#sqliteImportPanel .sqlite-price-decision span{flex:1 1 130px}
+#sqliteImportPanel .sqlite-price-decision select{flex:1 1 210px;max-width:100%}
