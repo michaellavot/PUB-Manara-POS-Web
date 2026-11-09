@@ -694,3 +694,8 @@ body[data-layout-mode="desktop"] #managePage #auditPanel .audit-table{max-height
    overflow-y:auto;overflow-x:hidden;
  }
 }
+
+/* V1.0.5: mandatory update dialog must cover login, admin and catalog dialogs. */
+#updateDialog.update-modal{z-index:4500}
+#updateDialog .update-modal-actions{grid-template-columns:1fr}
+#updateDialog .update-modal-actions .button.hidden{display:none!important}
