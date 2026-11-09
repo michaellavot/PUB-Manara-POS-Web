@@ -86,6 +86,34 @@ const LegacyDbImport=(()=>{
     ['שמות משקאות היסטוריים שלא קיימים בקטלוג',d.missingProducts.join(' · ')||'אין']
    ];
    for(const [label,value] of items){const p=document.createElement('p');p.textContent=label+': '+value;host.append(p);}
+   const existingProducts=new Map((RemotePos.products||[]).map(x=>[norm(x.name),x]));
+   const duplicateCustomers=new Set((RemotePos.customers||[]).map(x=>norm(x.name)));
+   const matchingNames=[...new Set(data.payload.customers.filter(c=>duplicateCustomers.has(norm(c.name))).map(c=>c.name))];
+   if(matchingNames.length){
+    const p=document.createElement('p');p.textContent='לקוחות בשם שכבר קיים בענן — יאוחדו לפי שם בלבד: '+matchingNames.join(' · ');host.append(p);
+   }
+   const differences=data.payload.products.filter(p=>{
+    const ex=existingProducts.get(norm(p.name));
+    return ex&&Number(ex.price)!==Number(p.price);
+   });
+   if(differences.length){
+    const title=document.createElement('p');title.textContent='בחירת מחיר פעיל למוצרים עם מחיר שונה (ברירת מחדל: מחיר הענן). שינוי בחירה יחייב בדיקה מחדש מול הענן.';host.append(title);
+    for(const product of differences){
+     const ex=existingProducts.get(norm(product.name));
+     const row=document.createElement('label');row.className='sqlite-price-decision';
+     const name=document.createElement('span');name.textContent=product.name;
+     const select=document.createElement('select');select.className='field';
+     const keep=document.createElement('option');keep.value='cloud';keep.textContent='השאר מחיר ענן: '+money(ex.price);
+     const legacy=document.createElement('option');legacy.value='legacy';legacy.textContent='השתמש במחיר הישן: '+money(product.price);
+     select.append(keep,legacy);
+     select.addEventListener('change',()=>{
+      product.applyLegacyPrice=select.value==='legacy';
+      serverPreview=null;$('sqliteImportExecute').disabled=true;
+      message('מחיר שונה. יש להריץ שוב בדיקת ענן לפני ייבוא.');
+     });
+     row.append(name,select);host.append(row);
+    }
+   }
    $('sqliteImportPreview').disabled=false;
    message('הבדיקה המקומית הושלמה. ניתן לבדוק התאמה לנתוני הענן ללא ייבוא.');
   }catch(err){message('הבדיקה נכשלה: '+err.message,true);}
@@ -106,7 +134,7 @@ const LegacyDbImport=(()=>{
     'בדיקת ענן: '+result.new_customers+' לקוחות חדשים, '+result.existing_customers+' לקוחות בשם זהה',
     'מוצרים: '+result.new_products+' חדשים, '+result.existing_products+' קיימים; '+result.price_conflicts+' הפרשי מחיר',
     'היסטוריה: '+result.price_history+' רשומות. מוצרים היסטוריים חסרים: '+result.historic_products_missing+' שורות',
-    'המחיר הפעיל של מוצר קיים יישמר ללא שינוי; היסטוריית המקור תתווסף.',
+    'מחירי ענן קיימים יישמרו, פרט למוצרים שבחרת במפורש להשתמש במחיר הישן. היסטוריית המקור תתווסף.',
     'לא בוצע ייבוא. הפעולה תתבצע רק אחרי גיבוי ואישור נפרד.'
    ]){const p=document.createElement('p');p.textContent=line;host.append(p);}
    $('sqliteImportExecute').disabled=false;message('תצוגה מקדימה מהשרת מוכנה. לא נשמרה אף רשומה.');
