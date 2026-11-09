@@ -8,7 +8,7 @@ const POS_SESSION_KEY='manara-pos-web-supabase-session-v1';
 const POS_TEST_KEY='manara-pos-web-owner-test-toggle-v1';
 const POS_STAFF_ENDPOINT=POS_CLOUD_URL+'/functions/v1/pos-staff-auth';
 const RemotePos={
- active:false,session:null,employee:null,linkedCustomerId:null,testMode:false,isImported:false,users:[],products:[],customers:[],archive:[],priceHistory:[],audit:[],poll:null,socket:null,reconnect:null,loading:false,onChange:null,statusCallback:null,seq:0,authenticated:false,staffAdminUnlocked:false,
+ active:false,session:null,employee:null,linkedCustomerId:null,testMode:false,isImported:false,users:[],products:[],customers:[],archive:[],priceHistory:[],audit:[],poll:null,socket:null,reconnect:null,loading:false,onChange:null,statusCallback:null,seq:0,authenticated:false,staffAdminUnlocked:false,_transactionRows:[],_lastFullSync:0,_realtimeConnected:false,_pendingChanges:[],_retrySync:false,
  setStatus(message,kind=''){if(typeof this.statusCallback==='function')this.statusCallback(message,kind);},
  apiHeaders(jwt=this.session?.access_token){return {apikey:POS_PUBLISHABLE_KEY,Authorization:'Bearer '+(jwt||POS_PUBLISHABLE_KEY),'Content-Type':'application/json'};},
  async request(path,{method='GET',body,query,headers={}}={}){
@@ -185,17 +185,10 @@ const RemotePos={
    for(let from=0;from<50000;from+=1000){const data=await this.request(`/rest/v1/${table}`,{query:{select,...(order?{order}:{})},headers:{Range:`${from}-${from+999}`}});if(!Array.isArray(data))throw new Error('שגיאה בקריאת נתונים מהשרת');all.push(...data);if(data.length<1000)return all;}
    throw new Error('הארכיון גדול מדי לטעינה מלאה. נדרשת חלוקה נוספת לעמודים.');
  },
- async loadAll(){
-    if(!this.authenticated)throw new Error('נדרשת התחברות');
-    const [customerRows,productRows,transactionRows,settingsRows]=await Promise.all([
-      this.rows('customers','id,name,name_key,active,is_test_created'),
-      this.rows('products','id,name,name_key,category,product_type,price,active,price_history,is_test_created'),
-      this.rows('transactions','id,client_operation_id,customer_name,operator_name,operator_id,employee_charge,employee_charge_user_id,employee_charge_person_name,kind,created_at,is_test,transaction_items!transaction_items_transaction_id_fkey(id,product_name,quantity,line_total,is_test,test_code,archived_deleted_at)','created_at.asc'),
-      this.request('/rest/v1/pos_settings',{query:{select:'archive_imported',id:'eq.1'}})
-    ]);
-    this.customers=customerRows.map(c=>({id:c.id,name:c.name,normalized:c.name_key,active:c.active,isTestCreated:c.is_test_created===true}));
-    this.products=productRows.map(p=>({id:p.id,name:p.name,normalized:p.name_key,category:p.category,type:p.product_type,price:Number(p.price),active:p.active,isTestCreated:p.is_test_created===true}));
-    this.priceHistory=productRows.flatMap(p=>Array.isArray(p.price_history)?p.price_history:[]);
+ _transactionSelect:'id,client_operation_id,customer_name,operator_name,operator_id,employee_charge,employee_charge_user_id,employee_charge_person_name,kind,created_at,is_test,transaction_items!transaction_items_transaction_id_fkey(id,product_name,quantity,line_total,is_test,test_code,archived_deleted_at)',
+ applyCustomers(rows){this.customers=rows.map(c=>({id:c.id,name:c.name,normalized:c.name_key,active:c.active,isTestCreated:c.is_test_created===true}));},
+ applyProducts(rows){this.products=rows.map(p=>({id:p.id,name:p.name,normalized:p.name_key,category:p.category,type:p.product_type,price:Number(p.price),active:p.active,isTestCreated:p.is_test_created===true}));this.priceHistory=rows.flatMap(p=>Array.isArray(p.price_history)?p.price_history:[]);},
+ applyTransactions(transactionRows){
     this.archive=transactionRows.flatMap(tx=>{
       const d=new Date(tx.created_at);
       const formatted=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jerusalem',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);
@@ -209,26 +202,72 @@ const RemotePos={
         kind:tx.kind,legacyNumber:'',createdAt:tx.created_at,isTest:tx.is_test===true||item.is_test===true,testCode:item.test_code||''
       }));
     });
-    this.isImported=settingsRows?.[0]?.archive_imported===true;
-    this.linkedCustomerId=await this.request('/rest/v1/rpc/pos_employee_link_v0938',{method:'POST',body:{}});
-    if(this.employee?.is_owner===true){
-      const [catalogLog,staffLog]=await Promise.all([
-       this.request('/rest/v1/pos_audit_log',{query:{
-        select:'id,entity_type,entity_name,action,actor_name,changed_at,old_values,new_values',
-        order:'changed_at.desc,id.desc',limit:'250'
-       }}),
-       this.request('/rest/v1/pos_employee_audit',{query:{
-        select:'id,actor_name,target_name,action,occurred_at',order:'occurred_at.desc,id.desc',limit:'250'
-       }})
-      ]);
-      this.audit=[...catalogLog,...staffLog.map(x=>({
-       id:'staff-'+x.id,entity_type:'employee',entity_name:x.target_name,
-       action:x.action,actor_name:x.actor_name,changed_at:x.occurred_at,
-       old_values:null,new_values:null
-      }))].sort((a,b)=>new Date(b.changed_at)-new Date(a.changed_at)).slice(0,350);
-    }else this.audit=[];
-    this.active=true;
-    return {customers:this.customers,products:this.products,archive:this.archive,priceHistory:this.priceHistory,audit:this.audit};
+ },
+ async loadAudit(){
+  if(this.employee?.is_owner!==true){this.audit=[];return;}
+  const [catalogLog,staffLog]=await Promise.all([
+   this.request('/rest/v1/pos_audit_log',{query:{select:'id,entity_type,entity_name,action,actor_name,changed_at,old_values,new_values',order:'changed_at.desc,id.desc',limit:'250'}}),
+   this.request('/rest/v1/pos_employee_audit',{query:{select:'id,actor_name,target_name,action,occurred_at',order:'occurred_at.desc,id.desc',limit:'250'}})
+  ]);
+  this.audit=[...catalogLog,...staffLog.map(x=>({id:'staff-'+x.id,entity_type:'employee',entity_name:x.target_name,action:x.action,actor_name:x.actor_name,changed_at:x.occurred_at,old_values:null,new_values:null}))].sort((a,b)=>new Date(b.changed_at)-new Date(a.changed_at)).slice(0,350);
+ },
+ async loadAll(){
+  if(!this.authenticated)throw new Error('נדרשת התחברות');
+  const [customerRows,productRows,transactionRows,settingsRows,linked]=await Promise.all([
+   this.rows('customers','id,name,name_key,active,is_test_created'),
+   this.rows('products','id,name,name_key,category,product_type,price,active,price_history,is_test_created'),
+   this.rows('transactions',this._transactionSelect,'created_at.asc'),
+   this.request('/rest/v1/pos_settings',{query:{select:'archive_imported',id:'eq.1'}}),
+   this.request('/rest/v1/rpc/pos_employee_link_v0938',{method:'POST',body:{}})
+  ]);
+  this.applyCustomers(customerRows);this.applyProducts(productRows);
+  this._transactionRows=transactionRows;this.applyTransactions(transactionRows);
+  this.isImported=settingsRows?.[0]?.archive_imported===true;
+  this.linkedCustomerId=linked;
+  await this.loadAudit();
+  this._lastFullSync=Date.now();this.active=true;
+  return {customers:this.customers,products:this.products,archive:this.archive,priceHistory:this.priceHistory,audit:this.audit};
+ },
+ async syncChanged(changes){
+  const tables=new Set(changes.map(x=>x.table));
+  const sections=new Set();
+  const promises=[];
+  if(tables.has('customers')){sections.add('customers');promises.push(this.rows('customers','id,name,name_key,active,is_test_created').then(rows=>this.applyCustomers(rows)));}
+  if(tables.has('products')){sections.add('products');promises.push(this.rows('products','id,name,name_key,category,product_type,price,active,price_history,is_test_created').then(rows=>this.applyProducts(rows)));}
+  if(tables.has('pos_settings')){sections.add('settings');promises.push(this.request('/rest/v1/pos_settings',{query:{select:'archive_imported',id:'eq.1'}}).then(rows=>{this.isImported=rows?.[0]?.archive_imported===true;}));}
+  if(tables.has('pos_audit_log')){sections.add('audit');promises.push(this.loadAudit());}
+  const transactionChanges=changes.filter(x=>x.table==='transactions'||x.table==='transaction_items');
+  if(transactionChanges.length){
+   sections.add('archive');
+   promises.push((async()=>{
+    const ids=new Set();let full=false;
+    for(const change of transactionChanges){
+     const record=change.record||{},older=change.old_record||{};
+     let id=change.table==='transactions'?(record.id||older.id):(record.transaction_id||older.transaction_id);
+     if(!id&&change.table==='transaction_items'){
+      const itemId=record.id||older.id;
+      if(itemId)id=this._transactionRows.find(t=>(t.transaction_items||[]).some(x=>x.id===itemId))?.id;
+      if(!id&&itemId&&change.type!=='DELETE'){
+       const found=await this.request('/rest/v1/transaction_items',{query:{select:'transaction_id',id:'eq.'+itemId,limit:'1'}});
+       id=found?.[0]?.transaction_id;
+      }
+     }
+     if(!id){full=true;break;}
+     ids.add(id);
+    }
+    if(full||ids.size>150)this._transactionRows=await this.rows('transactions',this._transactionSelect,'created_at.asc');
+    else for(const batchStart of Array.from({length:Math.ceil(ids.size/60)},(_,i)=>i*60)){
+     const batch=[...ids].slice(batchStart,batchStart+60);
+     const fetched=await this.request('/rest/v1/transactions',{query:{select:this._transactionSelect,id:'in.('+batch.join(',')+')'}});
+     const hit=new Set(batch);
+     this._transactionRows=this._transactionRows.filter(t=>!hit.has(t.id)).concat(fetched);
+    }
+    this._transactionRows.sort((a,b)=>a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id));
+    this.applyTransactions(this._transactionRows);
+   })());
+  }
+  await Promise.all(promises);
+  return [...sections];
  },
  async saveCustomer(row){
    const existing=this.customers.some(c=>c.id===row.id);
