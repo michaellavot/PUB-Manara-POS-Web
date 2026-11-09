@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='1.0.15';
+const APP_VERSION='1.0.16';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -491,16 +491,59 @@ for(const id of ['fromDate','toDate','reportCustomer','reportType'])on(id,'chang
 function getDeviceId(){let id=localStorage.getItem('manara_device_id');if(!id){id=uuid();localStorage.setItem('manara_device_id',id);}return id;}
 function showCloudGate(message){el('cloudGate').classList.remove('hidden');el('cloudGateMessage').textContent=message;}
 function selectEmployee(name){el('cloudUserName').value=name;el('employeeSelectedText').textContent=name||'עובד';el('employeePickerBtn').classList.toggle('employee-selected',Boolean(name));}
-function closeEmployeePicker(){el('employeePicker').classList.add('hidden');el('employeePickerBtn').setAttribute('aria-expanded','false');el('employeePickerBtn').focus();}
+let employeePickerLoad=null;
+function closeEmployeePicker(){
+ if(employeePickerLoad){employeePickerLoad.abort();employeePickerLoad=null;}
+ el('employeePicker').classList.add('hidden');
+ el('employeePickerRetryBtn').classList.add('hidden');
+ el('employeePickerBtn').setAttribute('aria-expanded','false');
+ el('employeePickerBtn').focus();
+}
 function renderEmployeeChoices(){
  const filter=norm(el('employeeSearch').value),matches=state.availableEmployees.filter(name=>norm(name).includes(filter)),host=el('employeePickerResults');host.replaceChildren();el('employeePickerCount').textContent=matches.length+' עובדים פעילים';
  for(const name of matches){const b=document.createElement('button');b.type='button';b.className='button';b.textContent=name;b.onclick=()=>{selectEmployee(name);closeEmployeePicker();el('cloudPin').focus();};host.append(b);}
  if(!matches.length){const msg=document.createElement('p');msg.className='customer-results-empty';msg.textContent='לא נמצאו עובדים פעילים מתאימים';host.append(msg);}
 }
+async function loadEmployeePickerWithRetry(){
+ if(employeePickerLoad)employeePickerLoad.abort();
+ const controller=new AbortController();employeePickerLoad=controller;
+ const retry=el('employeePickerRetryBtn'),message=el('employeePickerMessage');
+ retry.classList.add('hidden');retry.disabled=true;
+ el('employeePickerResults').replaceChildren();el('employeePickerCount').textContent='';
+ const attempts=3;
+ try{
+  for(let attempt=1;attempt<=attempts;attempt++){
+   if(controller.signal.aborted)return;
+   message.textContent=attempt===1?'טוען עובדים פעילים…':'מתחבר מחדש לרשימת העובדים (ניסיון '+attempt+' מתוך '+attempts+')…';
+   try{
+    const names=await RemotePos.listLoginEmployees({signal:controller.signal});
+    if(controller.signal.aborted||el('employeePicker').classList.contains('hidden'))return;
+    state.availableEmployees=names;
+    message.textContent=names.length?'':'לא נמצאו עובדים פעילים. ניתן לנסות שוב.';
+    retry.classList.toggle('hidden',names.length>0);
+    renderEmployeeChoices();
+    el('employeeSearch').focus();
+    return;
+   }catch(error){
+    if(controller.signal.aborted||error.code==='cancelled')return;
+    if(attempt===attempts||error.retryable===false){
+     message.textContent='לא ניתן לטעון את רשימת העובדים: '+error.message;
+     retry.classList.remove('hidden');
+     return;
+    }
+    // Short bounded pauses; the user may dismiss the picker at any time.
+    await new Promise(resolve=>setTimeout(resolve,attempt*500));
+   }
+  }
+ }finally{
+  if(employeePickerLoad===controller){employeePickerLoad=null;retry.disabled=false;}
+ }
+}
 async function openEmployeePicker(){
- el('employeePicker').classList.remove('hidden');el('employeePickerBtn').setAttribute('aria-expanded','true');el('employeeSearch').value='';el('employeePickerMessage').textContent='טוען עובדים פעילים…';el('employeePickerResults').replaceChildren();el('employeePickerCount').textContent='';
- try{state.availableEmployees=await RemotePos.listLoginEmployees();if(el('employeePicker').classList.contains('hidden'))return;el('employeePickerMessage').textContent='';renderEmployeeChoices();el('employeeSearch').focus();}
- catch(e){el('employeePickerMessage').textContent='לא ניתן לטעון את רשימת העובדים: '+e.message;}
+ el('employeePicker').classList.remove('hidden');
+ el('employeePickerBtn').setAttribute('aria-expanded','true');
+ el('employeeSearch').value='';
+ await loadEmployeePickerWithRetry();
 }
 function showCloudLogin(message=''){el('cloudLogin').classList.remove('hidden');el('loginMessage').textContent=message;el('cloudLoginTitle').textContent=state.switchingEmployee?'החלפת עובד':'כניסה לקופת מנרה';el('cancelEmployeeSwitch').classList.toggle('hidden',!state.switchingEmployee);}
 function resetEmployeeSwitchForm(){
@@ -1083,6 +1126,7 @@ function remoteEvents(){
  on('employeePermissionsCancel','click',closeEmployeePermissions);
  on('employeePermissionsBackdrop','click',closeEmployeePermissions);
  on('employeePickerBtn','click',openEmployeePicker);
+ on('employeePickerRetryBtn','click',loadEmployeePickerWithRetry);
  on('employeePickerBackdrop','click',closeEmployeePicker);
  on('employeePickerClose','click',closeEmployeePicker);
  on('employeeSearch','input',renderEmployeeChoices);
