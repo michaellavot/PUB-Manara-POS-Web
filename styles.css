@@ -288,3 +288,19 @@ button:disabled{transform:none}
 .navigation-menu-item:active,.navigation-menu-item:focus-visible{background:#53391f;border-color:#d8aa6e}
 .system-switch-employee{margin-inline-end:10px;min-height:44px}
 @media(max-width:430px){.navigation-menu-panel{width:calc(100vw - 32px)}.navigation-menu-grid{gap:9px}.navigation-menu-item{min-height:96px;font-size:16px}.navigation-gear{width:35px;min-width:35px}}
+
+/* V0.9.30: subtle, static dark walnut wood behind the POS windows. */
+html,body{
+ background:
+   radial-gradient(ellipse at 45% 24%,rgba(106,54,24,.23) 0%,rgba(20,13,11,.12) 42%,rgba(3,6,9,.69) 100%),
+   linear-gradient(180deg,rgba(5,10,11,.14),rgba(3,7,9,.38)),
+   url("./assets/dark_wood_background.svg") center top / 960px 1152px repeat,
+   #080b0b;
+}
+.panel{
+ background:
+  linear-gradient(160deg,rgba(23,36,44,.92),rgba(15,24,30,.88)),
+  url("./assets/dark_wood_background.svg") center center / 960px 1152px repeat,
+  #101920;
+}
+@media print{html,body{background:#fff!important}.panel{background:#fff!important}}
