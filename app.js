@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='1.0.18';
+const APP_VERSION='1.0.19';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -752,7 +752,7 @@ async function toggleTrialMode(){
  renderCustomer();renderBill();renderReport();renderModeControls();
  status(newValue?'ניסיון הופעל — חיובים יסומנו D':'מצב ניסיון כבוי — יופיעו רק עסקאות אמת','success');
 }
-async function cloudAfterAuthentication(){await activateCloud();leaveCloudLogin();}
+async function cloudAfterAuthentication(){await activateCloud();navigateFromMenu('posPage');leaveCloudLogin();}
 async function loginCloud(event){
  event.preventDefault();
  if(!softwareUpdate.verified){
@@ -772,6 +772,8 @@ async function loginCloud(event){
   el('cloudPin').value='';
   // The previous employee is retained until the new employee has fully loaded.
   await activateCloud();
+  // Show the POS only after the new employee has authenticated and loaded.
+  navigateFromMenu('posPage');
   state.switchingEmployee=false;
   leaveCloudLogin();
   if(previous){
