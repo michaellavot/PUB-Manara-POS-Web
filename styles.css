@@ -837,3 +837,9 @@ body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
  flex:0 0 auto;min-height:42px;height:42px;padding:7px 13px;
  font-size:14px;white-space:nowrap;
 }
+
+/* V1.0.13 — owner-only removed employees filter and safe staff actions. */
+.employee-removed-filter{display:inline-flex;align-items:center;gap:9px;margin:0 0 12px;color:var(--muted);font-size:13px;cursor:pointer}
+.employee-removed-filter input{width:17px;height:17px;accent-color:#c7a16c}
+#employeeRows .tiny-btn.danger{background:#59302a;border-color:#ad5b48;color:#ffe3d9}
+#employeeRows .tiny-btn:disabled{opacity:.55;cursor:wait}
