@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='1.0.12';
+const APP_VERSION='1.0.13';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -873,12 +873,21 @@ function fillEmployeeChargeReportOptions(){
 async function renderEmployeeList(){
  const host=el('employeeRows');host.replaceChildren();
  if(RemotePos.employee?.is_owner!==true)return;
+ const showRemoved=el('showRemovedEmployees').checked;
  const result=await RemotePos.manageStaff('list');
- for(const employee of (result.employees||[])){
-   const tr=document.createElement('tr');
-   const name=document.createElement('td');name.textContent=employee.username;
-   const condition=document.createElement('td');condition.textContent=employee.active?'פעיל':'לא פעיל';
-   const actions=document.createElement('td');
+ const employees=(result.employees||[]).filter(employee=>showRemoved?Boolean(employee.removed_at):!employee.removed_at);
+ for(const employee of employees){
+  const tr=document.createElement('tr');
+  const name=document.createElement('td');name.textContent=employee.username;
+  const condition=document.createElement('td');
+  condition.textContent=employee.removed_at?'הוסר · כניסה חסומה':employee.active?'פעיל':'לא פעיל';
+  const actions=document.createElement('td');
+  if(employee.removed_at){
+   const restore=document.createElement('button');restore.type='button';
+   restore.className='tiny-btn';restore.textContent='שחזר עובד';
+   restore.onclick=()=>changeStaffRemoval(employee,'restore_removed').catch(error=>{el('employeeMessage').textContent=error.message;});
+   actions.append(restore);
+  }else{
    if(employee.owner_terminal){
     actions.textContent='חשבון בעלים · איפוס דרך מסך הכניסה';
    }else{
@@ -886,17 +895,40 @@ async function renderEmployeeList(){
     toggle.textContent=employee.active?'השבת':'הפעל';toggle.onclick=()=>editEmployee(employee,employee.active?'disable':'enable');
     const reset=document.createElement('button');reset.type='button';reset.className='tiny-btn';
     reset.textContent='שנה קוד';reset.onclick=()=>editEmployee(employee,'reset_pin');
-    const permissions=document.createElement('button');permissions.type='button';permissions.className='tiny-btn';permissions.textContent='הרשאות';permissions.onclick=()=>openEmployeePermissions(employee);
-    actions.append(toggle,reset,permissions);
+    const permissions=document.createElement('button');permissions.type='button';permissions.className='tiny-btn';
+    permissions.textContent='הרשאות';permissions.onclick=()=>openEmployeePermissions(employee);
+    const remove=document.createElement('button');remove.type='button';remove.className='tiny-btn danger';
+    remove.textContent='מחק עובד';
+    remove.onclick=()=>changeStaffRemoval(employee,'soft_remove').catch(error=>{el('employeeMessage').textContent=error.message;});
+    actions.append(toggle,reset,permissions,remove);
    }
    const link=document.createElement('button');link.type='button';link.className='tiny-btn';
    link.textContent='חשבון: '+(state.customers.find(c=>c.id===employee.linked_customer_id)?.name||'לא מקושר');
    link.onclick=()=>openEmployeeCustomerLink(employee);
-   actions.append(link);tr.append(name,condition,actions);host.append(tr);
+   actions.append(link);
+  }
+  tr.append(name,condition,actions);host.append(tr);
  }
- if(!host.childNodes.length){
-  const row=document.createElement('tr');row.innerHTML='<td colspan="3" class="empty">עדיין לא הוגדרו עובדים</td>';host.append(row);
+ if(!employees.length){
+  const row=document.createElement('tr');
+  row.innerHTML='<td colspan="3" class="empty">'+(showRemoved?'אין עובדים שהוסרו':'עדיין לא הוגדרו עובדים')+'</td>';
+  host.append(row);
  }
+}
+async function changeStaffRemoval(employee,operation){
+ if(RemotePos.employee?.is_owner!==true||employee.owner_terminal)throw new Error('מחיקת עובדים ושחזורם דורשים הרשאת בעלים');
+ const restore=operation==='restore_removed';
+ const question=restore
+  ?'לשחזר את '+employee.username+' ולאפשר לו להתחבר שוב בקוד הקיים?'
+  :'למחוק את '+employee.username+' מרשימת העובדים ולחסום את כניסתו?\\n\\nכל החיובים והזיכויים שביצע, כולל חיובים על חשבון עובד, יישמרו בארכיון. אפשר לשחזר את העובד בהמשך.';
+ if(!confirm(question.replaceAll('\\n','\n')))return;
+ const buttons=el('employeeRows').querySelectorAll('button');
+ buttons.forEach(btn=>btn.disabled=true);
+ try{
+  const result=await RemotePos.manageStaff(operation,{user_id:employee.user_id});
+  el('employeeMessage').textContent=result.message||(restore?'העובד שוחזר':'העובד הוסר');
+  await renderEmployeeList();
+ }finally{buttons.forEach(btn=>btn.disabled=false);}
 }
 function openEmployeePermissions(employee){
  if(!RemotePos.active||RemotePos.employee?.is_owner!==true||employee.owner_terminal)throw new Error('ניהול הרשאות שמור לבעלים');
@@ -1070,6 +1102,7 @@ function remoteEvents(){
  on('adminCancelBtn','click',()=>{el('adminPassword').value='';el('adminLogin').classList.add('hidden');});
  on('adminLockBtn','click',lockAdmin);
  el('employeeCreateForm').addEventListener('submit',e=>Promise.resolve(createEmployee(e)).catch(err=>{el('employeeMessage').textContent=err.message;}));
+ on('showRemovedEmployees','change',()=>renderEmployeeList().catch(error=>{el('employeeMessage').textContent=error.message;}));
  on('trialToggleBtn','click',toggleTrialMode);
  on('cloudImportFromSystemBtn','click',migrateCloud);
  on('cloudMigrateBtn','click',migrateCloud);
