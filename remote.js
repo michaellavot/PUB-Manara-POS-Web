@@ -69,11 +69,24 @@ const RemotePos={
    signal?.addEventListener('abort',cancel,{once:true});
    let response;
    try{
+     // Simple cross-origin POST: no custom headers, no credentials and a
+     // CORS-safelisted Content-Type. The endpoint is intentionally public
+     // for ACTIVE employee names only; authentication actions stay unchanged.
      response=await fetch(POS_STAFF_ENDPOINT,{
-       method:'POST',cache:'no-store',signal:controller.signal,
-       headers:{apikey:POS_PUBLISHABLE_KEY,'Content-Type':'application/json'},
+       method:'POST',mode:'cors',credentials:'omit',cache:'no-store',
+       signal:controller.signal,
+       headers:{'Content-Type':'text/plain;charset=UTF-8'},
        body:JSON.stringify({action:'list_login_users'})
      });
+     // Backward compatibility for gateways that insist on an API key;
+     // this fallback retains the previous, preflight-based request.
+     if(response.status===401||response.status===403){
+       response=await fetch(POS_STAFF_ENDPOINT,{
+         method:'POST',cache:'no-store',signal:controller.signal,
+         headers:{apikey:POS_PUBLISHABLE_KEY,'Content-Type':'application/json'},
+         body:JSON.stringify({action:'list_login_users'})
+       });
+     }
    }catch(error){
      const cancelled=signal?.aborted||controller.signal.reason==='cancelled';
      const code=cancelled?'cancelled':controller.signal.aborted?'timeout':'network';
