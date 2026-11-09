@@ -327,3 +327,70 @@ html,body{
   z-index:2;
   background:#2b2119;
 }
+
+/* V0.9.33: local display mode and desktop layout fit; touch behavior retained. */
+.device-layout-panel{width:min(430px,calc(100vw - 24px))}
+.device-layout-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}
+.device-layout-option{min-height:60px;border:1px solid #715333;background:linear-gradient(#29353c,#162128);border-radius:11px;color:#ead5b6;font-weight:700;font-size:16px;cursor:pointer}
+.device-layout-option.selected,.device-layout-option[aria-pressed="true"]{background:linear-gradient(#694622,#3c2a1c);border-color:#e6b578;color:#fff1da;box-shadow:0 0 0 1px #d9a46c66}
+#deviceLayoutCurrent{margin:8px 0 2px}
+@media (min-width:1101px){
+ html,body{height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto}
+ .app-shell{height:auto;min-height:100dvh;overflow:visible}
+ main{flex:1;min-height:0;overflow:visible;padding:12px clamp(14px,2vw,30px) 24px}
+ .page.active{height:auto;min-height:0}
+ #managePage{gap:12px}
+ #managePage .catalog-launchers{gap:12px;margin-bottom:0}
+ #managePage .catalog-launch-button{min-height:108px;gap:5px;padding:14px}
+ #managePage .catalog-launch-icon{font-size:24px}
+ #managePage .catalog-launch-button strong{font-size:20px}
+ #managePage #ownerAdminBox,#managePage #staffAdminBox,#managePage #auditPanel{flex:none;height:auto;min-height:0;margin-top:0}
+ #managePage #ownerAdminBox{padding-bottom:16px}
+ #managePage #adminPanel{height:auto;min-height:0;overflow:visible}
+ #managePage #adminPanel>.scroll-table{max-height:310px;flex:none;overflow:auto}
+ #managePage #auditPanel .audit-table{height:auto;max-height:340px;min-height:100px;flex:none;overflow:auto}
+ #managePage #employeeCreateForm{align-items:end}
+ #managePage #employeeCreateForm label{flex:0 1 220px}
+ #managePage #employeeCreateForm .field{width:100%}
+ #systemPage .system-grid>.panel{min-height:0}
+}
+/* Force a narrower presentation without changing other devices. */
+body[data-layout-mode="mobile"] .app-shell{width:min(100%,520px);max-width:520px;margin-inline:auto;height:auto;min-height:100dvh;overflow:visible}
+body[data-layout-mode="mobile"] main{overflow:visible}
+body[data-layout-mode="mobile"] .page.active{height:auto;min-height:0}
+body[data-layout-mode="mobile"] .work-grid{display:flex;flex-direction:column;min-height:0}
+body[data-layout-mode="mobile"] .work-grid>.panel{height:auto;min-height:440px;flex:none}
+body[data-layout-mode="mobile"] .product-panel{min-height:565px!important}
+body[data-layout-mode="mobile"] .category-grid,body[data-layout-mode="mobile"] .products-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+body[data-layout-mode="mobile"] .catalog-launchers{grid-template-columns:1fr}
+body[data-layout-mode="mobile"] .catalog-launch-button{min-height:95px}
+body[data-layout-mode="mobile"] .system-grid,body[data-layout-mode="mobile"] .manage-grid{grid-template-columns:1fr}
+body[data-layout-mode="mobile"] .report-controls{grid-template-columns:1fr 1fr}
+body[data-layout-mode="mobile"] .toolbar{flex-wrap:nowrap}
+body[data-layout-mode="tablet"] .app-shell{width:min(100%,960px);max-width:960px;margin-inline:auto;height:auto;min-height:100dvh;overflow:visible}
+body[data-layout-mode="tablet"] main{overflow:visible}
+body[data-layout-mode="tablet"] .page.active{height:auto;min-height:0}
+body[data-layout-mode="tablet"] .work-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,1fr);min-height:610px}
+body[data-layout-mode="tablet"] .manage-grid{grid-template-columns:1fr}
+body[data-layout-mode="tablet"] .system-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+body[data-layout-mode="tablet"] .catalog-launchers{grid-template-columns:repeat(2,minmax(0,1fr))}
+body[data-layout-mode="desktop"] .app-shell{width:100%;max-width:none;height:auto;min-height:100dvh;overflow:visible}
+body[data-layout-mode="desktop"] main{overflow:visible}
+body[data-layout-mode="desktop"] .page.active{height:auto;min-height:0}
+body[data-layout-mode="desktop"] .work-grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(305px,2fr);min-height:565px}
+body[data-layout-mode="desktop"] .manage-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+body[data-layout-mode="desktop"] .system-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+body[data-layout-mode="desktop"] .catalog-launchers{grid-template-columns:repeat(2,minmax(0,1fr))}
+body[data-layout-mode="desktop"] #managePage .catalog-launch-button{min-height:108px}
+body[data-layout-mode="desktop"] #managePage #ownerAdminBox,body[data-layout-mode="desktop"] #managePage #auditPanel{height:auto;min-height:0;flex:none}
+body[data-layout-mode="desktop"] #managePage #adminPanel>.scroll-table{max-height:310px;overflow:auto;flex:none}
+body[data-layout-mode="desktop"] #managePage #auditPanel .audit-table{max-height:340px;min-height:100px;flex:none}
+@media(max-width:700px){
+ body[data-layout-mode="tablet"] .work-grid{display:flex;flex-direction:column;min-height:0}
+ body[data-layout-mode="tablet"] .system-grid{grid-template-columns:1fr}
+ body[data-layout-mode="desktop"] .work-grid{display:flex;flex-direction:column;min-height:0}
+ body[data-layout-mode="desktop"] .system-grid,body[data-layout-mode="desktop"] .manage-grid{grid-template-columns:1fr}
+}
+@media print{
+ body[data-layout-mode="mobile"] .app-shell,body[data-layout-mode="tablet"] .app-shell{width:100%;max-width:none}
+}
