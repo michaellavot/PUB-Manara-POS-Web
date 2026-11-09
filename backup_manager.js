@@ -78,6 +78,36 @@ const BackupManager=(()=>{
   }catch(e){msg('שמירת התזמון נכשלה: '+e.message,true);}
   finally{busy=false;$('backupScheduleSaveBtn').disabled=false;}
  }
+ async function restoreSelected(){
+  if(busy||!owner())return;
+  const id=$('backupSnapshotSelect').value;
+  if(!id){msg('יש לבחור עותק לשחזור',true);return;}
+  busy=true;$('backupRestoreSnapshotBtn').disabled=true;
+  try{
+   const preview=await request('pos_backup_restore_preview_v0945',{p_id:id});
+   const time=new Date(preview.createdAt).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem'});
+   if(!confirm('שחזור מלא של העסקאות למצב מתאריך '+time+'!\n'+
+    'כרגע: '+preview.currentTransactions+' עסקאות ו-'+preview.currentItems+' שורות.\n'+
+    'בעותק: '+preview.transactionCount+' עסקאות ו-'+preview.itemCount+' שורות.\n'+
+    'כל חיוב ועריכת ארכיון שנעשו מאז העותק יוחלפו.\n'+
+    'הקופה תיצור גיבוי חדש לפני השחזור. האם להמשיך?'))return;
+   const phrase=prompt('כדי לשחזר, הקלד בדיוק: אני מאשר שחזור מלא');
+   if(phrase!=='אני מאשר שחזור מלא'){msg('השחזור בוטל. לא שונו נתונים.');return;}
+   if(!confirm('אישור סופי: האם כל הקופות הפסיקו לבצע חיובים? להתחיל שחזור כעת?'))return;
+   msg('משחזר באופן מבוקר בשרת. אין לרענן את הדף…');
+   const result=await request('pos_backup_restore_v0945',{
+    p_id:id,p_checksum:preview.checksum,p_confirmation:phrase
+   });
+   if(!result?.restored)throw new Error('תוצאת שחזור לא תקינה');
+   await RemotePos.loadAll();
+   await refresh({fromRemote:true});
+   renderPermissions();
+   await refreshBackupAfterRestore();
+   msg('השחזור הושלם: '+result.transactions+' עסקאות ו-'+result.items+' שורות. גיבוי המצב הקודם נשמר לפני השחזור.');
+  }catch(e){msg('לא ניתן לאשר שהשחזור הושלם: '+e.message+' — בדוק את הארכיון לפני ניסיון נוסף.',true);}
+  finally{busy=false;$('backupRestoreSnapshotBtn').disabled=false;}
+ }
+ async function refreshBackupAfterRestore(){await refresh();}
  function init(){
   $('backupImmediateBtn').addEventListener('click',immediate);
   $('backupSnapshotDownloadBtn').addEventListener('click',selected);
@@ -85,9 +115,7 @@ const BackupManager=(()=>{
   $('backupScheduleForm').addEventListener('submit',schedule);
   $('backupAutoFrequency').addEventListener('change',()=>$('backupAutoWeekdayLabel').classList.toggle('hidden',$('backupAutoFrequency').value!=='weekly'));
   $('backupArchiveManageBtn').addEventListener('click',()=>{$('archiveManageBtn').click();});
-  $('backupRestoreHelpBtn').addEventListener('click',()=>{
-   alert('ניתן להוריד כל עותק שמור, והוא מכיל את הנתונים הדרושים לשחזור. שחזור מלא לענן דורש פעולה מאומתת של בעל החשבון; לא מבצעים דריסה אוטומטית של עסקאות פעילות כדי למנוע אובדן מידע. שמור את קובץ הגיבוי לצורך שחזור מבוקר.');
-  });
+  $('backupRestoreSnapshotBtn').addEventListener('click',restoreSelected);
  }
  return{init,refresh};
 })();
