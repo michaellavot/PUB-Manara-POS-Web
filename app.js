@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='0.9.35';
+const APP_VERSION='0.9.36';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -359,6 +359,7 @@ function renderPermissions(){
  el('staffAdminProductsBtn').classList.toggle('hidden',!['create_products','change_prices','toggle_products'].some(canManage));
  el('staffAdminCustomersBtn').classList.toggle('hidden',!['create_customers','toggle_customers'].some(canManage));
  el('staffAdminReportsBtn').classList.toggle('hidden',!canViewFullReports());
+ el('archiveManageBtn').classList.toggle('hidden',!(ownerTerminal||limitedAdmin));
  const fullReports=canViewFullReports();
  el('reportControls').classList.toggle('hidden',!fullReports);
  el('reportAccessNote').textContent=fullReports?'כולל חיובים וזיכויים':'תנועות הקופה ב־24 השעות האחרונות בלבד';
@@ -641,6 +642,7 @@ async function migrateCloud(){
  }finally{btn.disabled=false;}
 }
 function remoteEvents(){
+ ArchiveAdmin.init();
  el('employeePermissionsForm').addEventListener('submit',saveEmployeePermissions);
  on('manageSystemPermission','change',e=>el('staffAdminEmailField').classList.toggle('hidden',!e.target.checked));
  el('staffAdminUnlockForm').addEventListener('submit',unlockStaffAdmin);
