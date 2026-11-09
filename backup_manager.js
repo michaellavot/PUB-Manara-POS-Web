@@ -12,7 +12,7 @@ const BackupManager=(()=>{
   const a=document.createElement('a');a.href=url;a.download=fileName;document.body.append(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(url),60000);
  }
- async function refresh(){
+ async function loadStatus(){
   if(!owner())return;
   try{
    const data=await request('pos_backup_status_v0945');
@@ -51,7 +51,7 @@ const BackupManager=(()=>{
    const id=await request('pos_backup_create_v0945');
    await downloadSnapshot(id);
    msg('גיבוי נוצר והורדת הקובץ הופעלה. ודא שהקובץ נמצא בתיקיית ההורדות.');
-   await refresh();
+   await loadStatus();
   }catch(e){msg('יצירת הגיבוי נכשלה: '+e.message,true);}
   finally{busy=false;$('backupImmediateBtn').disabled=false;}
  }
@@ -74,7 +74,7 @@ const BackupManager=(()=>{
     p_weekday:Number($('backupAutoWeekday').value)
    });
    msg('תזמון הגיבוי נשמר. בדיקת השרת רצה חמש דקות אחרי תחילת השעה לפי שעון ישראל.');
-   await refresh();
+   await loadStatus();
   }catch(e){msg('שמירת התזמון נכשלה: '+e.message,true);}
   finally{busy=false;$('backupScheduleSaveBtn').disabled=false;}
  }
@@ -107,15 +107,15 @@ const BackupManager=(()=>{
   }catch(e){msg('לא ניתן לאשר שהשחזור הושלם: '+e.message+' — בדוק את הארכיון לפני ניסיון נוסף.',true);}
   finally{busy=false;$('backupRestoreSnapshotBtn').disabled=false;}
  }
- async function refreshBackupAfterRestore(){await refresh();}
+ async function refreshBackupAfterRestore(){await loadStatus();}
  function init(){
   $('backupImmediateBtn').addEventListener('click',immediate);
   $('backupSnapshotDownloadBtn').addEventListener('click',selected);
-  $('backupRefreshBtn').addEventListener('click',refresh);
+  $('backupRefreshBtn').addEventListener('click',loadStatus);
   $('backupScheduleForm').addEventListener('submit',schedule);
   $('backupAutoFrequency').addEventListener('change',()=>$('backupAutoWeekdayLabel').classList.toggle('hidden',$('backupAutoFrequency').value!=='weekly'));
   $('backupArchiveManageBtn').addEventListener('click',()=>{$('archiveManageBtn').click();});
   $('backupRestoreSnapshotBtn').addEventListener('click',restoreSelected);
  }
- return{init,refresh};
+ return{init,refresh:loadStatus};
 })();
