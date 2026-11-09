@@ -425,7 +425,7 @@ function resetLockedWorkspace(message){
  el('navigationMenu').classList.add('hidden');
  el('archiveManagerModal').classList.add('hidden');
  el('employeeChargeReportModal').classList.add('hidden');
- el('catalogManagerModal').classList.add('hidden');
+ el('manageCatalogModal').classList.add('hidden');
  state.pendingImport=null;
  el('importPreview').classList.add('hidden');
  resetEmployeeSwitchForm();
@@ -831,26 +831,14 @@ async function lockAdmin(){
 }
 async function enforceShiftExpiry(){
  if(!RemotePos.session?.pos_valid_until||Date.now()<RemotePos.session.pos_valid_until)return;
+ // The login overlay locks the UI before any asynchronous server sign-out.
  el('cloudLogin').classList.remove('hidden');
- await RemotePos.signOut();
- resetLockedWorkspace('חלפו 24 שעות מתחילת המשמרת. יש להיכנס שוב בשם ובקוד.');
- return;
- // Previous expiry cleanup retained below but unreachable, for compatibility.
-
- state.switchingEmployee=false;
- state.cart=[];state.cartHistory=[];state.selectedCustomer=null;state.employeeCharge=false;state.pendingOperation=null;
- RemotePos.onChange=null;
- el('cloudUserBar').classList.add('hidden');
- el('adminLogin').classList.add('hidden');
- el('cloudGate').classList.add('hidden');
- el('adminPanel').classList.add('hidden');
- closeEmployeePermissions();
- el('trialToggleBtn').classList.add('hidden');
- el('modeBanner').classList.add('hidden');
- document.body.classList.add('staff-mode');
- el('ownerBackupPanel').classList.add('hidden');el('ownerLegacyPanel').classList.add('hidden');state.pendingImport=null;el('importPreview').classList.add('hidden');
- selectEmployee('');
- showCloudLogin('חלפו 24 שעות מתחילת המשמרת. יש להיכנס שוב בשם ובסיסמה.');
+ try{await RemotePos.signOut();}
+ finally{
+  RemotePos.stop();RemotePos.active=false;RemotePos.authenticated=false;RemotePos.session=null;RemotePos.employee=null;
+  localStorage.removeItem(POS_SESSION_KEY);
+  resetLockedWorkspace('חלפו 24 שעות מתחילת המשמרת. יש להיכנס שוב בשם ובקוד.');
+ }
 }
 async function migrateCloud(){
  const btn=el('cloudImportFromSystemBtn');btn.disabled=true;
