@@ -59,10 +59,43 @@ const RemotePos={
    localStorage.setItem(POS_SESSION_KEY,JSON.stringify(this.session));
    return this.session;
  },
- async listLoginEmployees(){
-   const data=await this.staffAction("list_login_users",{},false);
-   if(!Array.isArray(data?.employees))throw new Error("לא התקבלה רשימת עובדים תקינה");
-   return data.employees.filter(name=>typeof name==="string"&&name.length>=2);
+ async listLoginEmployees({signal}={}){
+   // Read-only public staff-name lookup; do not alter authentication or staff data.
+   // Bound each request so an unresponsive connection cannot leave the picker stuck.
+   const controller=new AbortController();
+   const timeout=setTimeout(()=>controller.abort('timeout'),9000);
+   const cancel=()=>controller.abort('cancelled');
+   if(signal?.aborted){clearTimeout(timeout);throw Object.assign(new Error('הבקשה בוטלה'),{code:'cancelled',retryable:false});}
+   signal?.addEventListener('abort',cancel,{once:true});
+   let response;
+   try{
+     response=await fetch(POS_STAFF_ENDPOINT,{
+       method:'POST',cache:'no-store',signal:controller.signal,
+       headers:{apikey:POS_PUBLISHABLE_KEY,'Content-Type':'application/json'},
+       body:JSON.stringify({action:'list_login_users'})
+     });
+   }catch(error){
+     const cancelled=signal?.aborted||controller.signal.reason==='cancelled';
+     const code=cancelled?'cancelled':controller.signal.aborted?'timeout':'network';
+     const message=code==='timeout'?'שרת העובדים לא הגיב בזמן.':code==='cancelled'?'הבקשה בוטלה.':'לא ניתן להתחבר לשרת העובדים. בדוק את חיבור האינטרנט.';
+     throw Object.assign(new Error(message),{code,retryable:!cancelled});
+   }finally{
+     clearTimeout(timeout);signal?.removeEventListener('abort',cancel);
+   }
+   let data;
+   try{data=await response.json();}
+   catch{throw Object.assign(new Error('השרת החזיר תגובה לא תקינה. נא לנסות שוב.'),{code:'invalid_response',retryable:true});}
+   if(!response.ok){
+     const retryable=response.status===408||response.status===429||response.status>=500;
+     const message=response.status===429?'שרת העובדים עמוס. נא לנסות שוב.':
+       response.status>=500?'שרת העובדים אינו זמין כרגע (שגיאה '+response.status+').':
+       response.status===401||response.status===403?'השרת דחה את בקשת רשימת העובדים (שגיאה '+response.status+').':
+       'טעינת העובדים נכשלה (שגיאה '+response.status+').';
+     throw Object.assign(new Error(message),{code:'http_'+response.status,retryable});
+   }
+   if(!Array.isArray(data?.employees))
+     throw Object.assign(new Error('לא התקבלה רשימת עובדים תקינה מהשרת.'),{code:'invalid_response',retryable:true});
+   return data.employees.filter(name=>typeof name==='string'&&name.length>=2);
  },
  async loginPin(username,pin){
    const data=await this.staffAction('login',{username,pin},false);
