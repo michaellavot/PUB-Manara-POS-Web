@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=0.9.29">
   <link rel="icon" href="assets/app_icon_192.png?v=0.9.29">
   <link rel="apple-touch-icon" href="assets/app_icon_192.png?v=0.9.29">
-  <link rel="stylesheet" href="styles.css?v=0.9.35">
+  <link rel="stylesheet" href="styles.css?v=0.9.36">
 </head>
 <body>
   <div class="app-shell">
@@ -96,10 +96,55 @@
       <div id="archiveImportPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא הארכיון ממחשב הפאב המקורי</h2></div>
         <p class="small-note" id="archiveImportNotice">העבר את הנתונים רק לאחר פתיחת הקופה במחשב הפאב המקורי. לפני ההעברה ירד קובץ גיבוי.</p>
         <button type="button" class="button primary" id="cloudImportFromSystemBtn">גבה וייבא ארכיון מהמחשב הזה</button>
-      </div><div id="ownerBackupPanel" class="panel hidden"><div class="panel-head"><h2>גיבוי ושחזור</h2></div><p id="remoteSystemNotice">העותק המקומי נשאר במכשיר. אחרי מעבר לענן, כל הקופות משתמשות במסד המשותף.</p><div class="stack-buttons"><button id="downloadBackup" class="button primary">הורד גיבוי JSON</button><label class="file-input">שחזור גיבוי מלא (מחליף נתונים) <input id="restoreFile" type="file" accept=".json,application/json"></label></div><p class="small-note">הורד גיבוי בתחילת ובסיום משמרת. אין למחוק את נתוני הדפדפן לפני סיום העברת הארכיון.</p><p id="cloudSync" class="sync-msg"></p></div><div id="ownerLegacyPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא מהקופה הישנה</h2></div><p>ייבוא CSV מהארכיון הישן או JSON שנוצר מקובץ SQLite באמצעות הכלי המצורף. חשבונות כרדיט ישנים מסוג C0001 או C-0001 אינם מיובאים.</p><label class="file-input">בחר ארכיון CSV או JSON <input id="legacyInput" type="file" accept=".csv,.json,text/csv,application/json"></label><div class="import-preview hidden" id="importPreview"></div><div id="legacyNotice" class="small-note"></div></div><div class="panel"><div class="system-meta-controls"><small id="versionLabel">V0.9.35</small><button id="updateBadge" class="update-badge hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button><span class="chip" id="storageLabel">מתחבר לשרת…</span><button id="trialToggleBtn" type="button" class="button mode-switch hidden" aria-pressed="false">ניסיון: כבוי</button><button id="installBtn" type="button" class="button install hidden">התקן אפליקציה</button></div><button type="button" id="cloudSignOut" class="button secondary system-switch-employee">החלף עובד</button><button id="installBtnSystem" class="button primary" type="button">התקן כאפליקציה</button><button id="deviceLayoutBtn" class="button secondary" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="deviceLayoutDialog">מצב תצוגה</button><div class="updater-system"><strong>עדכוני תוכנה</strong><p class="small-note">גרסה מותקנת: <span id="installedVersion">V0.9.35</span> · <span id="updateStatus">אין עדכון ידוע</span></p><button id="checkUpdatesBtn" class="button secondary" type="button">בדוק עדכונים</button></div></div></div></section>
+      </div><div id="ownerBackupPanel" class="panel hidden"><div class="panel-head"><h2>גיבוי ושחזור</h2></div><p id="remoteSystemNotice">העותק המקומי נשאר במכשיר. אחרי מעבר לענן, כל הקופות משתמשות במסד המשותף.</p><div class="stack-buttons"><button id="downloadBackup" class="button primary">הורד גיבוי JSON</button><label class="file-input">שחזור גיבוי מלא (מחליף נתונים) <input id="restoreFile" type="file" accept=".json,application/json"></label></div><p class="small-note">הורד גיבוי בתחילת ובסיום משמרת. אין למחוק את נתוני הדפדפן לפני סיום העברת הארכיון.</p><p id="cloudSync" class="sync-msg"></p></div><div id="ownerLegacyPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא מהקופה הישנה</h2></div><p>ייבוא CSV מהארכיון הישן או JSON שנוצר מקובץ SQLite באמצעות הכלי המצורף. חשבונות כרדיט ישנים מסוג C0001 או C-0001 אינם מיובאים.</p><label class="file-input">בחר ארכיון CSV או JSON <input id="legacyInput" type="file" accept=".csv,.json,text/csv,application/json"></label><div class="import-preview hidden" id="importPreview"></div><div id="legacyNotice" class="small-note"></div></div><div class="panel"><div class="system-meta-controls"><small id="versionLabel">V0.9.36</small><button id="updateBadge" class="update-badge hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button><span class="chip" id="storageLabel">מתחבר לשרת…</span><button id="trialToggleBtn" type="button" class="button mode-switch hidden" aria-pressed="false">ניסיון: כבוי</button><button id="installBtn" type="button" class="button install hidden">התקן אפליקציה</button></div><button type="button" id="cloudSignOut" class="button secondary system-switch-employee">החלף עובד</button><button id="installBtnSystem" class="button primary" type="button">התקן כאפליקציה</button><button id="deviceLayoutBtn" class="button secondary" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="deviceLayoutDialog">מצב תצוגה</button><button id="archiveManageBtn" class="button primary hidden" type="button">ניהול ארכיון</button><div class="updater-system"><strong>עדכוני תוכנה</strong><p class="small-note">גרסה מותקנת: <span id="installedVersion">V0.9.36</span> · <span id="updateStatus">אין עדכון ידוע</span></p><button id="checkUpdatesBtn" class="button secondary" type="button">בדוק עדכונים</button></div></div></div></section>
     </main>
   </div>
 
+  <div id="archiveManagerModal" class="catalog-manager-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="archiveManagerTitle" dir="rtl">
+    <div id="archiveAdminBackdrop" class="archive-admin-backdrop"></div>
+    <section class="catalog-manager-panel panel archive-admin-panel">
+      <header class="catalog-manager-header"><h2 id="archiveManagerTitle">ניהול ארכיון</h2><button type="button" id="archiveAdminClose" class="button secondary">✕ סגור</button></header>
+      <p class="small-note">כל התנועות מהקופה החדשה והארכיון הישן לאחר ייבוא. תיקונים משפיעים על הדוחות ונשמרים ביומן שינויים.</p>
+      <div class="archive-admin-toolbar">
+        <button id="archiveRefreshBtn" type="button" class="button secondary">רענן ארכיון</button>
+        <button id="archiveAuditBtn" type="button" class="button secondary">יומן עריכות</button>
+        <span id="archiveCustomerCount" class="small-note"></span>
+      </div>
+      <p id="archiveAdminMessage" class="small-note" role="status"></p>
+      <div id="archiveAuditList" class="archive-audit-list hidden"></div>
+      <div class="archive-admin-grid">
+        <div class="archive-admin-customers">
+          <label for="archiveCustomerSearch">לקוחות בארכיון</label>
+          <input id="archiveCustomerSearch" class="field" type="search" autocomplete="off" placeholder="חיפוש לפי שם לקוח">
+          <div id="archiveCustomerList" class="archive-customer-list"></div>
+          <button id="archiveLoadMoreBtn" class="button secondary hidden" type="button">טען עסקאות נוספות</button>
+        </div>
+        <div class="archive-admin-details">
+          <h3 id="archiveSelectedCustomer">בחר לקוח להצגת פירוט החיובים</h3>
+          <div id="archiveLinesList" class="archive-lines-list"></div>
+          <form id="archiveEditForm" class="archive-edit-form hidden">
+            <h3>עריכת שורת חיוב</h3>
+            <input type="hidden" name="item_id">
+            <label>תאריך ושעה<input class="field" type="datetime-local" name="created_at" required></label>
+            <label>עובד<input class="field" type="text" name="operator_name" maxlength="120"></label>
+            <label>לקוח<input class="field" type="text" name="customer_name" required maxlength="120"></label>
+            <label>משקה<input class="field" type="text" name="product_name" required maxlength="180"></label>
+            <label>סוג פעולה<select class="field" name="kind"><option value="sale">חיוב</option><option value="refund">זיכוי</option></select></label>
+            <label>כמות<input class="field" type="number" min="1" max="999" step="1" name="quantity" required></label>
+            <label>מחיר יחידה ₪<input class="field" type="number" min="0" max="1000000" step="0.01" name="unit_price" required></label>
+            <p id="archiveEditNote" class="small-note"></p>
+            <div class="archive-form-actions"><button class="button primary" type="submit">שמור תיקון</button><button id="archiveCancelEdit" class="button secondary" type="button">ביטול</button></div>
+          </form>
+        </div>
+      </div>
+      <section class="archive-db-section">
+        <h3>קובץ ארכיון מהקופה הישנה</h3>
+        <p class="small-note">אפשר לבחור קובץ pub_manara.db ולבדוק שהוא SQLite. ייבוא נתונים למסד הפעיל יופעל לאחר מיפוי טבלאות הקובץ המקורי; כרגע הבחירה אינה מייבאת ואינה משנה נתונים.</p>
+        <input class="field" id="archiveDbFile" type="file" accept=".db,.sqlite,.sqlite3,application/x-sqlite3">
+        <p id="archiveDbNotice" class="small-note" role="status"></p>
+      </section>
+    </section>
+  </div>
   <div id="updateDialog" class="update-modal hidden" role="dialog" aria-modal="true" aria-labelledby="updateDialogTitle">
     <div class="update-modal-shade"></div>
     <div class="update-modal-card" dir="rtl">
@@ -211,5 +256,5 @@
     <div id="migrationPanel"><button id="cloudMigrateBtn" class="button primary">גבה והעבר את כל הארכיון לענן</button><p class="small-note">תתבצע הורדת גיבוי לפני אישור העלאה. הייבוא יתבצע רק כשהענן ריק ובאישור המנהל.</p></div>
     <button id="cloudRetryBtn" class="button secondary" type="button">בדוק אם הארכיון כבר נמצא בענן</button><button id="cloudBackToTest" class="button secondary hidden" type="button">חזרה למצב ניסיון — ללא ייבוא</button></div>
   </div>
-  <script src="db.js"></script><script src="remote.js?v=0.9.35"></script><script src="xlsx.js"></script><script src="updater.js?v=0.9.35"></script><script src="app.js?v=0.9.35"></script>
+  <script src="db.js"></script><script src="remote.js?v=0.9.36"></script><script src="xlsx.js"></script><script src="updater.js?v=0.9.36"></script><script src="archive_admin.js?v=0.9.36"></script><script src="app.js?v=0.9.36"></script>
 </body></html>
