@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='1.0.4';
+const APP_VERSION='1.0.5';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -351,7 +351,7 @@ function events(){on('deviceLayoutBtn','click',openLayoutDialog);on('deviceLayou
  on('showInactiveProductsBtn','click',()=>{state.showInactiveProducts=!state.showInactiveProducts;state.catalogSelections.clear();renderManage();});
  on('showInactiveCustomersBtn','click',()=>{state.showInactiveCustomers=!state.showInactiveCustomers;state.catalogSelections.clear();renderManage();});
  on('refreshAuditBtn','click',async()=>{if(RemotePos.active)await refresh();});
-for(const id of ['fromDate','toDate','reportCustomer','reportType'])on(id,'change',renderReport);on('showReportBtn','click',renderReport);on('exportExcelBtn','click',downloadReportXlsx);on('exportCsvBtn','click',downloadReportCsv);on('printBtn','click',()=>{assertFullReportAccess();renderReport();window.print();});on('downloadBackup','click',async()=>{requireOwnerArchiveAccess();return downloadBlob(new Blob([JSON.stringify(RemotePos.active?{format:'manara-web-backup-v1',app:'PUB Manara POS Web',version:'0.9-cloud',exportedAt:new Date().toISOString(),stores:{customers:state.customers,products:state.products,archive:state.archive,priceHistory:state.priceHistory,settings:[]}}:await dbSnapshot(),null,2)],{type:'application/json'}),`Manara_${RemotePos.active?'cloud_':''}backup_${nowIso()}.json`);});on('restoreFile','change',async e=>{if(e.target.files[0])await restoreBackup(e.target.files[0]);e.target.value='';});on('legacyInput','change',async e=>{if(e.target.files[0])await loadLegacyFile(e.target.files[0]);});on('installBtn','click',promptInstall);on('installBtnSystem','click',promptInstall);on('updateBadge','click',showUpdateDialog);on('laterUpdateBtn','click',hideUpdateDialog);on('applyUpdateBtn','click',applySoftwareUpdate);on('checkUpdatesBtn','click',()=>checkSoftwareUpdates(true));window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();state.installPrompt=e;el('installBtn').classList.remove('hidden');});}
+for(const id of ['fromDate','toDate','reportCustomer','reportType'])on(id,'change',renderReport);on('showReportBtn','click',renderReport);on('exportExcelBtn','click',downloadReportXlsx);on('exportCsvBtn','click',downloadReportCsv);on('printBtn','click',()=>{assertFullReportAccess();renderReport();window.print();});on('downloadBackup','click',async()=>{requireOwnerArchiveAccess();return downloadBlob(new Blob([JSON.stringify(RemotePos.active?{format:'manara-web-backup-v1',app:'PUB Manara POS Web',version:'0.9-cloud',exportedAt:new Date().toISOString(),stores:{customers:state.customers,products:state.products,archive:state.archive,priceHistory:state.priceHistory,settings:[]}}:await dbSnapshot(),null,2)],{type:'application/json'}),`Manara_${RemotePos.active?'cloud_':''}backup_${nowIso()}.json`);});on('restoreFile','change',async e=>{if(e.target.files[0])await restoreBackup(e.target.files[0]);e.target.value='';});on('legacyInput','change',async e=>{if(e.target.files[0])await loadLegacyFile(e.target.files[0]);});on('installBtn','click',promptInstall);on('installBtnSystem','click',promptInstall);on('updateBadge','click',showUpdateDialog);on('laterUpdateBtn','click',hideUpdateDialog);on('updateRetryBtn','click',retryMandatoryVersionCheck);on('applyUpdateBtn','click',applySoftwareUpdate);on('checkUpdatesBtn','click',()=>checkSoftwareUpdates(true));window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();state.installPrompt=e;el('installBtn').classList.remove('hidden');});}
 
 function getDeviceId(){let id=localStorage.getItem('manara_device_id');if(!id){id=uuid();localStorage.setItem('manara_device_id',id);}return id;}
 function showCloudGate(message){el('cloudGate').classList.remove('hidden');el('cloudGateMessage').textContent=message;}
@@ -559,6 +559,10 @@ async function toggleTrialMode(){
 async function cloudAfterAuthentication(){await activateCloud();leaveCloudLogin();}
 async function loginCloud(event){
  event.preventDefault();
+ if(!softwareUpdate.verified){
+  const result=await checkSoftwareUpdates(true);
+  if(result!=='current')return;
+ }
  const btn=el('cloudLoginBtn');btn.disabled=true;
  el('cancelEmployeeSwitch').disabled=true;
  el('loginMessage').textContent='מתחבר לקופה…';
@@ -966,6 +970,15 @@ async function init(){
  el('fromDate').value=today.slice(0,8)+'01';el('toDate').value=today;
  await openDatabase();await seedFirstTime();await refresh();
  remoteEvents();
+ // Verify the installed version BEFORE restoring a session or unlocking the POS.
+ // Failure and pending updates leave the mandatory dialog blocking all operations.
+ setStartupMessage('בודק את גרסת הקופה…');
+ const versionGate=await setupSoftwareUpdater();
+ if(versionGate!=='current'){
+  showCloudLogin('יש לעדכן את התוכנה לפני פתיחת הקופה.');
+  finishStartup();
+  return;
+ }
  // Keep the startup overlay visible until an authenticated session is ready
  // or the employee login screen is ready. Never expose a partially filled POS.
  showCloudLogin('יש להתחבר כדי לעבוד על הארכיון המשותף.');
@@ -985,8 +998,6 @@ async function init(){
   if(!document.hidden)enforceShiftExpiry().catch(console.error);
  });
  finishStartup();
- if('serviceWorker' in navigator&&location.protocol!=='file:')
-  setupSoftwareUpdater().catch(console.warn);
 }
 
 init().catch(failStartup);
