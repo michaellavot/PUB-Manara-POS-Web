@@ -190,7 +190,7 @@ const RemotePos={
     const [customerRows,productRows,transactionRows,settingsRows]=await Promise.all([
       this.rows('customers','id,name,name_key,active,is_test_created'),
       this.rows('products','id,name,name_key,category,product_type,price,active,price_history,is_test_created'),
-      this.rows('transactions','id,client_operation_id,customer_name,operator_name,operator_id,employee_charge,employee_charge_user_id,kind,created_at,is_test,transaction_items!transaction_items_transaction_id_fkey(id,product_name,quantity,line_total,is_test,test_code,archived_deleted_at)','created_at.asc'),
+      this.rows('transactions','id,client_operation_id,customer_name,operator_name,operator_id,employee_charge,employee_charge_user_id,employee_charge_person_name,kind,created_at,is_test,transaction_items!transaction_items_transaction_id_fkey(id,product_name,quantity,line_total,is_test,test_code,archived_deleted_at)','created_at.asc'),
       this.request('/rest/v1/pos_settings',{query:{select:'archive_imported',id:'eq.1'}})
     ]);
     this.customers=customerRows.map(c=>({id:c.id,name:c.name,normalized:c.name_key,active:c.active,isTestCreated:c.is_test_created===true}));
@@ -203,7 +203,7 @@ const RemotePos={
       const dateIso=`${part('year')}-${part('month')}-${part('day')}`;
       const time=d.toLocaleTimeString('en-GB',{timeZone:'Asia/Jerusalem',hour12:false});
       return(tx.transaction_items||[]).filter(item=>!item.archived_deleted_at).map(item=>({
-        id:item.id,operationId:tx.client_operation_id,customer:tx.customer_name,operatorName:tx.operator_name||'',operatorId:tx.operator_id,employeeCharge:tx.employee_charge===true,employeeChargeUserId:tx.employee_charge_user_id,
+        id:item.id,operationId:tx.client_operation_id,customer:tx.customer_name,operatorName:tx.operator_name||'',operatorId:tx.operator_id,employeeCharge:tx.employee_charge===true,employeeChargeUserId:tx.employee_charge_user_id,employeeChargePerson:tx.employee_charge_person_name||'',
         customerKey:String(tx.customer_name||'').toLocaleLowerCase('he-IL').trim(),
         dateIso,time,drink:item.product_name,qty:item.quantity,price:Number(item.line_total),
         kind:tx.kind,legacyNumber:'',createdAt:tx.created_at,isTest:tx.is_test===true||item.is_test===true,testCode:item.test_code||''
@@ -272,11 +272,11 @@ const RemotePos={
       p_device_id:deviceId,p_is_test:this.testMode}
     });
  },
- async submitEmployeeCharge({operationId,kind,items,deviceId}){
-  return this.request('/rest/v1/rpc/submit_pos_employee_charge_v0938',{method:'POST',body:{
+ async submitEmployeeCharge({operationId,kind,items,deviceId,personName}){
+  return this.request('/rest/v1/rpc/submit_pos_employee_charge_v0939',{method:'POST',body:{
     p_operation_id:operationId,p_kind:kind,
     p_items:items.map(i=>({product_id:i.productId,quantity:i.qty,unit_price:i.unitPrice})),
-    p_device_id:deviceId,p_is_test:this.testMode===true}});
+    p_device_id:deviceId,p_person_name:personName,p_is_test:this.testMode===true}});
  },
  async employeeChargeReport(employeeId=null){
   return this.request('/rest/v1/rpc/pos_employee_charge_report_v0938',{method:'POST',body:{p_employee_id:employeeId}});
