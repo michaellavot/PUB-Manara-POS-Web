@@ -59,6 +59,7 @@ const ArchiveAdmin=(()=>{
     const details=add('div',undefined,'archive-line-details');
     details.append(add('strong',li.product_name+' · '+li.quantity+' × '+Number(li.unit_price).toLocaleString('he-IL')+' ₪'));
     details.append(add('small',readableDate(tx.created_at)+' · '+(tx.operator_name||'—')+' · '+(tx.kind==='refund'?'זיכוי':'חיוב')+' · '+Number(li.line_total).toLocaleString('he-IL')+' ₪'));
+    if(tx.employee_charge)details.append(add('small','חיוב עובד — עבור '+(tx.employee_charge_person_name||'ללא שם (חיוב ישן)'),'archive-employee-person'));
     if(li.archived_deleted_at)details.append(add('small','שורה מבוטלת — לא נכללת בדוחות','archive-deleted-note'));
     const actions=add('div',undefined,'archive-line-actions');
     const edit=add('button','ערוך','button secondary archive-small-btn');
