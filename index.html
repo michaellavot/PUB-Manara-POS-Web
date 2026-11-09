@@ -29,6 +29,18 @@
   <div id="startupScreen" role="status" aria-live="polite">
     <div class="startup-content"><h2>PUB MANARA POS</h2><div class="startup-spinner" aria-hidden="true"></div><p id="startupScreenMessage">מכין את הקופה לעבודה…</p><button id="startupRetryBtn" class="startup-retry" type="button" onclick="location.reload()">נסה שוב</button></div>
   </div>
+  <script>
+    // Even if a script or the network stalls, the login-protected UI remains hidden.
+    // Give the user a safe reload action without exposing the unfinished POS.
+    setTimeout(function(){
+      var screen=document.getElementById('startupScreen');
+      if(screen&&!screen.hidden){
+        screen.classList.add('is-error');
+        var message=document.getElementById('startupScreenMessage');
+        if(message)message.textContent='הטעינה נמשכת זמן רב מהרגיל. אפשר לנסות לפתוח את הקופה מחדש.';
+      }
+    },25000);
+  </script>
   <div class="app-shell">
     <header class="hero" aria-label="PUB Manara POS"><img src="assets/main_logo.gif" alt="PUB Manara POS" /></header>
     
