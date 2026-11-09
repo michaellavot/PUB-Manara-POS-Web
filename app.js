@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='1.0.0';
+const APP_VERSION='1.0.1';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -421,8 +421,9 @@ function renderPermissions(){
  el('sqliteImportPanel').classList.toggle('hidden',!(ownerTerminal&&!RemotePos.isImported));
  const fullReports=canViewFullReports();
  el('reportControls').classList.toggle('hidden',!fullReports);
- el('employeeChargeReportPanel').classList.toggle('hidden',!RemotePos.authenticated);
- el('reportAccessNote').textContent=fullReports?'כולל חיובים וזיכויים':'תנועות הקופה ב־24 השעות האחרונות; חיובי העובד זמינים למטה';
+ el('employeeChargeReportOpen').classList.toggle('hidden',!RemotePos.active||!RemotePos.authenticated);
+ if(!RemotePos.active||!RemotePos.authenticated)closeEmployeeChargeReport(false);
+ el('reportAccessNote').textContent=fullReports?'כולל חיובים וזיכויים':'תנועות הקופה ב־24 השעות האחרונות; דוח חיובי עובד זמין בכפתור נפרד';
  el('reportSummary').classList.toggle('hidden',!fullReports);
  for(const id of ['fromDate','toDate','reportCustomer','reportType','exportExcelBtn','exportCsvBtn','printBtn'])el(id).disabled=!fullReports;
  if(!fullReports){el('reportType').value='movements';}
@@ -612,6 +613,24 @@ async function saveEmployeeCustomerLink(e){
   el('employeeMessage').textContent='חשבון העובד עודכן. חיובים קודמים לא שונו.';
  }catch(err){el('employeeLinkMessage').textContent=err.message;}
  finally{button.disabled=false;}
+}
+function openEmployeeChargeReport(){
+ if(!RemotePos.active||!RemotePos.authenticated)return;
+ const modal=el('employeeChargeReportModal');
+ modal.classList.remove('hidden');
+ el('employeeChargeReportOpen').setAttribute('aria-expanded','true');
+ document.body.classList.add('employee-charge-report-open');
+ el('employeeChargeReportClose').focus();
+ fillEmployeeChargeReportOptions();
+ renderEmployeeChargeReport();
+}
+function closeEmployeeChargeReport(restoreFocus=true){
+ const modal=el('employeeChargeReportModal');
+ if(!modal||modal.classList.contains('hidden'))return;
+ modal.classList.add('hidden');
+ document.body.classList.remove('employee-charge-report-open');
+ el('employeeChargeReportOpen').setAttribute('aria-expanded','false');
+ if(restoreFocus&&!el('employeeChargeReportOpen').classList.contains('hidden'))el('employeeChargeReportOpen').focus();
 }
 async function renderEmployeeChargeReport(){
  if(!RemotePos.active||!RemotePos.authenticated)return;
@@ -811,6 +830,19 @@ function remoteEvents(){
  on('employeeChargeNameClose','click',closeEmployeeChargeName);
  on('employeeChargeNameBackdrop','click',closeEmployeeChargeName);
  el('employeeChargeNameForm').addEventListener('submit',confirmEmployeeChargeName);
+ on('employeeChargeReportOpen','click',openEmployeeChargeReport);
+ on('employeeChargeReportClose','click',()=>closeEmployeeChargeReport());
+ on('employeeChargeReportBackdrop','click',()=>closeEmployeeChargeReport());
+ on('employeeChargeReportModal','keydown',event=>{
+  if(event.key==='Escape'){event.preventDefault();closeEmployeeChargeReport();}
+  if(event.key==='Tab'){
+   const all=[...el('employeeChargeReportModal').querySelectorAll('button:not([disabled]):not(.hidden),select:not([disabled]):not(.hidden)')];
+   if(!all.length)return;
+   const first=all[0],last=all[all.length-1];
+   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  }
+ });
  on('employeeChargeReportRefresh','click',()=>renderEmployeeChargeReport());
  on('employeeChargeReportEmployee','change',()=>{el('employeeChargePersonFilter').value='';renderEmployeeChargeReport();});
  on('employeeChargePersonFilter','change',()=>renderEmployeeChargeReport());
