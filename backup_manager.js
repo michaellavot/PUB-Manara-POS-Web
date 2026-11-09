@@ -1,5 +1,5 @@
 'use strict';
-/* V0.9.45 owner-controlled cloud snapshots and scheduled server backup UI. */
+/* V1.0.0 owner-controlled cloud snapshots and scheduled server backup UI. */
 const BackupManager=(()=>{
  const $=id=>document.getElementById(id);
  let busy=false;
