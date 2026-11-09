@@ -531,7 +531,9 @@ function renderPermissions(){
  renderAudit();
 }
 async function activateCloud(){
- state.employeeCharge=false;state.employeeChargePerson='';
+ // Do not carry the previous operator's unsent bill into a new session.
+ state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;
+ state.pendingOperation=null;state.employeeCharge=false;state.employeeChargePerson='';
  await RemotePos.start();
  await refresh({remoteAlreadyLoaded:true});
  recoverUnsentBill();
