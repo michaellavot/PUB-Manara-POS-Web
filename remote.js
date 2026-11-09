@@ -329,18 +329,91 @@ const RemotePos={
     this.isImported=data?.[0]?.archive_imported===true;
     return {hasData:this.isImported,archiveImported:this.isImported};
  },
- async start(){await this.loadAll();this.stop();this.watchRealtime();this.poll=setInterval(()=>{if(navigator.onLine&&this.active)this.refreshQuietly();},12000);window.addEventListener('online',this._online=()=>{this.refreshQuietly();this.watchRealtime();});},
- async refreshQuietly(){if(this.loading||!this.active)return;this.loading=true;try{await this.authorize();await this.loadAll();if(this.onChange)await this.onChange();this.setStatus('מסונכרן עם כל הקופות','success');}catch(e){this.setStatus('לא ניתן לסנכרן: '+e.message,'error');}finally{this.loading=false;}},
- watchRealtime(){
-   if(!navigator.onLine||!this.session?.access_token||this.socket&&this.socket.readyState<2)return;
-   const url=`${POS_CLOUD_URL.replace('https','wss')}/realtime/v1/websocket?apikey=${encodeURIComponent(POS_PUBLISHABLE_KEY)}&vsn=1.0.0`;
-   try{const ws=new WebSocket(url);this.socket=ws;let joined=false;
-     ws.onopen=()=>{const ref=String(++this.seq);ws.send(JSON.stringify({topic:'realtime:manara-pos',event:'phx_join',payload:{config:{broadcast:{self:false},presence:{key:''},postgres_changes:['customers','products','transactions','transaction_items','pos_audit_log','pos_settings'].map(table=>({event:'*',schema:'public',table}))},access_token:this.session.access_token},ref,join_ref:ref}));};
-     ws.onmessage=e=>{let msg;try{msg=JSON.parse(e.data);}catch{return;}if(msg.event==='phx_reply'&&msg.payload?.status==='ok')joined=true;if(msg.event==='postgres_changes'&&joined){clearTimeout(this._debounce);this._debounce=setTimeout(()=>this.refreshQuietly(),300);}};
-     ws.onclose=()=>{this.socket=null;this.setStatus('Realtime מנותק — סנכרון מחזורי פעיל','');clearTimeout(this.reconnect);if(this.active)this.reconnect=setTimeout(()=>this.watchRealtime(),6000);};
-     ws.onerror=()=>{try{ws.close();}catch{}};
-     clearInterval(this.heartbeat);this.heartbeat=setInterval(()=>{if(ws.readyState===1){const ref=String(++this.seq);ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref}));}},25000);
-   }catch{this.setStatus('סנכרון מחזורי פעיל','');}
+ async start(){
+  this.stop();await this.loadAll();this.watchRealtime();
+  // Reconcile occasionally to recover missed websocket events; never pull full archive every 12 seconds.
+  this.poll=setInterval(()=>{
+   if(!navigator.onLine||!this.active||document.hidden)return;
+   const elapsed=Date.now()-this._lastFullSync;
+   const interval=this._realtimeConnected?15*60*1000:2*60*1000;
+   if(elapsed>=interval)this.refreshQuietly();
+  },30000);
+  this._online=()=>{this.watchRealtime();this.refreshQuietly();};
+  window.addEventListener('online',this._online);
+  this._visible=()=>{if(!document.hidden&&navigator.onLine&&this.active&&Date.now()-this._lastFullSync>2*60*1000)this.refreshQuietly();};
+  document.addEventListener('visibilitychange',this._visible);
  },
- stop(){if(this.poll){clearInterval(this.poll);this.poll=null;}clearInterval(this.heartbeat);clearTimeout(this.reconnect);clearTimeout(this._debounce);if(this.socket){const s=this.socket;this.socket=null;try{s.onclose=null;s.close();}catch{}}if(this._online)window.removeEventListener('online',this._online);}
+ async refreshQuietly(changes=null){
+  if(!this.active||!this.authenticated)return;
+  if(Array.isArray(changes))this._pendingChanges.push(...changes);
+  else this._retrySync=true;
+  if(this.loading)return;
+  this.loading=true;
+  try{
+   while(this._retrySync||this._pendingChanges.length){
+    const full=this._retrySync;
+    const batch=this._pendingChanges.splice(0);
+    this._retrySync=false;
+    let sections;
+    if(full){
+     await this.authorize();
+     await this.loadAll();
+     sections=['all'];
+    }else{
+     sections=await this.syncChanged(batch);
+    }
+    if(this.onChange)await this.onChange(sections);
+    this.setStatus('מסונכרן עם כל הקופות','success');
+   }
+  }catch(error){
+   // A full reconciliation is safer than dropping an event when a network request fails.
+   this._retrySync=true;
+   this.setStatus('הסנכרון ינסה שוב: '+error.message,'error');
+  }finally{this.loading=false;}
+ },
+ watchRealtime(){
+  if(!navigator.onLine||!this.session?.access_token||this.socket&&this.socket.readyState<2)return;
+  const url=`${POS_CLOUD_URL.replace('https','wss')}/realtime/v1/websocket?apikey=${encodeURIComponent(POS_PUBLISHABLE_KEY)}&vsn=1.0.0`;
+  try{
+   const ws=new WebSocket(url);this.socket=ws;this._realtimeConnected=false;let joined=false;
+   ws.onopen=()=>{
+    const ref=String(++this.seq);
+    ws.send(JSON.stringify({topic:'realtime:manara-pos',event:'phx_join',
+     payload:{config:{broadcast:{self:false},presence:{key:''},postgres_changes:['customers','products','transactions','transaction_items','pos_audit_log','pos_settings'].map(table=>({event:'*',schema:'public',table}))},access_token:this.session.access_token},ref,join_ref:ref}));
+   };
+   ws.onmessage=e=>{
+    let msg;try{msg=JSON.parse(e.data);}catch{return;}
+    if(msg.event==='phx_reply'&&msg.topic==='realtime:manara-pos'){
+     joined=msg.payload?.status==='ok';this._realtimeConnected=joined;
+     if(!joined)this.setStatus('Realtime לא התחבר — בדיקת גיבוי מחזורית פעילה','');
+    }
+    if(msg.event==='postgres_changes'&&joined){
+     const data=msg.payload?.data||{},change={table:data.table,type:data.type,record:data.record,old_record:data.old_record};
+     if(!['customers','products','transactions','transaction_items','pos_audit_log','pos_settings'].includes(change.table)){
+      this._retrySync=true;return;
+     }
+     this._pendingChanges.push(change);
+     clearTimeout(this._debounce);
+     this._debounce=setTimeout(()=>{
+      const updates=this._pendingChanges.splice(0);
+      this.refreshQuietly(updates);
+     },450);
+    }
+   };
+   ws.onclose=()=>{
+    if(this.socket===ws)this.socket=null;
+    this._realtimeConnected=false;
+    this.setStatus('Realtime מנותק — בדיקת גיבוי מחזורית פעילה','');
+    clearTimeout(this.reconnect);
+    if(this.active)this.reconnect=setTimeout(()=>this.watchRealtime(),6000);
+   };
+   ws.onerror=()=>{try{ws.close();}catch{}};
+   clearInterval(this.heartbeat);
+   this.heartbeat=setInterval(()=>{
+    if(ws.readyState===1){const ref=String(++this.seq);ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref}));}
+   },25000);
+  }catch{this._realtimeConnected=false;this.setStatus('בדיקת גיבוי מחזורית פעילה','');}
+ },
+
+ stop(){if(this.poll){clearInterval(this.poll);this.poll=null;}clearInterval(this.heartbeat);clearTimeout(this.reconnect);clearTimeout(this._debounce);if(this.socket){const s=this.socket;this.socket=null;try{s.onclose=null;s.close();}catch{}}if(this._online)window.removeEventListener('online',this._online);if(this._visible)document.removeEventListener('visibilitychange',this._visible);this._pendingChanges=[];this._retrySync=false;this._realtimeConnected=false;}
 };
