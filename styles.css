@@ -588,3 +588,10 @@ body[data-layout-mode="desktop"] #managePage #auditPanel .audit-table{max-height
  height:min(42px,85%);width:clamp(35px,9%,52px);
  object-fit:contain;pointer-events:none;z-index:1;
 }
+
+/* V0.9.43: preview grid for manual SQLite import. */
+.sqlite-import-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:8px;margin-top:12px}
+.sqlite-import-details p{margin:0;border:1px solid #58422c;background:#17232b;border-radius:9px;padding:10px;overflow-wrap:anywhere}
+#sqliteImportMessage.error{color:#f7a89e}
+#sqliteImportPanel .stack-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#sqliteImportPanel .stack-buttons .button{min-height:44px}
