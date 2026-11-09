@@ -676,6 +676,8 @@ function closeQrShareDialog(){
  activeQrShareUrl='';
  el('qrShareModal').classList.add('hidden');
  el('qrShareCode').replaceChildren();
+ el('qrShareLink').textContent='';
+ el('qrShareMeta').textContent='';
 }
 async function copyQrShareUrl(){
  if(!activeQrShareUrl)return;
@@ -690,6 +692,7 @@ async function createCustomerReportQr(){
  if(!customer||!from||!to||from>to){message.textContent='בחר לקוח מסוים וטווח תאריכים תקין לפני יצירת QR.';return;}
  btn.disabled=true;message.textContent='מכין צילום מצב של דוח הלקוח בענן…';
  try{
+  if(RemotePos.session&&RemotePos.session.expires_at-Date.now()<75000)await RemotePos.refreshSession();
   const response=await RemotePos.staffAction('create_customer_share',{customer,from,to});
   if(!response?.token||!/^[0-9a-f]{64}$/.test(response.token))throw new Error('השרת לא החזיר קישור תקין');
   const url=POS_APP_SHARE_URL+'share.html#'+response.token;
