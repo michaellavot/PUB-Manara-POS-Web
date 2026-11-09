@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+<title>דוח תנועות לקוח · PUB Manara</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;padding:clamp(12px,3vw,32px);background:#091218;color:#f5e5ca;font:16px Arial,"Segoe UI",sans-serif}
+main{max-width:980px;margin:auto}header,section{border:1px solid #856038;background:#17252b;border-radius:13px;padding:18px;margin-bottom:16px}
+h1{font-size:clamp(21px,4vw,30px);margin:0 0 8px}h2{font-size:20px}
+small,p{color:#d7c2a4;line-height:1.6}
+.summary{display:flex;gap:18px;flex-wrap:wrap;align-items:center}.summary strong{color:#ffe3ae}
+.table-scroll{overflow-x:auto;max-height:70vh;overflow-y:auto}
+table{border-collapse:collapse;width:100%;min-width:680px}th,td{padding:9px 8px;border-bottom:1px solid #3c4444;text-align:right;white-space:nowrap;font-size:14px}
+th{background:#302b24;color:#f8dfba;position:sticky;top:0}tr:nth-child(even){background:#1f2b31}
+#error{color:#ffc7a6}a{color:#edc590}
+</style>
+</head>
+<body><main>
+<header><h1>MANARA PUB · דוח תנועות לקוח</h1><p>צילום מצב לקריאה בלבד. הקישור תקף לשבעה ימים מיצירת הדוח.</p></header>
+<section id="loading" role="status">טוען את הדוח המאובטח…</section>
+<section id="report" hidden>
+<h2 id="customer"></h2><p id="period"></p>
+<div class="summary"><span>מספר תנועות: <strong id="count"></strong></span><span>סה״כ נטו: <strong id="total"></strong></span></div>
+<p id="expiry"></p>
+<div class="table-scroll"><table><thead><tr><th>תאריך</th><th>שעה</th><th>עובד</th><th>משקה</th><th>סוג</th><th>כמות</th><th>מחיר יחידה</th><th>סכום</th></tr></thead><tbody id="body"></tbody></table></div>
+</section><section id="error" hidden role="alert"></section>
+<p><a href="./">פתיחת אפליקציית PUB Manara POS</a></p>
+</main>
+<script>
+'use strict';
+const endpoint='https://vvrilytybmrutxzeknab.supabase.co/functions/v1/pos-staff-auth';
+const byId=id=>document.getElementById(id);
+function shekel(value){return Number(value||0).toLocaleString('he-IL',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₪';}
+async function main(){
+ const token=location.hash.slice(1);
+ if(!/^[0-9a-f]{64}$/.test(token))throw Error('קישור הדוח אינו תקין.');
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+ let response;
+ try{response=await fetch(endpoint,{method:'POST',mode:'cors',credentials:'omit',cache:'no-store',signal:controller.signal,headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({action:'get_customer_share',token})});}
+ finally{clearTimeout(timer);}
+ const payload=await response.json().catch(()=>({}));
+ if(!response.ok||!payload.report)throw Error(payload.error||'הדוח אינו זמין או שתוקפו פג.');
+ const data=payload.report;
+ byId('customer').textContent='לקוח: '+data.customer;
+ byId('period').textContent='טווח תאריכים: '+data.from+' עד '+data.to;
+ byId('count').textContent=String(data.count??data.rows.length);
+ byId('total').textContent=shekel(data.total);
+ byId('expiry').textContent='תוקף הקישור: '+new Date(payload.expires_at).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem'});
+ const tbody=byId('body');tbody.replaceChildren();
+ for(const row of data.rows||[]){
+  const tr=document.createElement('tr');
+  for(const value of [row.date,row.time,row.operator,row.drink,row.kind,row.quantity,shekel(row.price),shekel(row.total)]){
+   const td=document.createElement('td');td.textContent=String(value??'');tr.append(td);
+  }
+  tbody.append(tr);
+ }
+ byId('report').hidden=false;
+}
+main().catch(e=>{byId('error').hidden=false;byId('error').textContent=e.name==='AbortError'?'השרת לא הגיב בזמן. נסה לפתוח את הקישור מחדש.':e.message;}).finally(()=>{byId('loading').hidden=true;});
+</script>
+</body></html>
