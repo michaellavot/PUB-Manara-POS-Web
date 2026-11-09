@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=0.9.29">
   <link rel="icon" href="assets/app_icon_192.png?v=0.9.29">
   <link rel="apple-touch-icon" href="assets/app_icon_192.png?v=0.9.29">
-  <link rel="stylesheet" href="styles.css?v=0.9.44">
+  <link rel="stylesheet" href="styles.css?v=0.9.45">
 </head>
 <body>
   <div class="app-shell">
@@ -100,6 +100,51 @@
   <div class="scroll-table employee-charge-report-table"><table class="data-table"><thead><tr><th>תאריך</th><th>עובד</th><th>עבור מי</th><th>לקוח מקושר</th><th>משקה</th><th>כמות</th><th>סכום</th><th>סוג</th></tr></thead><tbody id="employeeChargeReportBody"></tbody></table></div>
  </section></div></section>
       <section id="systemPage" class="page"><div class="system-grid">
+ <section id="newSystemDashboard" class="panel hidden" aria-label="ניהול וגיבוי">
+  <div class="panel-head"><h2>ניהול וגיבוי הקופה</h2></div>
+  <div class="pos-simple-system-grid">
+   <section class="pos-simple-system-section">
+    <h3>עריכת ארכיון</h3>
+    <p class="small-note">חיפוש חיובים, שינוי מוצר, כמות, מחיר, תאריך ולקוח. מחיקה מבטלת שורה בדוחות וניתנת לשחזור.</p>
+    <button id="backupArchiveManageBtn" class="button primary" type="button">פתח עריכת ארכיון</button>
+   </section>
+   <section id="backupOwnerControls" class="pos-simple-system-section hidden">
+    <h3>גיבוי מיידי</h3>
+    <p class="small-note">יוצר גיבוי חדש בענן וגם מוריד עותק JSON למחשב שלך.</p>
+    <button id="backupImmediateBtn" class="button primary" type="button">גבה עכשיו והורד קובץ</button>
+    <p id="backupLastSummary" class="small-note">ממתין לרשימת גיבויים…</p>
+   </section>
+   <section id="backupAutoSection" class="pos-simple-system-section hidden">
+    <h3>גיבוי אוטומטי</h3>
+    <p class="small-note">גיבוי מתוזמן בשרת, גם כשהקופה סגורה. נשמרים עד 30 עותקים אוטומטיים.</p>
+    <form id="backupScheduleForm" class="pos-backup-schedule">
+     <label class="pos-backup-toggle"><input id="backupAutoEnabled" type="checkbox" checked>גיבוי אוטומטי פעיל</label>
+     <label>תדירות
+      <select id="backupAutoFrequency" class="field"><option value="daily">כל יום</option><option value="weekly">פעם בשבוע</option></select>
+     </label>
+     <label>שעה (ישראל)
+      <select id="backupAutoHour" class="field"><option value="0" >00:05</option><option value="1" >01:05</option><option value="2" >02:05</option><option value="3" selected>03:05</option><option value="4" >04:05</option><option value="5" >05:05</option><option value="6" >06:05</option><option value="7" >07:05</option><option value="8" >08:05</option><option value="9" >09:05</option><option value="10" >10:05</option><option value="11" >11:05</option><option value="12" >12:05</option><option value="13" >13:05</option><option value="14" >14:05</option><option value="15" >15:05</option><option value="16" >16:05</option><option value="17" >17:05</option><option value="18" >18:05</option><option value="19" >19:05</option><option value="20" >20:05</option><option value="21" >21:05</option><option value="22" >22:05</option><option value="23" >23:05</option></select>
+     </label>
+     <label id="backupAutoWeekdayLabel" class="hidden">יום בשבוע
+      <select id="backupAutoWeekday" class="field"><option value="0">ראשון</option><option value="1">שני</option><option value="2">שלישי</option><option value="3">רביעי</option><option value="4">חמישי</option><option value="5">שישי</option><option value="6">שבת</option></select>
+     </label>
+     <button id="backupScheduleSaveBtn" class="button primary" type="submit">שמור תזמון</button>
+    </form>
+   </section>
+   <section id="backupHistorySection" class="pos-simple-system-section hidden">
+    <h3>עותקים שמורים ושחזור</h3>
+    <p class="small-note">בחר צילום גיבוי להורדה או לשחזור מאומת. שחזור מחליף עסקאות ושומר עותק של המצב הקודם.</p>
+    <select id="backupSnapshotSelect" class="field" aria-label="בחר צילום גיבוי"></select>
+    <div class="pos-backup-actions">
+     <button id="backupSnapshotDownloadBtn" class="button secondary" type="button" disabled>הורד עותק</button>
+     <button id="backupRefreshBtn" class="button secondary" type="button">רענן רשימה</button>
+     <button id="backupRestoreSnapshotBtn" class="button warning" type="button">שחזר גיבוי</button>
+    </div>
+    <p class="small-note">העותקים המתוזמנים נשמרים בתוך Supabase. להיערכות לאובדן מלא של מסד הנתונים, חשוב גם להוריד עותק למחשב.</p>
+   </section>
+  </div>
+  <p id="backupManagerMessage" class="small-note" role="status"></p>
+ </section>
       <div id="sqliteImportPanel" class="panel hidden">
  <div class="panel-head"><h2>ייבוא ידני של pub_manara.db (SQLite)</h2></div>
  <p class="small-note">ללא לקוחות או חיובי כרדיט. תחילה בוחרים קובץ ומקבלים תצוגה מקדימה. רק בעל החשבון יכול לאשר ייבוא; לפניו יופק גיבוי ענן.</p>
@@ -115,7 +160,7 @@
  <div id="archiveImportPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא הארכיון ממחשב הפאב המקורי</h2></div>
         <p class="small-note" id="archiveImportNotice">העבר את הנתונים רק לאחר פתיחת הקופה במחשב הפאב המקורי. לפני ההעברה ירד קובץ גיבוי.</p>
         <button type="button" class="button primary" id="cloudImportFromSystemBtn">גבה וייבא ארכיון מהמחשב הזה</button>
-      </div><div id="ownerBackupPanel" class="panel hidden"><div class="panel-head"><h2>גיבוי ושחזור</h2></div><p id="remoteSystemNotice">העותק המקומי נשאר במכשיר. אחרי מעבר לענן, כל הקופות משתמשות במסד המשותף.</p><div class="stack-buttons"><button id="downloadBackup" class="button primary">הורד גיבוי JSON</button><label class="file-input">שחזור גיבוי מלא (מחליף נתונים) <input id="restoreFile" type="file" accept=".json,application/json"></label></div><p class="small-note">הורד גיבוי בתחילת ובסיום משמרת. אין למחוק את נתוני הדפדפן לפני סיום העברת הארכיון.</p><p id="cloudSync" class="sync-msg"></p></div><div id="ownerLegacyPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא מהקופה הישנה</h2></div><p>ייבוא CSV מהארכיון הישן או JSON שנוצר מקובץ SQLite באמצעות הכלי המצורף. חשבונות כרדיט ישנים מסוג C0001 או C-0001 אינם מיובאים.</p><label class="file-input">בחר ארכיון CSV או JSON <input id="legacyInput" type="file" accept=".csv,.json,text/csv,application/json"></label><div class="import-preview hidden" id="importPreview"></div><div id="legacyNotice" class="small-note"></div></div><div class="panel"><div class="system-meta-controls"><small id="versionLabel">V0.9.44</small><button id="updateBadge" class="update-badge hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button><span class="chip" id="storageLabel">מתחבר לשרת…</span><button id="trialToggleBtn" type="button" class="button mode-switch hidden" aria-pressed="false">ניסיון: כבוי</button><button id="installBtn" type="button" class="button install hidden">התקן אפליקציה</button></div><button type="button" id="cloudSignOut" class="button secondary system-switch-employee">החלף עובד</button><button id="installBtnSystem" class="button primary" type="button">התקן כאפליקציה</button><button id="deviceLayoutBtn" class="button secondary" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="deviceLayoutDialog">מצב תצוגה</button><button id="archiveManageBtn" class="button primary hidden" type="button">ניהול ארכיון</button><div class="updater-system"><strong>עדכוני תוכנה</strong><p class="small-note">גרסה מותקנת: <span id="installedVersion">V0.9.44</span> · <span id="updateStatus">אין עדכון ידוע</span></p><button id="checkUpdatesBtn" class="button secondary" type="button">בדוק עדכונים</button></div></div></div></section>
+      </div><div id="ownerBackupPanel" class="panel hidden"><div class="panel-head"><h2>גיבוי ושחזור</h2></div><p id="remoteSystemNotice">העותק המקומי נשאר במכשיר. אחרי מעבר לענן, כל הקופות משתמשות במסד המשותף.</p><div class="stack-buttons"><button id="downloadBackup" class="button primary">הורד גיבוי JSON</button><label class="file-input">שחזור גיבוי מלא (מחליף נתונים) <input id="restoreFile" type="file" accept=".json,application/json"></label></div><p class="small-note">הורד גיבוי בתחילת ובסיום משמרת. אין למחוק את נתוני הדפדפן לפני סיום העברת הארכיון.</p><p id="cloudSync" class="sync-msg"></p></div><div id="ownerLegacyPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא מהקופה הישנה</h2></div><p>ייבוא CSV מהארכיון הישן או JSON שנוצר מקובץ SQLite באמצעות הכלי המצורף. חשבונות כרדיט ישנים מסוג C0001 או C-0001 אינם מיובאים.</p><label class="file-input">בחר ארכיון CSV או JSON <input id="legacyInput" type="file" accept=".csv,.json,text/csv,application/json"></label><div class="import-preview hidden" id="importPreview"></div><div id="legacyNotice" class="small-note"></div></div><div class="panel"><div class="system-meta-controls"><small id="versionLabel">V0.9.45</small><button id="updateBadge" class="update-badge hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button><span class="chip" id="storageLabel">מתחבר לשרת…</span><button id="trialToggleBtn" type="button" class="button mode-switch hidden" aria-pressed="false">ניסיון: כבוי</button><button id="installBtn" type="button" class="button install hidden">התקן אפליקציה</button></div><button type="button" id="cloudSignOut" class="button secondary system-switch-employee">החלף עובד</button><button id="installBtnSystem" class="button primary" type="button">התקן כאפליקציה</button><button id="deviceLayoutBtn" class="button secondary" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="deviceLayoutDialog">מצב תצוגה</button><button id="archiveManageBtn" class="button primary hidden" type="button">ניהול ארכיון</button><div class="updater-system"><strong>עדכוני תוכנה</strong><p class="small-note">גרסה מותקנת: <span id="installedVersion">V0.9.45</span> · <span id="updateStatus">אין עדכון ידוע</span></p><button id="checkUpdatesBtn" class="button secondary" type="button">בדוק עדכונים</button></div></div></div></section>
     </main>
   </div>
 
@@ -295,6 +340,7 @@
     <div id="migrationPanel"><button id="cloudMigrateBtn" class="button primary">גבה והעבר את כל הארכיון לענן</button><p class="small-note">תתבצע הורדת גיבוי לפני אישור העלאה. הייבוא יתבצע רק כשהענן ריק ובאישור המנהל.</p></div>
     <button id="cloudRetryBtn" class="button secondary" type="button">בדוק אם הארכיון כבר נמצא בענן</button><button id="cloudBackToTest" class="button secondary hidden" type="button">חזרה למצב ניסיון — ללא ייבוא</button></div>
   </div>
-  <script src="db.js"></script><script src="remote.js?v=0.9.44"></script><script src="xlsx.js"></script><script src="updater.js?v=0.9.44"></script><script src="archive_admin.js?v=0.9.44"></script><script src="legacy_db_import.js?v=0.9.44"></script>
-<script src="app.js?v=0.9.44"></script>
+  <script src="db.js"></script><script src="remote.js?v=0.9.45"></script><script src="xlsx.js"></script><script src="updater.js?v=0.9.45"></script><script src="archive_admin.js?v=0.9.45"></script><script src="legacy_db_import.js?v=0.9.45"></script>
+<script src="backup_manager.js?v=0.9.45"></script>
+<script src="app.js?v=0.9.45"></script>
 </body></html>
