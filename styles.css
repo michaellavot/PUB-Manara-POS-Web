@@ -699,3 +699,23 @@ body[data-layout-mode="desktop"] #managePage #auditPanel .audit-table{max-height
 #updateDialog.update-modal{z-index:4500}
 #updateDialog .update-modal-actions{grid-template-columns:1fr}
 #updateDialog .update-modal-actions .button.hidden{display:none!important}
+
+/* V1.0.7 — compact staff creation fields in every display mode.
+   Override .inline-form .field flex-basis:115px, which stretched fields vertically. */
+#employeeCreateForm #employeeCreateName,
+#employeeCreateForm #employeeCreatePin,
+#employeeCreateForm #employeeCreateCustomer{
+  box-sizing:border-box;
+  height:42px;
+  min-height:42px;
+  max-height:42px;
+  flex:0 0 42px;
+}
+#employeeCreateForm button[type="submit"]{
+  box-sizing:border-box;
+  height:42px;
+  min-height:42px;
+  max-height:42px;
+  flex:0 0 auto;
+  align-self:flex-end;
+}
