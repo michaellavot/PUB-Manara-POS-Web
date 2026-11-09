@@ -1,8 +1,8 @@
-/* PUB Manara POS Web V1.0.7 — network-first, safe offline cache fallback.
+/* PUB Manara POS Web V1.0.8 — network-first, safe offline cache fallback.
    Do not clear IndexedDB or localStorage: they contain the original POS archive.
    Waiting workers activate only after explicit approval through the updater UI. */
-const CACHE='manara-pos-web-v1.0.7-20261109-compact-staff-fields';
-const PRECACHE=["./","./index.html","./styles.css?v=1.0.7","./app.js?v=1.0.7","./updater.js?v=1.0.7","./db.js","./xlsx.js","./manifest.webmanifest?v=0.9.29","./assets/dark_wood_background.svg","./assets/main_logo.gif","./assets/billing_left_texture.gif","./assets/beer_icon.gif","./assets/app_icon_192.png?v=0.9.29","./assets/app_icon_512.png?v=0.9.29","./assets/app_icon_maskable_192.png?v=0.9.29","./assets/app_icon_maskable_512.png?v=0.9.29","./assets/rubik-variable.ttf","./legacy_db_import.js?v=1.0.7","./remote.js?v=1.0.7","./archive_admin.js?v=1.0.7","./backup_manager.js?v=1.0.7"];
+const CACHE='manara-pos-web-v1.0.8-20261109-desktop-customer-combobox';
+const PRECACHE=["./","./index.html","./styles.css?v=1.0.8","./app.js?v=1.0.8","./updater.js?v=1.0.8","./db.js","./xlsx.js","./manifest.webmanifest?v=0.9.29","./assets/dark_wood_background.svg","./assets/main_logo.gif","./assets/billing_left_texture.gif","./assets/beer_icon.gif","./assets/app_icon_192.png?v=0.9.29","./assets/app_icon_512.png?v=0.9.29","./assets/app_icon_maskable_192.png?v=0.9.29","./assets/app_icon_maskable_512.png?v=0.9.29","./assets/rubik-variable.ttf","./legacy_db_import.js?v=1.0.8","./remote.js?v=1.0.8","./archive_admin.js?v=1.0.8","./backup_manager.js?v=1.0.8"];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(PRECACHE)));
 });
