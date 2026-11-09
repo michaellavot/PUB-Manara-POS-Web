@@ -772,3 +772,46 @@ body[data-layout-mode="desktop"] #managePage #auditPanel .audit-table{max-height
   object-fit:contain;
  }
 }
+
+/* V1.0.11 — desktop header uses the otherwise unused image side margins.
+   The actual gear, employee name and clock are moved here by app.js;
+   the GIF and the header's dimensions remain unchanged. */
+.hero{position:relative}
+.desktop-hero-gear,.desktop-hero-identity{display:none}
+body.desktop-hero-controls .desktop-hero-gear{
+ display:flex;position:absolute;z-index:2;
+ left:clamp(12px,2.1vw,32px);top:0;bottom:0;
+ align-items:center;justify-content:center;
+}
+body.desktop-hero-controls .desktop-hero-identity{
+ display:flex;position:absolute;z-index:2;
+ right:clamp(12px,2.1vw,32px);top:0;bottom:0;
+ flex-direction:column;align-items:center;justify-content:center;
+ gap:9px;max-width:clamp(128px,17vw,270px);
+ text-align:center;direction:rtl;
+}
+body.desktop-hero-controls #desktopHeroGear #navigationGearBtn{
+ display:inline-flex;align-items:center;justify-content:center;
+ width:52px;min-width:52px;height:52px;min-height:52px;
+ font-size:29px;padding:0!important;
+}
+body.desktop-hero-controls .hero:has(#cloudUserBar.hidden) #navigationGearBtn{
+ visibility:hidden;pointer-events:none;
+}
+body.desktop-hero-controls #desktopHeroIdentity #cloudUserBar:not(.hidden){
+ display:flex;justify-content:center;align-items:center;
+ min-width:0;max-width:100%;font-size:clamp(14px,1.1vw,19px);
+ font-weight:700;color:#f2d3a3;
+}
+body.desktop-hero-controls #desktopHeroIdentity #cloudUser{
+ display:block;position:static!important;inset:auto!important;
+ transform:none!important;max-width:100%;overflow:hidden;
+ white-space:nowrap;text-overflow:ellipsis;
+ font-size:inherit;font-weight:inherit;pointer-events:auto;
+}
+body.desktop-hero-controls #desktopHeroIdentity #clock{
+ display:inline-flex;align-items:center;justify-content:center;
+ padding:7px 11px;max-width:100%;
+ white-space:nowrap;font-size:clamp(12px,.9vw,15px);
+}
+/* Preserve the GIF's visual center, without enlarging or shifting the header. */
