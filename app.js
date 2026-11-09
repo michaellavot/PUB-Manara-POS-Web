@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.0.0';
+const APP_VERSION='2.0.1';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -193,7 +193,7 @@ function renderCatalogSelection(){
  el('catalogBulkDelete').classList.toggle('hidden',!(RemotePos.active&&RemotePos.employee?.is_owner===true));
  el('catalogBulkDelete').disabled=state.catalogSelections.size===0;
 }
-const POS_STAFF_PERMISSIONS=['create_products','change_prices','toggle_products','create_customers','toggle_customers','full_reports','manage_system'];
+const POS_STAFF_PERMISSIONS=['create_products','change_prices','toggle_products','create_customers','toggle_customers','full_reports','share_customer_qr','manage_system'];
 function canViewFullReports(){return RemotePos.active&&RemotePos.authenticated===true&&(RemotePos.employee?.owner_terminal===true||RemotePos.employee?.is_owner===true||RemotePos.employee?.permissions?.full_reports===true);}
 function assertFullReportAccess(){if(!canViewFullReports())throw new Error('ייצוא ודוחות מלאים מחייבים הרשאה מתאימה');}
 function canManage(permission){return RemotePos.active&&RemotePos.authenticated===true&&(RemotePos.employee?.is_owner===true||RemotePos.employee?.permissions?.[permission]===true);}
@@ -322,7 +322,18 @@ async function deleteCatalogRecord(entity,record){
 }
 async function manageProductClick(e){const b=e.target.closest('button[data-product]');if(!b)return;if(b.dataset.action==='edit')assertManage('change_prices');if(b.dataset.action==='toggle')assertManage('toggle_products');const p=state.products.find(p=>p.id===b.dataset.product);if(!p)return;if(b.dataset.action==='delete'){await deleteCatalogRecord('product',p);return;}if(b.dataset.action==='toggle'){if(!confirm(`${p.active?'להסתיר את המשקה':'להחזיר את המשקה'} ${p.name}?`))return;if(RemotePos.active)await RemotePos.saveProduct({...p,active:!p.active});else await putRow('products',{...p,active:!p.active});}else{const val=prompt('מחיר חדש עבור '+p.name,String(p.price));if(val===null)return;const price=amount(val);if(price<0)throw new Error('מחיר לא יכול להיות שלילי');if(RemotePos.active)await RemotePos.saveProduct({...p,price},{id:uuid(),productName:p.name,oldPrice:p.price,newPrice:price,changedAt:new Date().toISOString(),note:'שינוי מחיר'});else{await putRow('products',{...p,price});await putRow('priceHistory',{id:uuid(),productName:p.name,oldPrice:p.price,newPrice:price,changedAt:new Date().toISOString(),note:'שינוי מחיר'});}}await refresh();}
 async function manageCustomerClick(e){const b=e.target.closest('button[data-customer]');if(!b)return;if(b.dataset.action==='rename'&&RemotePos.employee?.is_owner!==true)throw new Error('שינוי שם לקוח שמור לבעלים');if(b.dataset.action==='toggle')assertManage('toggle_customers');const c=state.customers.find(c=>c.id===b.dataset.customer);if(!c)return;if(b.dataset.action==='delete'){await deleteCatalogRecord('customer',c);return;}if(b.dataset.action==='toggle'){if(!confirm(`${c.active?'למחוק את הלקוח מהרשימה הפעילה':'לשחזר את הלקוח'} ${c.name}?\nהיסטוריית המכירות תישמר.`))return;if(RemotePos.active)await RemotePos.saveCustomer({...c,active:!c.active});else await putRow('customers',{...c,active:!c.active});}else{const next=prompt('שם לקוח חדש',c.name);if(next===null)return;const newName=next.trim();if(!newName)throw new Error('שם לקוח לא יכול להיות ריק');if(state.customers.some(x=>x.id!==c.id&&x.normalized===norm(newName)))throw new Error('שם לקוח כבר קיים');if(RemotePos.active)await RemotePos.saveCustomer({...c,name:newName,normalized:norm(newName)});else await putRow('customers',{...c,name:newName,normalized:norm(newName)}); /* historical transaction name remains unchanged for audit */}await refresh();}
-function fillReportCustomers(){const field=el('reportCustomer'),prior=field.value;field.replaceChildren();const all=new Set([...state.customers.map(c=>c.name),...state.archive.filter(r=>Boolean(r.isTest)===(RemotePos.active&&RemotePos.testMode===true)).map(r=>r.customer)]);const blank=document.createElement('option');blank.value='';blank.textContent='כל הלקוחות';field.append(blank);for(const name of [...all].sort((a,b)=>a.localeCompare(b,'he'))){const opt=document.createElement('option');opt.value=name;opt.textContent=name;field.append(opt);}if([...field.options].some(x=>x.value===prior))field.value=prior;}
+function fillQrCustomerOptions(){
+ const selector=el('qrReportCustomer');
+ if(!selector)return;
+ const prior=selector.value;
+ selector.replaceChildren();
+ const option=document.createElement('option');option.value='';option.textContent='בחר לקוח';selector.append(option);
+ for(const name of [...new Set([...state.customers.map(c=>c.name),...state.archive.filter(r=>!r.isTest).map(r=>r.customer)])].filter(Boolean).sort((x,y)=>x.localeCompare(y,'he'))){
+  const item=document.createElement('option');item.value=name;item.textContent=name;selector.append(item);
+ }
+ if([...selector.options].some(x=>x.value===prior))selector.value=prior;
+}
+function fillReportCustomers(){const field=el('reportCustomer'),prior=field.value;field.replaceChildren();const all=new Set([...state.customers.map(c=>c.name),...state.archive.filter(r=>Boolean(r.isTest)===(RemotePos.active&&RemotePos.testMode===true)).map(r=>r.customer)]);const blank=document.createElement('option');blank.value='';blank.textContent='כל הלקוחות';field.append(blank);for(const name of [...all].sort((a,b)=>a.localeCompare(b,'he'))){const opt=document.createElement('option');opt.value=name;opt.textContent=name;field.append(opt);}if([...field.options].some(x=>x.value===prior))field.value=prior;fillQrCustomerOptions();}
 function reportRowsRaw(){
  const full=canViewFullReports();
  if(!RemotePos.active||!RemotePos.authenticated)return [];
@@ -648,6 +659,45 @@ function showCloudDataError(error){
  showCloudGate('ההתחברות הצליחה, אבל טעינת נתוני הענן נכשלה: '+(error?.message||'שגיאת שרת')+'. הנתונים לא שונו. אפשר לנסות שוב.');
  el('cloudBackToTest').classList.add('hidden');
 }
+
+const POS_APP_SHARE_URL='https://michaellavot.github.io/PUB-Manara-POS-Web/';
+let activeQrShareUrl='';
+function openQrShareDialog(title,url,meta){
+ if(typeof QRCode==='undefined')throw new Error('רכיב ה-QR לא נטען. יש לרענן את התוכנה.');
+ activeQrShareUrl=url;
+ el('qrShareTitle').textContent=title;
+ el('qrShareMeta').textContent=meta;
+ el('qrShareLink').textContent=url;
+ const target=el('qrShareCode');target.replaceChildren();
+ new QRCode(target,{text:url,width:216,height:216,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+ el('qrShareModal').classList.remove('hidden');
+}
+function closeQrShareDialog(){
+ activeQrShareUrl='';
+ el('qrShareModal').classList.add('hidden');
+ el('qrShareCode').replaceChildren();
+}
+async function copyQrShareUrl(){
+ if(!activeQrShareUrl)return;
+ try{await navigator.clipboard.writeText(activeQrShareUrl);el('qrShareMeta').textContent+=' · הקישור הועתק';}
+ catch(error){window.prompt('העתק קישור',activeQrShareUrl);}
+}
+async function createCustomerReportQr(){
+ if(!canManage('share_customer_qr'))throw new Error('אין הרשאה לשיתוף דוח תנועות לקוח');
+ const full=canViewFullReports(),customer=full?el('reportCustomer').value:el('qrReportCustomer').value;
+ const from=full?el('fromDate').value:el('qrFromDate').value,to=full?el('toDate').value:el('qrToDate').value;
+ const message=el('qrReportStatus'),btn=el('createCustomerQrBtn');
+ if(!customer||!from||!to||from>to){message.textContent='בחר לקוח מסוים וטווח תאריכים תקין לפני יצירת QR.';return;}
+ btn.disabled=true;message.textContent='מכין צילום מצב של דוח הלקוח בענן…';
+ try{
+  const response=await RemotePos.staffAction('create_customer_share',{customer,from,to});
+  if(!response?.token||!/^[0-9a-f]{64}$/.test(response.token))throw new Error('השרת לא החזיר קישור תקין');
+  const url=POS_APP_SHARE_URL+'share.html#'+response.token;
+  openQrShareDialog('דוח תנועות לקוח',url,customer+' · '+from+' עד '+to+' · '+response.count+' שורות · בתוקף ל־7 ימים');
+  message.textContent='הדוח נוצר בהצלחה. הקישור פג לאחר 7 ימים.';
+ }catch(error){message.textContent='שיתוף הדוח נכשל: '+error.message;}
+ finally{btn.disabled=false;}
+}
 function renderPermissions(){
  fillEmployeeCreateCustomers();
  fillEmployeeChargeReportOptions();
@@ -668,6 +718,9 @@ function renderPermissions(){
  el('sqliteImportPanel').classList.toggle('hidden',!(ownerTerminal&&!RemotePos.isImported));
  const fullReports=canViewFullReports();
  el('reportControls').classList.toggle('hidden',!fullReports);
+ const shareAllowed=canManage('share_customer_qr');
+ el('qrReportShareSection').classList.toggle('hidden',!shareAllowed);
+ el('qrLimitedFilters').classList.toggle('hidden',!shareAllowed||fullReports);
  el('employeeChargeReportOpen').classList.toggle('hidden',!RemotePos.active||!RemotePos.authenticated);
  if(!RemotePos.active||!RemotePos.authenticated)closeEmployeeChargeReport(false);
  el('reportAccessNote').textContent=fullReports?'כולל חיובים וזיכויים':'תנועות הקופה ב־24 השעות האחרונות; דוח חיובי עובד זמין בכפתור נפרד';
@@ -1145,6 +1198,12 @@ function remoteEvents(){
  on('employeePermissionsClose','click',closeEmployeePermissions);
  on('employeePermissionsCancel','click',closeEmployeePermissions);
  on('employeePermissionsBackdrop','click',closeEmployeePermissions);
+ on('shareAppQrBtn','click',()=>openQrShareDialog('שיתוף האפליקציה',POS_APP_SHARE_URL,'סרוק את הקוד לפתיחת הקופה ולהתקנתה.'));
+ on('createCustomerQrBtn','click',createCustomerReportQr);
+ on('qrShareClose','click',closeQrShareDialog);
+ on('qrShareDoneBtn','click',closeQrShareDialog);
+ on('qrShareBackdrop','click',closeQrShareDialog);
+ on('qrShareCopyBtn','click',copyQrShareUrl);
  on('employeePickerBtn','click',openEmployeePicker);
  on('employeePickerRetryBtn','click',loadEmployeePickerWithRetry);
  on('cloudPinKeyboardToggle','click',toggleCloudPinKeyboard);
@@ -1200,6 +1259,7 @@ async function init(){
  events();
  const today=nowIso();
  el('fromDate').value=today.slice(0,8)+'01';el('toDate').value=today;
+ el('qrFromDate').value=today.slice(0,8)+'01';el('qrToDate').value=today;
  await openDatabase();await seedFirstTime();await refresh();
  remoteEvents();
  // Verify the installed version BEFORE restoring a session or unlocking the POS.
