@@ -755,3 +755,20 @@ body[data-layout-mode="desktop"] #managePage #auditPanel .audit-table{max-height
  body[data-layout-mode="auto"] .customer-select-wrap>.customer-main-button{display:none}
  body[data-layout-mode="auto"] .customer-select-wrap>.desktop-customer-select{display:block}
 }
+
+/* V1.0.10 — keep the 1280×130 animated header at native pixel size on wide
+   desktop layouts. Avoid upscale blur without adding frames or bytes to GIF. */
+@media (min-width:701px){
+ body[data-layout-mode="desktop"] .hero img{
+  max-width:1280px;
+  margin-inline:auto;
+  object-fit:contain;
+ }
+}
+@media (min-width:1101px){
+ body[data-layout-mode="auto"] .hero img{
+  max-width:1280px;
+  margin-inline:auto;
+  object-fit:contain;
+ }
+}
