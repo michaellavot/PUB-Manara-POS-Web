@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='1.0.8';
+const APP_VERSION='1.0.9';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -9,6 +9,13 @@ const DEFAULT_PRODUCTS=[
 const state={pendingOperation:null,customers:[],products:[],archive:[],priceHistory:[],showInactiveProducts:false,showInactiveCustomers:false,selectedCustomer:null,employeeCharge:false,employeeChargePerson:'',category:null,cart:[],selectedRow:-1,cartHistory:[],busy:false,installPrompt:null,currentReport:{headers:[],rows:[],title:'דוח תנועות'},pendingImport:null,catalogDialog:null,catalogSearch:'',catalogSelections:new Set(),availableEmployees:[],permissionEmployee:null,switchingEmployee:false};
 const el=id=>document.getElementById(id);
 const norm=s=>String(s||'').normalize('NFKC').replace(/\s+/g,' ').trim().toLocaleLowerCase('he-IL');
+// Match each query word to the beginning of any word in the customer's full name, in any order.
+const customerNameMatches=(name,query)=>{
+ const terms=norm(query).split(' ').filter(Boolean);
+ if(!terms.length)return true;
+ const words=norm(name).split(' ').filter(Boolean);
+ return terms.every(term=>words.some(word=>word.startsWith(term)));
+};
 const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uuid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2);
 const nowIso=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');};
@@ -95,7 +102,7 @@ function desktopCustomerMode(){
 }
 function desktopCustomerMatches(){
  const query=norm(el('desktopCustomerSearch').value);
- return state.customers.filter(c=>c.active&&norm(c.name).startsWith(query));
+ return state.customers.filter(c=>c.active&&customerNameMatches(c.name,query));
 }
 function closeDesktopCustomerOptions(restoreSelected=true){
  const options=el('desktopCustomerOptions'),input=el('desktopCustomerSearch');
@@ -148,7 +155,7 @@ function desktopCustomerKeydown(event){
 function openCustomerDialog(){el('customerDropdown').classList.remove('hidden');el('customerInput').setAttribute('aria-expanded','true');el('customerSearch').value='';renderCustomerResults();el('customerSearch').focus();}
 function closeCustomerDialog(restoreFocus=true){el('customerDropdown').classList.add('hidden');el('customerInput').setAttribute('aria-expanded','false');if(restoreFocus)el('customerInput').focus();}
 function toggleCustomerDropdown(){if(el('customerDropdown').classList.contains('hidden'))openCustomerDialog();else closeCustomerDialog();}
-function renderCustomerResults(){const search=norm(el('customerSearch').value);const results=state.customers.filter(c=>c.active&&norm(c.name).startsWith(search));const host=el('customerResults');host.replaceChildren();el('customerResultCount').textContent=results.length+' לקוחות';for(const c of results){const b=document.createElement('button');b.type='button';b.className='customer-result';b.setAttribute('aria-pressed',String(state.selectedCustomer?.id===c.id));b.innerHTML='<span></span><span aria-hidden="true">‹</span>';b.firstChild.textContent=c.name;b.onclick=()=>selectCustomer(c);host.append(b);}if(!results.length){const empty=document.createElement('div');empty.className='customer-results-empty';empty.textContent='לא נמצאו לקוחות מתאימים';host.append(empty);}}
+function renderCustomerResults(){const search=norm(el('customerSearch').value);const results=state.customers.filter(c=>c.active&&customerNameMatches(c.name,search));const host=el('customerResults');host.replaceChildren();el('customerResultCount').textContent=results.length+' לקוחות';for(const c of results){const b=document.createElement('button');b.type='button';b.className='customer-result';b.setAttribute('aria-pressed',String(state.selectedCustomer?.id===c.id));b.innerHTML='<span></span><span aria-hidden="true">‹</span>';b.firstChild.textContent=c.name;b.onclick=()=>selectCustomer(c);host.append(b);}if(!results.length){const empty=document.createElement('div');empty.className='customer-results-empty';empty.textContent='לא נמצאו לקוחות מתאימים';host.append(empty);}}
 function selectCustomer(match){resetEmployeeCharge();state.selectedCustomer=match;renderCustomer();renderBill();closeDesktopCustomerOptions();if(!el('customerDropdown').classList.contains('hidden'))closeCustomerDialog();status('');}
 
 
