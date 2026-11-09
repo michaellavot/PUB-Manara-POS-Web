@@ -363,6 +363,7 @@ function showCloudDataError(error){
  el('cloudBackToTest').classList.add('hidden');
 }
 function renderPermissions(){
+ fillEmployeeCreateCustomers();
  fillEmployeeChargeReportOptions();
  const auth=RemotePos.employee||{};
  const owner=RemotePos.active&&auth.is_owner===true;
@@ -408,6 +409,7 @@ function renderPermissions(){
  renderAudit();
 }
 async function activateCloud(){
+ state.employeeCharge=false;
  await RemotePos.start();
  await refresh();
  fillEmployeeChargeReportOptions();
@@ -528,6 +530,14 @@ async function unlockAdmin(event){
  finally{btn.disabled=false;}
 }
 
+function fillEmployeeCreateCustomers(){
+ const field=el('employeeCreateCustomer'),previous=field.value;field.replaceChildren();
+ const blank=document.createElement('option');blank.value='';blank.textContent='ללא קישור';field.append(blank);
+ for(const c of [...state.customers].filter(c=>c.active).sort((a,b)=>a.name.localeCompare(b.name,'he'))){
+  const option=document.createElement('option');option.value=c.id;option.textContent=c.name;field.append(option);
+ }
+ if([...field.options].some(x=>x.value===previous))field.value=previous;
+}
 function openEmployeeCustomerLink(employee){
  if(RemotePos.employee?.is_owner!==true)throw new Error('קישור לקוח דורש אימות בעלים');
  el('employeeLinkTitle').textContent='חשבון לקוח: '+employee.username;
@@ -656,9 +666,15 @@ async function createEmployee(event){
  const submit=event.target.querySelector('button[type="submit"]');
  submit.disabled=true;
  try{
-  await RemotePos.manageStaff('create',{username:name,pin});
-  el('employeeCreatePin').value='';el('employeeCreateName').value='';
-  el('employeeMessage').textContent='העובד נוסף ויכול להתחבר לקופה באמצעות השם והסיסמה שהוגדרו.';
+  const created=await RemotePos.manageStaff('create',{username:name,pin});
+  const customerId=el('employeeCreateCustomer').value||null;
+  el('employeeCreatePin').value='';el('employeeCreateName').value='';el('employeeCreateCustomer').value='';
+  let msg='העובד נוסף ויכול להתחבר לקופה באמצעות השם והסיסמה שהוגדרו.';
+  if(customerId&&created.employee?.user_id){
+   try{await RemotePos.manageStaff('set_customer_link',{user_id:created.employee.user_id,customer_id:customerId});msg+=' חשבון הלקוח קושר בהצלחה.';}
+   catch(error){msg+=' הקישור ללקוח לא נשמר: '+error.message+' — ניתן להגדיר אותו בעריכת העובד.';}
+  }
+  el('employeeMessage').textContent=msg;
   await renderEmployeeList();await refresh();
  }finally{submit.disabled=false;}
 }
