@@ -1,5 +1,5 @@
 'use strict';
-/* V1.0.5 mandatory updates: fail closed, preserve in-progress transactions. */
+/* V1.0.6: corrected version syntax and silent successful check. */
 const softwareUpdate={registration:null,info:null,checking:false,applying:false,verified:false,pendingForCart:false,checkPromise:null,initialized:false};
 const versionSegments=v=>String(v||'').replace(/^v/i,'').split('.').map(x=>parseInt(x,10)||0);
 function isNewerVersion(remote,local=APP_VERSION){
@@ -61,7 +61,7 @@ async function getLiveVersion(){
   const response=await fetch(url,{cache:'no-store',signal:controller.signal});
   if(!response.ok)throw new Error('שרת הגרסאות אינו זמין');
   const info=await response.json();
-  if(!info||!/^\\d+(\\.\\d+)*$/.test(String(info.version)))throw new Error('מספר גרסה לא תקין');
+  if(!info||!/^[0-9]+(\.[0-9]+)*$/.test(String(info.version)))throw new Error('מספר גרסה לא תקין');
   return info;
  }finally{clearTimeout(timer);}
 }
@@ -69,10 +69,16 @@ async function checkSoftwareUpdates(manual=false){
  if(softwareUpdate.checkPromise)return softwareUpdate.checkPromise;
  softwareUpdate.checking=true;
  const deferred=transactionStillOpen();
+ // Verify silently: show the mandatory-update window only when an update
+ // is confirmed, and the connection-error window only when checking fails.
+ // Event guards still block new actions until verification is complete.
  if(!deferred&&!softwareUpdate.applying){
   softwareUpdate.verified=false;
-  blockForUpdate('בודק את הגרסה העדכנית בשרת…');
-  el('updateRetryBtn').disabled=true;
+  if(el('updateDialog').classList.contains('hidden'))updateStatus('בודק גרסה…');
+  else if(!softwareUpdate.info){
+   el('updateModalMessage').textContent='בודק שוב את הגרסה…';
+   el('updateRetryBtn').disabled=true;
+  }
  }
  softwareUpdate.checkPromise=(async()=>{
   try{
