@@ -290,7 +290,7 @@ const RemotePos={
     this.isImported=data?.[0]?.archive_imported===true;
     return {hasData:this.isImported,archiveImported:this.isImported};
  },
- async start(){await this.loadAll();this.stop();this.watchRealtime();this.poll=setInterval(()=>{if(navigator.onLine&&this.active&&!document.hidden)this.refreshQuietly();},30000);window.addEventListener('online',this._online=()=>{this.refreshQuietly();this.watchRealtime();});},
+ async start(){await this.loadAll();this.stop();this.watchRealtime();this.poll=setInterval(()=>{if(navigator.onLine&&this.active)this.refreshQuietly();},12000);window.addEventListener('online',this._online=()=>{this.refreshQuietly();this.watchRealtime();});},
  async refreshQuietly(){if(this.loading||!this.active)return;this.loading=true;try{await this.authorize();await this.loadAll();if(this.onChange)await this.onChange();this.setStatus('מסונכרן עם כל הקופות','success');}catch(e){this.setStatus('לא ניתן לסנכרן: '+e.message,'error');}finally{this.loading=false;}},
  watchRealtime(){
    if(!navigator.onLine||!this.session?.access_token||this.socket&&this.socket.readyState<2)return;
