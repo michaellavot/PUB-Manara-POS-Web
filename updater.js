@@ -8,7 +8,7 @@ function isNewerVersion(remote,local=APP_VERSION){
  return false;
 }
 function updateStatus(message){el('updateStatus').textContent=message;}
-function transactionStillOpen(){return Boolean(state.busy||state.cart.length||state.pendingOperation);}
+function transactionStillOpen(){return Boolean(state.busy||state.cart.length);}
 function blockForUpdate(message){
  softwareUpdate.verified=false;
  el('updateDialog').classList.remove('hidden');
@@ -82,12 +82,13 @@ async function checkSoftwareUpdates(manual=false){
     if(deferred||transactionStillOpen()){
      softwareUpdate.pendingForCart=true;
      updateStatus('עדכון חובה ממתין לסיום החיוב הפתוח');
+     status('עדכון תוכנה נדרש. סיים או נקה את החיוב הפתוח לפני העדכון.','error');
     }else{
      softwareUpdate.pendingForCart=false;
      softwareUpdate.verified=false;
      showUpdateDialog();
     }
-    try{await softwareUpdate.registration?.update();}catch(e){console.warn('Worker update retry pending:',e);}
+    softwareUpdate.registration?.update().catch(e=>console.warn('Worker update retry pending:',e));
     return 'update';
    }
    softwareUpdate.info=null;softwareUpdate.pendingForCart=false;softwareUpdate.verified=true;
