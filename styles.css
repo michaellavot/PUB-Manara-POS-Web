@@ -561,3 +561,13 @@ body[data-layout-mode="desktop"] #managePage #auditPanel .audit-table{max-height
 .employee-charge-report-table{max-height:430px;overflow:auto}
 #employeeChargeReportSummary{color:#f2d39e}
 @media(max-width:730px){.employee-charge-check{font-size:12px;padding:5px 6px;gap:4px}.employee-charge-check input{width:17px;height:17px}.employee-charge-report-filters{flex-wrap:wrap}.employee-charge-report-table{overflow-x:auto}}
+
+/* V0.9.39 named employee-account charges */
+.employee-charge-button{flex:0 0 auto;min-height:48px;background:linear-gradient(145deg,#6c4828,#3b291b);border-color:#c3965e;color:#fff1d7}
+.employee-charge-button.active{background:linear-gradient(145deg,#256249,#173e31);border-color:#93d6a7;color:#fff}
+.employee-charge-name-panel{max-width:510px}
+.employee-charge-person-totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:7px;margin:10px 0}
+.employee-charge-person-total{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;background:#172128;border:1px solid #655039;border-radius:9px}
+.employee-charge-person-total strong{color:#f4d5a5}
+.archive-employee-person{color:#f0c486!important;font-weight:700}
+@media(max-width:730px){.employee-charge-button{min-height:43px;font-size:12px;padding:6px 8px}.employee-charge-person-totals{grid-template-columns:repeat(2,minmax(0,1fr))}}
