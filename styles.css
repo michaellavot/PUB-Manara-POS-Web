@@ -550,3 +550,14 @@ body[data-layout-mode="desktop"] #managePage #auditPanel .audit-table{max-height
   height:100%;
  }
 }
+
+/* V0.9.38: staff-account checkbox and private report */
+.employee-charge-check{display:flex;align-items:center;gap:7px;white-space:nowrap;color:#f1d8b1;font-weight:700;cursor:pointer;padding:8px 10px;background:#241f1a;border:1px solid #84613e;border-radius:10px}
+.employee-charge-check input{width:20px;height:20px;accent-color:#c29356;cursor:pointer}
+.employee-charge-check:has(input:checked){background:#3e3020;border-color:#d1a369;color:#ffe2b1}
+.employee-charge-report{margin-top:16px;min-height:280px}
+.employee-charge-report-filters{display:flex;gap:8px;align-items:center}
+.employee-charge-report-filters select{min-width:150px}
+.employee-charge-report-table{max-height:430px;overflow:auto}
+#employeeChargeReportSummary{color:#f2d39e}
+@media(max-width:730px){.employee-charge-check{font-size:12px;padding:5px 6px;gap:4px}.employee-charge-check input{width:17px;height:17px}.employee-charge-report-filters{flex-wrap:wrap}.employee-charge-report-table{overflow-x:auto}}
