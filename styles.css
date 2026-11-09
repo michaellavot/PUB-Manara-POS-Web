@@ -651,3 +651,46 @@ body[data-layout-mode="desktop"] #managePage #auditPanel .audit-table{max-height
 /* V1.0.2: compact logout action beside the signed-in employee's menu. */
 #cloudUserBar .employee-sign-out{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:5px 11px;margin-inline-end:7px;border-color:#966f53;color:#ffe6cd;font-size:13px;font-weight:700;white-space:nowrap}
 @media(max-width:730px){#cloudUserBar .employee-sign-out{padding:5px 8px;font-size:12px;margin-inline-end:5px}}
+
+/* V1.0.4 — five category/product rows and six charge rows in desktop layout only.
+   Row heights, button sizes, and independent inner scrolling remain unchanged. */
+@media (min-width:701px){
+ body[data-layout-mode="desktop"] .work-grid{min-height:690px}
+ body[data-layout-mode="desktop"] .product-panel{min-height:690px}
+ body[data-layout-mode="desktop"] .category-grid{
+   grid-template-columns:repeat(5,minmax(0,1fr));
+   height:254px;min-height:254px;max-height:254px;
+   grid-auto-rows:46px;overflow-y:auto;overflow-x:hidden;
+ }
+ body[data-layout-mode="desktop"] .product-visual-region{
+   height:324px;min-height:324px;max-height:324px;flex:none;
+ }
+ body[data-layout-mode="desktop"] .product-visual-region>.products-grid{
+   grid-template-columns:repeat(4,minmax(0,1fr));
+   height:100%;grid-auto-rows:58px;overflow-y:auto;overflow-x:hidden;
+ }
+ body[data-layout-mode="desktop"] .bill-table-wrap{
+   height:270px;min-height:270px;max-height:270px;flex:none;
+   overflow-y:auto;overflow-x:hidden;
+ }
+}
+@media (min-width:1101px){
+ body[data-layout-mode="auto"] .work-grid{min-height:690px}
+ body[data-layout-mode="auto"] .product-panel{min-height:690px}
+ body[data-layout-mode="auto"] .category-grid{
+   grid-template-columns:repeat(5,minmax(0,1fr));
+   height:254px;min-height:254px;max-height:254px;
+   grid-auto-rows:46px;overflow-y:auto;overflow-x:hidden;
+ }
+ body[data-layout-mode="auto"] .product-visual-region{
+   height:324px;min-height:324px;max-height:324px;flex:none;
+ }
+ body[data-layout-mode="auto"] .product-visual-region>.products-grid{
+   grid-template-columns:repeat(4,minmax(0,1fr));
+   height:100%;grid-auto-rows:58px;overflow-y:auto;overflow-x:hidden;
+ }
+ body[data-layout-mode="auto"] .bill-table-wrap{
+   height:270px;min-height:270px;max-height:270px;flex:none;
+   overflow-y:auto;overflow-x:hidden;
+ }
+}
