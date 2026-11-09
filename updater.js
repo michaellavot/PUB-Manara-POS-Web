@@ -125,6 +125,7 @@ async function setupSoftwareUpdater(){
   });
   window.addEventListener('online',()=>checkSoftwareUpdates());
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkSoftwareUpdates();});
+  window.addEventListener('pageshow',event=>{if(event.persisted)checkSoftwareUpdates();});
   setInterval(settlePendingMandatoryUpdate,400);
   return await checkSoftwareUpdates();
  }catch(error){
