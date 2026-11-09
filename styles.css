@@ -304,3 +304,26 @@ html,body{
   #101920;
 }
 @media print{html,body{background:#fff!important}.panel{background:#fff!important}}
+
+/* V0.9.32: fixed ten-row viewport for staff 24-hour transaction reports only. */
+#reportsPage .report-table.limited-24h-ten-rows{
+  --limited-report-row-height:42px;
+  flex:0 0 auto;
+  height:calc(11 * var(--limited-report-row-height) + 2px);
+  min-height:0;
+  max-height:none;
+  overflow:auto;
+  overscroll-behavior:contain;
+}
+#reportsPage .report-table.limited-24h-ten-rows #reportTable th,
+#reportsPage .report-table.limited-24h-ten-rows #reportTable td{
+  height:var(--limited-report-row-height);
+  box-sizing:border-box;
+  white-space:nowrap;
+}
+#reportsPage .report-table.limited-24h-ten-rows #reportTable th{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:#2b2119;
+}
