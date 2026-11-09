@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='1.0.7';
+const APP_VERSION='1.0.8';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -56,6 +56,14 @@ function renderCustomer(){
  const linked=state.employeeCharge?linkedEmployeeCustomer():null;
  el('customerSelectedText').textContent=state.employeeCharge?(linked?'חשבון עובד: '+linked.name+' · '+state.employeeChargePerson:'לא הוגדר חשבון עובד'):state.selectedCustomer?state.selectedCustomer.name:'לקוח';
  el('customerInput').disabled=state.employeeCharge;
+ const desktopSearch=el('desktopCustomerSearch');
+ if(desktopSearch){
+  desktopSearch.disabled=state.employeeCharge;
+  desktopSearch.value=state.employeeCharge?
+   (linked?'חשבון עובד: '+linked.name+' · '+state.employeeChargePerson:'לא הוגדר חשבון עובד'):
+   (state.selectedCustomer?.name||'');
+  if(state.employeeCharge)closeDesktopCustomerOptions(false);
+ }
  el('customerInput').classList.toggle('customer-selected',Boolean(state.selectedCustomer)||Boolean(linked));
  el('employeeChargeToggle').classList.toggle('active',state.employeeCharge);
  el('employeeChargeToggle').textContent=state.employeeCharge?'עבור '+state.employeeChargePerson+' ✎':'חיוב על עובד';
@@ -81,11 +89,67 @@ function confirmEmployeeChargeName(event){
 }
 function resetEmployeeCharge(){state.employeeCharge=false;state.employeeChargePerson='';renderCustomer();}
 
+function desktopCustomerMode(){
+ const mode=document.body.dataset.layoutMode;
+ return (mode==='desktop'&&window.innerWidth>700)||(mode==='auto'&&window.innerWidth>=1101);
+}
+function desktopCustomerMatches(){
+ const query=norm(el('desktopCustomerSearch').value);
+ return state.customers.filter(c=>c.active&&norm(c.name).startsWith(query));
+}
+function closeDesktopCustomerOptions(restoreSelected=true){
+ const options=el('desktopCustomerOptions'),input=el('desktopCustomerSearch');
+ if(!options||!input)return;
+ options.classList.add('hidden');
+ input.setAttribute('aria-expanded','false');
+ input.removeAttribute('aria-activedescendant');
+ if(restoreSelected)input.value=state.selectedCustomer?.name||'';
+}
+function renderDesktopCustomerOptions(){
+ if(!desktopCustomerMode()||state.employeeCharge){closeDesktopCustomerOptions(false);return;}
+ const input=el('desktopCustomerSearch'),options=el('desktopCustomerOptions');
+ const matches=desktopCustomerMatches();
+ options.replaceChildren();
+ for(const c of matches){
+  const item=document.createElement('button');
+  item.type='button';item.className='desktop-customer-option';
+  item.setAttribute('role','option');item.setAttribute('aria-selected',String(state.selectedCustomer?.id===c.id));
+  item.textContent=c.name;
+  item.addEventListener('click',()=>selectCustomer(c));
+  options.append(item);
+ }
+ if(!matches.length){
+  const empty=document.createElement('div');empty.className='desktop-customer-empty';
+  empty.textContent='לא נמצאו לקוחות מתאימים';options.append(empty);
+ }
+ options.classList.remove('hidden');input.setAttribute('aria-expanded','true');
+}
+function desktopCustomerKeydown(event){
+ const input=el('desktopCustomerSearch'),options=el('desktopCustomerOptions');
+ if(event.key==='Escape'){
+  if(!options.classList.contains('hidden')){event.preventDefault();closeDesktopCustomerOptions();}
+  return;
+ }
+ if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+  event.preventDefault();
+  if(options.classList.contains('hidden'))renderDesktopCustomerOptions();
+  const items=[...options.querySelectorAll('button.desktop-customer-option')];
+  if(!items.length)return;
+  const current=items.findIndex(item=>item===document.activeElement);
+  const next=current<0?(event.key==='ArrowDown'?0:items.length-1):(current+(event.key==='ArrowDown'?1:-1)+items.length)%items.length;
+  items[next].focus();
+ }else if(event.key==='Enter'){
+  event.preventDefault();
+  const first=options.querySelector('button.desktop-customer-option')||(!options.classList.contains('hidden')?null:null);
+  if(first)first.click();
+  else if(options.classList.contains('hidden'))renderDesktopCustomerOptions();
+ }else if(event.key==='Tab')closeDesktopCustomerOptions();
+}
 function openCustomerDialog(){el('customerDropdown').classList.remove('hidden');el('customerInput').setAttribute('aria-expanded','true');el('customerSearch').value='';renderCustomerResults();el('customerSearch').focus();}
 function closeCustomerDialog(restoreFocus=true){el('customerDropdown').classList.add('hidden');el('customerInput').setAttribute('aria-expanded','false');if(restoreFocus)el('customerInput').focus();}
 function toggleCustomerDropdown(){if(el('customerDropdown').classList.contains('hidden'))openCustomerDialog();else closeCustomerDialog();}
 function renderCustomerResults(){const search=norm(el('customerSearch').value);const results=state.customers.filter(c=>c.active&&norm(c.name).startsWith(search));const host=el('customerResults');host.replaceChildren();el('customerResultCount').textContent=results.length+' לקוחות';for(const c of results){const b=document.createElement('button');b.type='button';b.className='customer-result';b.setAttribute('aria-pressed',String(state.selectedCustomer?.id===c.id));b.innerHTML='<span></span><span aria-hidden="true">‹</span>';b.firstChild.textContent=c.name;b.onclick=()=>selectCustomer(c);host.append(b);}if(!results.length){const empty=document.createElement('div');empty.className='customer-results-empty';empty.textContent='לא נמצאו לקוחות מתאימים';host.append(empty);}}
-function selectCustomer(match){resetEmployeeCharge();state.selectedCustomer=match;renderCustomer();renderBill();closeCustomerDialog();status('');}
+function selectCustomer(match){resetEmployeeCharge();state.selectedCustomer=match;renderCustomer();renderBill();closeDesktopCustomerOptions();if(!el('customerDropdown').classList.contains('hidden'))closeCustomerDialog();status('');}
 
 
 async function addCustomer(name,select=true){assertManage('create_customers');name=String(name||'').trim().replace(/\s+/g,' ');if(!name)throw new Error('יש להזין שם לקוח');const key=norm(name),old=state.customers.find(c=>c.normalized===key);if(old){if(old.active)throw new Error('לקוח בשם זה כבר קיים');if(!confirm(`הלקוח ${old.name} אינו פעיל. להפעיל אותו מחדש?`))return;if(RemotePos.active)await RemotePos.saveCustomer({...old,active:true,name,normalized:key});else await putRow('customers',{...old,active:true,name,normalized:key});}else{const row={id:uuid(),name,normalized:key,active:true};if(RemotePos.active)await RemotePos.saveCustomer(row);else await putRow('customers',row);}await refresh();if(select){state.selectedCustomer=state.customers.find(c=>c.normalized===key);renderCustomer();renderBill();}status('הלקוח נשמר','success');}
@@ -303,6 +367,7 @@ function applyLayoutMode(mode){
  });
  const labels={auto:'אוטומטי — לפי רוחב המסך',mobile:'נייד — פריסה אנכית',tablet:'טאבלט — פריסה בינונית',desktop:'מחשב — פריסה רחבה'};
  el('deviceLayoutCurrent').textContent='מצב נבחר: '+labels[mode];
+ if(typeof closeDesktopCustomerOptions==='function')closeDesktopCustomerOptions();
 }
 function saveLayoutMode(mode){
  if(!LAYOUT_OPTIONS.includes(mode))return;
@@ -358,7 +423,23 @@ function events(){
    }
   }
  },true);
- on('deviceLayoutBtn','click',openLayoutDialog);on('deviceLayoutClose','click',closeLayoutDialog);on('deviceLayoutBackdrop','click',closeLayoutDialog);for(const btn of document.querySelectorAll('[data-layout-choice]'))btn.addEventListener('click',()=>saveLayoutMode(btn.dataset.layoutChoice));for(const b of document.querySelectorAll('.tab'))b.onclick=()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));if(b.dataset.page==='reportsPage'&&RemotePos.active){renderReport();renderEmployeeChargeReport();}if(b.dataset.page==='systemPage'&&RemotePos.active&&RemotePos.employee?.owner_terminal===true)BackupManager.refresh();el('globalControlStrip').classList.toggle('not-pos-page',b.dataset.page!=='posPage');};on('navigationGearBtn','click',openNavigationMenu);on('navigationMenuClose','click',()=>closeNavigationMenu());on('navigationMenuBackdrop','click',()=>closeNavigationMenu());for(const b of document.querySelectorAll('[data-nav-page]'))b.addEventListener('click',()=>navigateFromMenu(b.dataset.navPage));on('customerInput','click',toggleCustomerDropdown);on('customerDialogBackdrop','click',()=>closeCustomerDialog(false));on('customerDialogClose','click',()=>closeCustomerDialog());on('customerSearch','input',renderCustomerResults);on('customerSearch','keydown',e=>{if(e.key==='Enter'){const first=el('customerResults').querySelector('.customer-result');if(first)first.click();}else if(e.key==='ArrowDown'){e.preventDefault();el('customerResults').querySelector('.customer-result')?.focus();}});on('customerResults','keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const opts=[...el('customerResults').querySelectorAll('.customer-result')],i=opts.indexOf(document.activeElement);opts[(i+(e.key==='ArrowDown'?1:-1)+opts.length)%opts.length]?.focus();}});document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!el('deviceLayoutDialog').classList.contains('hidden'))closeLayoutDialog();else if(!el('navigationMenu').classList.contains('hidden'))closeNavigationMenu();else if(!el('employeePicker').classList.contains('hidden'))closeEmployeePicker();else if(!el('customerDropdown').classList.contains('hidden'))closeCustomerDialog();}});on('quickAddCustomerBtn','click',async()=>{const name=prompt('שם לקוח חדש');if(name!==null)await addCustomer(name);});on('resetCustomerBtn','click',()=>{if(state.cart.length&&!confirm('ניקוי לקוח יבטל את החיוב הנוכחי. להמשיך?'))return;state.selectedCustomer=null;state.cart=[];state.cartHistory=[];state.selectedRow=-1;renderCustomer();renderBill();closeCustomerDialog();});on('removeSelectedBtn','click',removeSelected);on('undoBtn','click',undoLast);on('clearBtn','click',clearBill);on('chargeBtn','click',()=>completeSale(false));on('chargeBtn','animationend',e=>{if(e.target===el('chargeBtn'))el('chargeBtn').classList.remove('charge-success');});on('refundBtn','click',()=>completeSale(true));on('customerForm','submit',async e=>{e.preventDefault();await addCustomer(new FormData(e.target).get('name'),false);e.target.reset();});on('productForm','submit',productSubmit);on('manageProducts','click',manageProductClick);on('manageCustomers','click',manageCustomerClick);
+ on('deviceLayoutBtn','click',openLayoutDialog);on('deviceLayoutClose','click',closeLayoutDialog);on('deviceLayoutBackdrop','click',closeLayoutDialog);for(const btn of document.querySelectorAll('[data-layout-choice]'))btn.addEventListener('click',()=>saveLayoutMode(btn.dataset.layoutChoice));for(const b of document.querySelectorAll('.tab'))b.onclick=()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));if(b.dataset.page==='reportsPage'&&RemotePos.active){renderReport();renderEmployeeChargeReport();}if(b.dataset.page==='systemPage'&&RemotePos.active&&RemotePos.employee?.owner_terminal===true)BackupManager.refresh();el('globalControlStrip').classList.toggle('not-pos-page',b.dataset.page!=='posPage');};on('navigationGearBtn','click',openNavigationMenu);on('navigationMenuClose','click',()=>closeNavigationMenu());on('navigationMenuBackdrop','click',()=>closeNavigationMenu());for(const b of document.querySelectorAll('[data-nav-page]'))b.addEventListener('click',()=>navigateFromMenu(b.dataset.navPage));on('customerInput','click',toggleCustomerDropdown);
+ on('desktopCustomerSearch','focus',renderDesktopCustomerOptions);
+ on('desktopCustomerSearch','click',renderDesktopCustomerOptions);
+ on('desktopCustomerSearch','input',renderDesktopCustomerOptions);
+ on('desktopCustomerSearch','keydown',desktopCustomerKeydown);
+ on('desktopCustomerOptions','keydown',event=>{
+  const options=[...el('desktopCustomerOptions').querySelectorAll('button.desktop-customer-option')];
+  const i=options.indexOf(document.activeElement);
+  if(event.key==='Escape'){event.preventDefault();closeDesktopCustomerOptions();el('desktopCustomerSearch').focus();}
+  else if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+   event.preventDefault();if(!options.length)return;
+   options[(i+(event.key==='ArrowDown'?1:-1)+options.length)%options.length].focus();
+  }else if(event.key==='Tab')closeDesktopCustomerOptions();
+ });
+ document.addEventListener('pointerdown',event=>{
+  if(!el('desktopCustomerSelect').contains(event.target))closeDesktopCustomerOptions();
+ });on('customerDialogBackdrop','click',()=>closeCustomerDialog(false));on('customerDialogClose','click',()=>closeCustomerDialog());on('customerSearch','input',renderCustomerResults);on('customerSearch','keydown',e=>{if(e.key==='Enter'){const first=el('customerResults').querySelector('.customer-result');if(first)first.click();}else if(e.key==='ArrowDown'){e.preventDefault();el('customerResults').querySelector('.customer-result')?.focus();}});on('customerResults','keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const opts=[...el('customerResults').querySelectorAll('.customer-result')],i=opts.indexOf(document.activeElement);opts[(i+(e.key==='ArrowDown'?1:-1)+opts.length)%opts.length]?.focus();}});document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!el('deviceLayoutDialog').classList.contains('hidden'))closeLayoutDialog();else if(!el('navigationMenu').classList.contains('hidden'))closeNavigationMenu();else if(!el('employeePicker').classList.contains('hidden'))closeEmployeePicker();else if(!el('customerDropdown').classList.contains('hidden'))closeCustomerDialog();}});on('quickAddCustomerBtn','click',async()=>{const name=prompt('שם לקוח חדש');if(name!==null)await addCustomer(name);});on('resetCustomerBtn','click',()=>{if(state.cart.length&&!confirm('ניקוי לקוח יבטל את החיוב הנוכחי. להמשיך?'))return;state.selectedCustomer=null;state.cart=[];state.cartHistory=[];state.selectedRow=-1;renderCustomer();renderBill();closeDesktopCustomerOptions();closeCustomerDialog();});on('removeSelectedBtn','click',removeSelected);on('undoBtn','click',undoLast);on('clearBtn','click',clearBill);on('chargeBtn','click',()=>completeSale(false));on('chargeBtn','animationend',e=>{if(e.target===el('chargeBtn'))el('chargeBtn').classList.remove('charge-success');});on('refundBtn','click',()=>completeSale(true));on('customerForm','submit',async e=>{e.preventDefault();await addCustomer(new FormData(e.target).get('name'),false);e.target.reset();});on('productForm','submit',productSubmit);on('manageProducts','click',manageProductClick);on('manageCustomers','click',manageCustomerClick);
  on('openProductManager','click',()=>openCatalogManager('product'));
  on('openCustomerManager','click',()=>openCatalogManager('customer'));
  on('closeCatalogManager','click',closeCatalogManager);
