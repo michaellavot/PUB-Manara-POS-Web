@@ -647,3 +647,7 @@ body[data-layout-mode="desktop"] #managePage #auditPanel .audit-table{max-height
  .employee-charge-modal .employee-charge-report-filters select{flex:1 1 120px}
  .employee-charge-modal .employee-charge-report-table .data-table{min-width:760px}
 }
+
+/* V1.0.2: compact logout action beside the signed-in employee's menu. */
+#cloudUserBar .employee-sign-out{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:5px 11px;margin-inline-end:7px;border-color:#966f53;color:#ffe6cd;font-size:13px;font-weight:700;white-space:nowrap}
+@media(max-width:730px){#cloudUserBar .employee-sign-out{padding:5px 8px;font-size:12px;margin-inline-end:5px}}
