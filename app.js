@@ -1,12 +1,12 @@
 'use strict';
-const APP_VERSION='0.9.37';
+const APP_VERSION='0.9.38';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
  ['וודקה (צ\'ייסר)',10],['ויסקי (צ\'ייסר)',10],['ערק (צ\'ייסר)',10],["ג'ין (צ\'ייסר)",10],['טקילה (צ\'ייסר)',10],
  ['וודקה (מנה)',25],['ויסקי (מנה)',25],['ערק (מנה)',25],["ג'ין (מנה)",25],['טקילה (מנה)',25],['גינס',1]
 ];
-const state={pendingOperation:null,customers:[],products:[],archive:[],priceHistory:[],showInactiveProducts:false,showInactiveCustomers:false,selectedCustomer:null,category:null,cart:[],selectedRow:-1,cartHistory:[],busy:false,installPrompt:null,currentReport:{headers:[],rows:[],title:'דוח תנועות'},pendingImport:null,catalogDialog:null,catalogSearch:'',catalogSelections:new Set(),availableEmployees:[],permissionEmployee:null,switchingEmployee:false};
+const state={pendingOperation:null,customers:[],products:[],archive:[],priceHistory:[],showInactiveProducts:false,showInactiveCustomers:false,selectedCustomer:null,employeeCharge:false,category:null,cart:[],selectedRow:-1,cartHistory:[],busy:false,installPrompt:null,currentReport:{headers:[],rows:[],title:'דוח תנועות'},pendingImport:null,catalogDialog:null,catalogSearch:'',catalogSelections:new Set(),availableEmployees:[],permissionEmployee:null,switchingEmployee:false};
 const el=id=>document.getElementById(id);
 const norm=s=>String(s||'').normalize('NFKC').replace(/\s+/g,' ').trim().toLocaleLowerCase('he-IL');
 const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -27,28 +27,43 @@ function downloadBlob(blob,name){const url=URL.createObjectURL(blob),a=document.
 async function loadAll(){[state.customers,state.products,state.archive,state.priceHistory]=RemotePos.active?Object.values(await RemotePos.loadAll()).slice(0,4):await Promise.all(['customers','products','archive','priceHistory'].map(allRows));state.customers.sort((a,b)=>a.name.localeCompare(b.name,'he'));state.products.sort((a,b)=>a.category.localeCompare(b.category,'he')||a.type.localeCompare(b.type,'he'));state.archive.sort((a,b)=>a.dateIso.localeCompare(b.dateIso)||a.time.localeCompare(b.time)||a.id.localeCompare(b.id));}
 async function seedFirstTime(){const settings=await allRows('settings');if(settings.some(s=>s.key==='seeded'))return;const count=(await allRows('products')).length;if(!count){await bulkTransaction(['products','settings'],stores=>{for(const [name,price] of DEFAULT_PRODUCTS){const match=name.match(/^(.*) \((.+)\)$/),beer=name.match(/^(בירה) (\d+)$/),category=match?match[1]:(beer?beer[1]:name),type=match?match[2]:(beer?beer[2]:name);stores.products.add({id:uuid(),name,normalized:norm(name),category,type,price,active:true});}stores.settings.put({key:'seeded',value:true});});}else await putRow('settings',{key:'seeded',value:true});}
 async function refresh(){await loadAll();if(state.selectedCustomer){state.selectedCustomer=state.customers.find(c=>c.id===state.selectedCustomer.id&&c.active)||null;}renderCustomer();renderProducts();renderBill();renderManage();renderAudit();fillReportCustomers();renderReport();}
-function renderCustomer(){el('customerSelectedText').textContent=state.selectedCustomer?state.selectedCustomer.name:'לקוח';el('customerInput').classList.toggle('customer-selected',Boolean(state.selectedCustomer));}
+function linkedEmployeeCustomer(){return state.customers.find(c=>c.id===RemotePos.linkedCustomerId&&c.active)||null;}
+function renderCustomer(){
+ const linked=state.employeeCharge?linkedEmployeeCustomer():null;
+ el('customerSelectedText').textContent=state.employeeCharge?(linked?'חשבון עובד: '+linked.name:'לא הוגדר חשבון עובד'):state.selectedCustomer?state.selectedCustomer.name:'לקוח';
+ el('customerInput').disabled=state.employeeCharge;
+ el('customerInput').classList.toggle('customer-selected',Boolean(state.selectedCustomer)||Boolean(linked));
+ el('employeeChargeToggle').checked=state.employeeCharge;
+}
+function toggleEmployeeCharge(checked){
+ if(state.busy||state.pendingOperation){el('employeeChargeToggle').checked=state.employeeCharge;status('יש לסיים חיוב קודם','error');return;}
+ if(checked&&(!RemotePos.active||!linkedEmployeeCustomer())){el('employeeChargeToggle').checked=false;status('לא הוגדר לעובד חשבון לקוח מקושר ופעיל','error');return;}
+ if(state.cart.length&&!confirm('שינוי מצב החיוב ינקה את הפריטים שנבחרו. להמשיך?')){el('employeeChargeToggle').checked=state.employeeCharge;return;}
+ state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;state.employeeCharge=checked;closeCustomerDialog(false);renderBill();
+ status(checked?'חיוב על חשבון עובד פעיל':'חיוב רגיל פעיל','');
+}
 function openCustomerDialog(){el('customerDropdown').classList.remove('hidden');el('customerInput').setAttribute('aria-expanded','true');el('customerSearch').value='';renderCustomerResults();el('customerSearch').focus();}
 function closeCustomerDialog(restoreFocus=true){el('customerDropdown').classList.add('hidden');el('customerInput').setAttribute('aria-expanded','false');if(restoreFocus)el('customerInput').focus();}
 function toggleCustomerDropdown(){if(el('customerDropdown').classList.contains('hidden'))openCustomerDialog();else closeCustomerDialog();}
 function renderCustomerResults(){const search=norm(el('customerSearch').value);const results=state.customers.filter(c=>c.active&&norm(c.name).startsWith(search));const host=el('customerResults');host.replaceChildren();el('customerResultCount').textContent=results.length+' לקוחות';for(const c of results){const b=document.createElement('button');b.type='button';b.className='customer-result';b.setAttribute('aria-pressed',String(state.selectedCustomer?.id===c.id));b.innerHTML='<span></span><span aria-hidden="true">‹</span>';b.firstChild.textContent=c.name;b.onclick=()=>selectCustomer(c);host.append(b);}if(!results.length){const empty=document.createElement('div');empty.className='customer-results-empty';empty.textContent='לא נמצאו לקוחות מתאימים';host.append(empty);}}
-function selectCustomer(match){state.selectedCustomer=match;renderCustomer();renderBill();closeCustomerDialog();status('');}
+function selectCustomer(match){state.employeeCharge=false;state.selectedCustomer=match;renderCustomer();renderBill();closeCustomerDialog();status('');}
 
 
 async function addCustomer(name,select=true){assertManage('create_customers');name=String(name||'').trim().replace(/\s+/g,' ');if(!name)throw new Error('יש להזין שם לקוח');const key=norm(name),old=state.customers.find(c=>c.normalized===key);if(old){if(old.active)throw new Error('לקוח בשם זה כבר קיים');if(!confirm(`הלקוח ${old.name} אינו פעיל. להפעיל אותו מחדש?`))return;if(RemotePos.active)await RemotePos.saveCustomer({...old,active:true,name,normalized:key});else await putRow('customers',{...old,active:true,name,normalized:key});}else{const row={id:uuid(),name,normalized:key,active:true};if(RemotePos.active)await RemotePos.saveCustomer(row);else await putRow('customers',row);}await refresh();if(select){state.selectedCustomer=state.customers.find(c=>c.normalized===key);renderCustomer();renderBill();}status('הלקוח נשמר','success');}
 function activeProducts(){return state.products.filter(p=>p.active);}
 function renderProducts(){const cats=[...new Set(activeProducts().map(p=>p.category))];if(!cats.includes(state.category))state.category=cats[0]||null;const host=el('categories');host.replaceChildren();for(const c of cats){const b=document.createElement('button');b.className='button'+(state.category===c?' active':'');b.type='button';b.textContent=c;b.onclick=()=>{state.category=c;renderProducts();};host.append(b);}const products=activeProducts().filter(p=>p.category===state.category);const box=el('products');box.replaceChildren();for(const p of products){const b=document.createElement('button');b.type='button';b.className='button';const name=document.createElement('span'),price=document.createElement('span');name.textContent=p.type;price.className='product-price';price.textContent=currency(p.price);b.append(name,price);b.onclick=()=>addProductToCart(p);box.append(b);}if(!products.length)box.textContent='אין משקאות להצגה';el('productCounter').textContent=products.length+' פריטים';}
-function addProductToCart(p){if(!state.selectedCustomer){toastCustomer();status('צריך לבחור לקוח לפני הוספת משקה','error');return;}const qty=1;let index=state.cart.findIndex(r=>r.productId===p.id&&r.unitPrice===p.price);if(index>=0){const row=state.cart[index];if(row.qty+qty>999){status('לא ניתן לחרוג מכמות 999 למשקה','error');return;}row.qty+=qty;row.price=Math.round(row.unitPrice*row.qty*100)/100;}else{state.cart.push({id:uuid(),productId:p.id,drink:p.name,qty,unitPrice:p.price,price:Math.round(p.price*qty*100)/100});index=state.cart.length-1;}state.cartHistory.push({id:state.cart[index].id,qty});state.selectedRow=index;renderBill();pulseTotal();status('נוסף: '+p.name,'success');}
+function addProductToCart(p){if(!state.employeeCharge&&!state.selectedCustomer){toastCustomer();status('צריך לבחור לקוח לפני הוספת משקה','error');return;}const qty=1;let index=state.cart.findIndex(r=>r.productId===p.id&&r.unitPrice===p.price);if(index>=0){const row=state.cart[index];if(row.qty+qty>999){status('לא ניתן לחרוג מכמות 999 למשקה','error');return;}row.qty+=qty;row.price=Math.round(row.unitPrice*row.qty*100)/100;}else{state.cart.push({id:uuid(),productId:p.id,drink:p.name,qty,unitPrice:p.price,price:Math.round(p.price*qty*100)/100});index=state.cart.length-1;}state.cartHistory.push({id:state.cart[index].id,qty});state.selectedRow=index;renderBill();pulseTotal();status('נוסף: '+p.name,'success');}
 function renderBill(){const body=el('billBody');body.replaceChildren();if(!state.cart.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="3" class="empty">אין פריטים בחיוב</td>';body.append(tr);}else state.cart.forEach((r,i)=>{const tr=document.createElement('tr');tr.className=state.selectedRow===i?'selected':'';for(const val of [r.drink,String(r.qty),currency(r.price)]){const td=document.createElement('td');td.textContent=val;tr.append(td);}tr.onclick=()=>{state.selectedRow=i;renderBill();};body.append(tr);});el('total').textContent=currency(state.cart.reduce((s,r)=>s+r.price,0));el('billTag').textContent=state.cart.length?`${state.cart.length} שורות`:'מוכן';renderCustomer();}
-function clearBill(){if(!state.cart.length&&!state.selectedCustomer)return;if(state.cart.length&&!confirm('לנקות את החיוב הנוכחי?'))return;state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;renderBill();status('החיוב נוקה');}
+function clearBill(){if(!state.cart.length&&!state.selectedCustomer&&!state.employeeCharge)return;if(state.cart.length&&!confirm('לנקות את החיוב הנוכחי?'))return;state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;state.employeeCharge=false;renderBill();status('החיוב נוקה');}
 function removeSelected(){if(!state.cart.length)return;const index=state.selectedRow>=0?state.selectedRow:state.cart.length-1;const removed=state.cart.splice(index,1)[0];state.cartHistory=state.cartHistory.filter(a=>a.id!==removed.id);state.selectedRow=Math.min(index,state.cart.length-1);renderBill();status('השורה הוסרה');}
 function undoLast(){if(!state.cart.length)return;const last=state.cartHistory.pop();if(last){const index=state.cart.findIndex(r=>r.id===last.id);if(index>=0){const row=state.cart[index];row.qty-=last.qty;if(row.qty<=0)state.cart.splice(index,1);else row.price=Math.round(row.qty*row.unitPrice*100)/100;}}else state.cart.pop();state.selectedRow=state.cart.length-1;renderBill();status('הפעולה האחרונה בוטלה');}
-async function completeSale(refund=false){if(state.busy)return;if(!state.selectedCustomer){toastCustomer();status('יש לבחור לקוח לפני חיוב','error');return;}if(!state.cart.length){status('לא נבחרו משקאות','error');return;}if(RemotePos.active&&!RemotePos.testMode&&!RemotePos.isImported){const message='לא ניתן לשמור חיוב או זיכוי במצב עבודה: ארכיון הפאב המקורי טרם יובא למערכת. לא נשמרה עסקה. ניתן להשתמש בכפתור ניסיון בחשבון הבעלים לצורך בדיקות.';status(message,'error');alert(message);return;}if(refund&&!confirm(`לשמור זיכוי עסקה ללקוח ${state.selectedCustomer.name} בסך ${currency(state.cart.reduce((s,r)=>s+r.price,0))}?`))return;state.busy=true;el('chargeBtn').disabled=true;el('refundBtn').disabled=true;try{const d=new Date(),op=uuid(),time=d.toTimeString().slice(0,8),dateIso=nowIso(),sign=refund?-1:1;const rows=state.cart.map(c=>({id:uuid(),operationId:op,customer:state.selectedCustomer.name,customerKey:norm(state.selectedCustomer.name),dateIso,time,drink:c.drink,qty:c.qty,price:Math.round(c.price*sign*100)/100,legacyNumber:'',kind:refund?'refund':'sale'}));if(RemotePos.active){
-  const fingerprint=JSON.stringify({customer:state.selectedCustomer.id,refund,isTest:RemotePos.testMode===true,items:state.cart.map(x=>[x.productId,x.qty,x.unitPrice])});
+async function completeSale(refund=false){if(state.busy)return;const onEmployee=state.employeeCharge,customer=onEmployee?linkedEmployeeCustomer():state.selectedCustomer;if(!customer){toastCustomer();status('יש לבחור לקוח לפני חיוב','error');return;}if(!state.cart.length){status('לא נבחרו משקאות','error');return;}if(RemotePos.active&&!RemotePos.testMode&&!RemotePos.isImported){const message='לא ניתן לשמור חיוב או זיכוי במצב עבודה: ארכיון הפאב המקורי טרם יובא למערכת. לא נשמרה עסקה. ניתן להשתמש בכפתור ניסיון בחשבון הבעלים לצורך בדיקות.';status(message,'error');alert(message);return;}if(refund&&!confirm(`לשמור זיכוי עסקה ללקוח ${customer.name} בסך ${currency(state.cart.reduce((s,r)=>s+r.price,0))}?`))return;state.busy=true;el('chargeBtn').disabled=true;el('refundBtn').disabled=true;try{const d=new Date(),op=uuid(),time=d.toTimeString().slice(0,8),dateIso=nowIso(),sign=refund?-1:1;const rows=state.cart.map(c=>({id:uuid(),operationId:op,customer:customer.name,customerKey:norm(customer.name),dateIso,time,drink:c.drink,qty:c.qty,price:Math.round(c.price*sign*100)/100,legacyNumber:'',kind:refund?'refund':'sale'}));if(RemotePos.active){
+  const fingerprint=JSON.stringify({customer:customer.id,onEmployee,refund,isTest:RemotePos.testMode===true,items:state.cart.map(x=>[x.productId,x.qty,x.unitPrice])});
   if(!state.pendingOperation||state.pendingOperation.fingerprint!==fingerprint){state.pendingOperation={fingerprint,op:uuid()};}
-  await RemotePos.submit({operationId:state.pendingOperation.op,customerId:state.selectedCustomer.id,kind:refund?'refund':'sale',items:state.cart,deviceId:getDeviceId()});
+  if(onEmployee)await RemotePos.submitEmployeeCharge({operationId:state.pendingOperation.op,kind:refund?'refund':'sale',items:state.cart,deviceId:getDeviceId()});
+  else await RemotePos.submit({operationId:state.pendingOperation.op,customerId:customer.id,kind:refund?'refund':'sale',items:state.cart,deviceId:getDeviceId()});
   state.pendingOperation=null;
-}else await saveSaleAtomic(rows);const total=rows.reduce((s,r)=>s+r.price,0),name=state.selectedCustomer.name;state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;await refresh();if(refund){status(`${RemotePos.active&&RemotePos.testMode?'[ניסיון D] ':''}זיכוי נשמר עבור ${name}: ${currency(total)}`,'success');el('billTag').textContent='זיכוי נשמר';}else{status('');const button=el('chargeBtn');button.classList.remove('charge-success');void button.offsetWidth;button.classList.add('charge-success');}}catch(e){const message='שמירת העסקה נכשלה: '+e.message+' — לא הוצג אישור שהעסקה נשמרה. בדוק את הארכיון לפני ניסיון חוזר.';status(message,'error');alert(message);}finally{setTimeout(()=>{state.busy=false;el('chargeBtn').disabled=false;el('refundBtn').disabled=false;},1050);}}
+}else await saveSaleAtomic(rows);const total=rows.reduce((s,r)=>s+r.price,0),name=customer.name;state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;state.employeeCharge=false;await refresh();if(refund){status(`${RemotePos.active&&RemotePos.testMode?'[ניסיון D] ':''}זיכוי נשמר עבור ${name}: ${currency(total)}`,'success');el('billTag').textContent='זיכוי נשמר';}else{status(onEmployee?'חיוב עובד נשמר בחשבון '+name:'',onEmployee?'success':'');const button=el('chargeBtn');button.classList.remove('charge-success');void button.offsetWidth;button.classList.add('charge-success');}}catch(e){const message='שמירת העסקה נכשלה: '+e.message+' — לא הוצג אישור שהעסקה נשמרה. בדוק את הארכיון לפני ניסיון חוזר.';status(message,'error');alert(message);}finally{setTimeout(()=>{state.busy=false;el('chargeBtn').disabled=false;el('refundBtn').disabled=false;},1050);}}
 async function productSubmit(event){event.preventDefault();assertManage('create_products');const f=new FormData(event.target),category=String(f.get('category')||'').trim(),type=String(f.get('type')||'').trim(),price=amount(f.get('price'));if(!category||!type||price<0)throw new Error('יש למלא קטגוריה, משקה ומחיר תקין');const name=productLabel(category,type),existing=state.products.find(p=>p.normalized===norm(name));if(existing){if(existing.active)throw new Error('משקה בשם זה כבר קיים');if(!confirm('המשקה לא פעיל. להפעיל אותו מחדש?'))return;if(RemotePos.active)await RemotePos.saveProduct({...existing,active:true,category,type,price},{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:'הפעלה מחדש'});else await putRow('products',{...existing,active:true,category,type,price});}else{const row={id:uuid(),category,type,name,normalized:norm(name),price,active:true};if(RemotePos.active)await RemotePos.saveProduct(row,{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:'הוספת משקה'});else await putRow('products',row);}if(!RemotePos.active)await putRow('priceHistory',{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:existing?'הפעלה מחדש':'הוספת משקה'});event.target.reset();await refresh();status('מוצר נשמר','success');}
 function catalogVisibleRows(){
  const entity=state.catalogDialog;
@@ -208,7 +223,7 @@ function reportRowsRaw(){
   (full||(r.createdAt&&Date.parse(r.createdAt)>=cutoff&&Date.parse(r.createdAt)<=Date.now()))&&
   (!from||r.dateIso>=from)&&(!to||r.dateIso<=to)&&(!customer||r.customer===customer));
 }
-function prepareReport(){const raw=reportRowsRaw(),kind=canViewFullReports()?el('reportType').value:'movements';let headers=[],rows=[],title='';if(kind==='byCustomer'){title='סיכום לפי לקוח';headers=['לקוח','מספר תנועות','סה״כ ₪'];const sums=new Map();for(const r of raw){const s=sums.get(r.customer)||{n:0,total:0};s.n++;s.total+=Number(r.price);sums.set(r.customer,s);}rows=[...sums.entries()].map(([k,s])=>[k,s.n,Math.round(s.total*100)/100]);}else if(kind==='byProduct'){title='סיכום לפי משקה';headers=['משקה','כמות נטו','סה״כ ₪'];const sums=new Map();for(const r of raw){const s=sums.get(r.drink)||{q:0,total:0};s.q+=Number(r.qty)*(r.price<0?-1:1);s.total+=Number(r.price);sums.set(r.drink,s);}rows=[...sums.entries()].map(([k,s])=>[k,s.q,Math.round(s.total*100)/100]);}else{title=kind==='endDay'?'דוח סגירת יום':'דוח תנועות';if(kind==='movements'){headers=['תאריך','שעה','עובד','לקוח','משקה','סוג','כמות','מחיר'];rows=raw.map(r=>[legacyDate(r.dateIso),r.time,r.operatorName||'—',r.customer,r.drink,r.kind==='refund'||r.price<0?'זיכוי':'חיוב',Number(r.qty),Number(r.price)]);}else{headers=['תאריך','שעה','לקוח','משקה','כמות','מחיר ₪','סוג'];rows=raw.map(r=>[legacyDate(r.dateIso),r.time,r.customer,r.drink,Number(r.qty),Number(r.price),r.kind==='refund'||r.price<0?'זיכוי':'חיוב']);}if(RemotePos.active&&RemotePos.testMode){headers.push('מזהה ניסיון');rows=rows.map((row,i)=>[...row,raw[i].testCode||'D']);}}return {headers,rows,title,raw};}
+function prepareReport(){const raw=reportRowsRaw(),kind=canViewFullReports()?el('reportType').value:'movements';let headers=[],rows=[],title='';if(kind==='byCustomer'){title='סיכום לפי לקוח';headers=['לקוח','מספר תנועות','סה״כ ₪'];const sums=new Map();for(const r of raw){const s=sums.get(r.customer)||{n:0,total:0};s.n++;s.total+=Number(r.price);sums.set(r.customer,s);}rows=[...sums.entries()].map(([k,s])=>[k,s.n,Math.round(s.total*100)/100]);}else if(kind==='byProduct'){title='סיכום לפי משקה';headers=['משקה','כמות נטו','סה״כ ₪'];const sums=new Map();for(const r of raw){const s=sums.get(r.drink)||{q:0,total:0};s.q+=Number(r.qty)*(r.price<0?-1:1);s.total+=Number(r.price);sums.set(r.drink,s);}rows=[...sums.entries()].map(([k,s])=>[k,s.q,Math.round(s.total*100)/100]);}else{title=kind==='endDay'?'דוח סגירת יום':'דוח תנועות';if(kind==='movements'){headers=['תאריך','שעה','עובד','לקוח','משקה','סוג','כמות','מחיר','מזהה'];rows=raw.map(r=>[legacyDate(r.dateIso),r.time,r.operatorName||'—',r.customer,r.drink,r.kind==='refund'||r.price<0?'זיכוי':'חיוב',Number(r.qty),Number(r.price),r.employeeCharge?'חיוב עובד':'']);}else{headers=['תאריך','שעה','לקוח','משקה','כמות','מחיר ₪','סוג','מזהה'];rows=raw.map(r=>[legacyDate(r.dateIso),r.time,r.customer,r.drink,Number(r.qty),Number(r.price),r.kind==='refund'||r.price<0?'זיכוי':'חיוב',r.employeeCharge?'חיוב עובד':'']);}if(RemotePos.active&&RemotePos.testMode){headers.push('מזהה ניסיון');rows=rows.map((row,i)=>[...row,raw[i].testCode||'D']);}}return {headers,rows,title,raw};}
 function renderReport(){const r=prepareReport();state.currentReport=r;el('reportTable').parentElement.classList.toggle('limited-24h-ten-rows',RemotePos.active&&RemotePos.authenticated===true&&!canViewFullReports());const head=el('reportHead'),body=el('reportBody');head.replaceChildren();body.replaceChildren();const tr=document.createElement('tr');for(const h of r.headers){const th=document.createElement('th');th.textContent=h;tr.append(th);}head.append(tr);for(const row of r.rows){const t=document.createElement('tr');for(const x of row){const c=document.createElement('td');c.textContent=typeof x==='number'?x.toLocaleString('he-IL',{maximumFractionDigits:2}):x;t.append(c);}body.append(t);}if(!r.rows.length){const t=document.createElement('tr');t.innerHTML=`<td colspan="${r.headers.length}" class="empty">אין נתונים לדוח בטווח שנבחר</td>`;body.append(t);}if(canViewFullReports()){const total=r.raw.reduce((n,x)=>n+Number(x.price||0),0),customers=new Set(r.raw.map(x=>x.customer)).size;el('reportSummary').innerHTML=`<div class="summary-card"><small>תנועות</small><strong>${r.raw.length}</strong></div><div class="summary-card"><small>לקוחות</small><strong>${customers}</strong></div><div class="summary-card"><small>${RemotePos.active&&RemotePos.testMode?'סה״כ ניסיון':'סה״כ נטו'}</small><strong>${escapeHtml(currency(total))}</strong></div>`;}else el('reportSummary').replaceChildren();return r;}
 function downloadReportXlsx(){assertFullReportAccess();const r=renderReport();downloadBlob(buildExcel(r.headers,r.rows,r.title),`Manara_${el('reportType').value}_${nowIso()}.xlsx`);}
 function csvEscape(v){return '"'+String(v??'').replaceAll('"','""')+'"';}
@@ -348,6 +363,7 @@ function showCloudDataError(error){
  el('cloudBackToTest').classList.add('hidden');
 }
 function renderPermissions(){
+ fillEmployeeChargeReportOptions();
  const auth=RemotePos.employee||{};
  const owner=RemotePos.active&&auth.is_owner===true;
  const ownerTerminal=RemotePos.active&&auth.owner_terminal===true;
@@ -362,7 +378,8 @@ function renderPermissions(){
  el('archiveManageBtn').classList.toggle('hidden',!(ownerTerminal||limitedAdmin));
  const fullReports=canViewFullReports();
  el('reportControls').classList.toggle('hidden',!fullReports);
- el('reportAccessNote').textContent=fullReports?'כולל חיובים וזיכויים':'תנועות הקופה ב־24 השעות האחרונות בלבד';
+ el('employeeChargeReportPanel').classList.toggle('hidden',!RemotePos.authenticated);
+ el('reportAccessNote').textContent=fullReports?'כולל חיובים וזיכויים':'תנועות הקופה ב־24 השעות האחרונות; חיובי העובד זמינים למטה';
  el('reportSummary').classList.toggle('hidden',!fullReports);
  for(const id of ['fromDate','toDate','reportCustomer','reportType','exportExcelBtn','exportCsvBtn','printBtn'])el(id).disabled=!fullReports;
  if(!fullReports){el('reportType').value='movements';}
@@ -393,13 +410,15 @@ function renderPermissions(){
 async function activateCloud(){
  await RemotePos.start();
  await refresh();
+ fillEmployeeChargeReportOptions();
+ renderEmployeeChargeReport();
  el('cloudGate').classList.add('hidden');
  el('storageLabel').textContent=RemotePos.isImported?'ענן · עבודה':'ענן · ממתין לייבוא';
  el('cloudUser').textContent=RemotePos.employee?.display_name||'עובד';
  el('cloudUserBar').classList.remove('hidden');
  el('remoteSystemNotice').textContent='קופה אחת וארכיון משותף. עסקאות ניסיון מסוג D אינן נכללות בדוחות העבודה. נתונים מקומיים נשמרים עד ייבוא מאושר מהמחשב המקורי.';
  el('migrationPanel').classList.add('hidden');
- RemotePos.onChange=async()=>{await refresh();renderPermissions();};
+ RemotePos.onChange=async()=>{await refresh();renderPermissions();renderEmployeeChargeReport();};
  RemotePos.statusCallback=(msg,kind)=>{el('cloudSync').textContent=msg;el('cloudSync').className='sync-msg '+(kind||'');};
  RemotePos.setStatus('מסונכרן עם כל הקופות','success');
  if(!RemotePos.isImported)status('ארכיון הפאב טרם יובא. חיובי אמת נעולים עד לייבוא.','');
@@ -424,7 +443,7 @@ async function toggleTrialMode(){
  const newValue=!RemotePos.testMode;
  if(state.cart.length&&!confirm('מעבר מצב ניסיון ינקה את החיוב הפתוח. להמשיך?'))return;
  if(!newValue&&!confirm('לצאת ממצב ניסיון? החיובים הבאים יהיו אמיתיים רק לאחר ייבוא הארכיון המקורי.'))return;
- state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;state.pendingOperation=null;
+ state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;state.employeeCharge=false;state.pendingOperation=null;
  RemotePos.setTestMode(newValue);
  renderCustomer();renderBill();renderReport();renderModeControls();
  status(newValue?'ניסיון הופעל — חיובים יסומנו D':'מצב ניסיון כבוי — יופיעו רק עסקאות אמת','success');
@@ -508,6 +527,56 @@ async function unlockAdmin(event){
  }catch(e){el('adminPassword').value='';el('adminMessage').textContent=e.message;}
  finally{btn.disabled=false;}
 }
+
+function openEmployeeCustomerLink(employee){
+ if(RemotePos.employee?.is_owner!==true)throw new Error('קישור לקוח דורש אימות בעלים');
+ el('employeeLinkTitle').textContent='חשבון לקוח: '+employee.username;
+ const field=el('employeeLinkedCustomer');field.replaceChildren();
+ const blank=document.createElement('option');blank.value='';blank.textContent='ללא קישור';field.append(blank);
+ for(const c of [...state.customers].filter(c=>c.active||c.id===employee.linked_customer_id).sort((a,b)=>a.name.localeCompare(b.name,'he'))){
+  const option=document.createElement('option');option.value=c.id;option.textContent=c.name+(c.active?'':' (לא פעיל)');option.disabled=!c.active;field.append(option);
+ }
+ field.value=employee.linked_customer_id||'';
+ el('employeeLinkModal').dataset.employeeId=employee.user_id;
+ el('employeeLinkMessage').textContent='';el('employeeLinkModal').classList.remove('hidden');
+}
+async function saveEmployeeCustomerLink(e){
+ e.preventDefault();const button=el('employeeLinkSave');button.disabled=true;
+ try{
+  await RemotePos.manageStaff('set_customer_link',{user_id:el('employeeLinkModal').dataset.employeeId,customer_id:el('employeeLinkedCustomer').value||null});
+  el('employeeLinkModal').classList.add('hidden');await renderEmployeeList();await refresh();
+  el('employeeMessage').textContent='חשבון העובד עודכן. חיובים קודמים לא שונו.';
+ }catch(err){el('employeeLinkMessage').textContent=err.message;}
+ finally{button.disabled=false;}
+}
+async function renderEmployeeChargeReport(){
+ if(!RemotePos.active||!RemotePos.authenticated)return;
+ try{
+  const id=el('employeeChargeReportEmployee').value||null;
+  const result=await RemotePos.employeeChargeReport(id);
+  const rows=(Array.isArray(result)?result:[]).filter(x=>Boolean(x.isTest)===Boolean(RemotePos.testMode));
+  const body=el('employeeChargeReportBody');body.replaceChildren();
+  for(const r of rows){
+   const tr=document.createElement('tr');
+   const vals=[new Date(r.date).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem'}),r.employee||'—',r.customer,r.drink,r.qty,currency(Number(r.amount)),r.kind==='refund'?'זיכוי עובד':'חיוב עובד'];
+   for(const v of vals){const td=document.createElement('td');td.textContent=v;tr.append(td);}body.append(tr);
+  }
+  if(!rows.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="7" class="empty">לא נמצאו חיובי עובד</td>';body.append(tr);}
+  el('employeeChargeReportSummary').textContent='סה״כ '+currency(rows.reduce((sum,x)=>sum+Number(x.amount||0),0))+' · '+new Set(rows.map(x=>x.transactionId)).size+' עסקאות';
+  el('employeeChargeReportMessage').textContent='';
+ }catch(err){el('employeeChargeReportMessage').textContent=err.message;}
+}
+function fillEmployeeChargeReportOptions(){
+ const field=el('employeeChargeReportEmployee'),previous=field.value;
+ field.classList.toggle('hidden',!canViewFullReports());field.replaceChildren();
+ const own=document.createElement('option');own.value='';own.textContent='החיובים שלי';field.append(own);
+ if(canViewFullReports()){
+  const names=new Map();for(const row of state.archive){if(row.operatorId)names.set(row.operatorId,row.operatorName||'עובד');}
+  for(const [id,name] of names){const opt=document.createElement('option');opt.value=id;opt.textContent=name;field.append(opt);}
+ }
+ if([...field.options].some(x=>x.value===previous))field.value=previous;
+}
+
 async function renderEmployeeList(){
  const host=el('employeeRows');host.replaceChildren();
  if(RemotePos.employee?.is_owner!==true)return;
@@ -527,7 +596,10 @@ async function renderEmployeeList(){
     const permissions=document.createElement('button');permissions.type='button';permissions.className='tiny-btn';permissions.textContent='הרשאות';permissions.onclick=()=>openEmployeePermissions(employee);
     actions.append(toggle,reset,permissions);
    }
-   tr.append(name,condition,actions);host.append(tr);
+   const link=document.createElement('button');link.type='button';link.className='tiny-btn';
+   link.textContent='חשבון: '+(state.customers.find(c=>c.id===employee.linked_customer_id)?.name||'לא מקושר');
+   link.onclick=()=>openEmployeeCustomerLink(employee);
+   actions.append(link);tr.append(name,condition,actions);host.append(tr);
  }
  if(!host.childNodes.length){
   const row=document.createElement('tr');row.innerHTML='<td colspan="3" class="empty">עדיין לא הוגדרו עובדים</td>';host.append(row);
@@ -601,7 +673,7 @@ async function enforceShiftExpiry(){
  if(!RemotePos.session?.pos_valid_until||Date.now()<RemotePos.session.pos_valid_until)return;
  await RemotePos.signOut();
  state.switchingEmployee=false;
- state.cart=[];state.cartHistory=[];state.selectedCustomer=null;state.pendingOperation=null;
+ state.cart=[];state.cartHistory=[];state.selectedCustomer=null;state.employeeCharge=false;state.pendingOperation=null;
  RemotePos.onChange=null;
  el('cloudUserBar').classList.add('hidden');
  el('adminLogin').classList.add('hidden');
@@ -643,6 +715,12 @@ async function migrateCloud(){
 }
 function remoteEvents(){
  ArchiveAdmin.init();
+ on('employeeChargeToggle','change',e=>toggleEmployeeCharge(e.target.checked));
+ on('employeeChargeReportRefresh','click',()=>renderEmployeeChargeReport());
+ on('employeeChargeReportEmployee','change',()=>renderEmployeeChargeReport());
+ on('employeeLinkClose','click',()=>el('employeeLinkModal').classList.add('hidden'));
+ on('employeeLinkCancel','click',()=>el('employeeLinkModal').classList.add('hidden'));
+ el('employeeLinkForm').addEventListener('submit',saveEmployeeCustomerLink);
  el('employeePermissionsForm').addEventListener('submit',saveEmployeePermissions);
  on('manageSystemPermission','change',e=>el('staffAdminEmailField').classList.toggle('hidden',!e.target.checked));
  el('staffAdminUnlockForm').addEventListener('submit',unlockStaffAdmin);
