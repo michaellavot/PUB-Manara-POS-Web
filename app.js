@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='0.9.42';
+const APP_VERSION='0.9.43';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -392,6 +392,7 @@ function renderPermissions(){
  el('staffAdminCustomersBtn').classList.toggle('hidden',!['create_customers','toggle_customers'].some(canManage));
  el('staffAdminReportsBtn').classList.toggle('hidden',!canViewFullReports());
  el('archiveManageBtn').classList.toggle('hidden',!(ownerTerminal||limitedAdmin));
+ el('sqliteImportPanel').classList.toggle('hidden',!(ownerTerminal&&!RemotePos.isImported));
  const fullReports=canViewFullReports();
  el('reportControls').classList.toggle('hidden',!fullReports);
  el('employeeChargeReportPanel').classList.toggle('hidden',!RemotePos.authenticated);
@@ -765,6 +766,7 @@ async function migrateCloud(){
 }
 function remoteEvents(){
  ArchiveAdmin.init();
+ LegacyDbImport.init();
  on('employeeChargeToggle','click',openEmployeeChargeName);
  on('employeeChargeNameCancel','click',closeEmployeeChargeName);
  on('employeeChargeNameClose','click',closeEmployeeChargeName);
