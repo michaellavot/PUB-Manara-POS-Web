@@ -342,7 +342,7 @@ function navigateFromMenu(page){
 function events(){
  // Defense in depth: do not let keyboard or synthetic UI events operate an
  // unlocked-looking page while the mandatory version check is unresolved.
- const isUpdateControl=target=>target instanceof Element&&Boolean(target.closest('#updateDialog'));
+ const isUpdateControl=target=>target instanceof Element&&Boolean(target.closest('#updateDialog')||target.closest('#startupScreen'));
  for(const eventName of ['click','submit']){
   document.addEventListener(eventName,event=>{
    if(softwareUpdate.verified||softwareUpdate.pendingForCart||isUpdateControl(event.target))return;
