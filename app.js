@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='1.0.11';
+const APP_VERSION='1.0.12';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -371,11 +371,19 @@ function arrangeDesktopHeaderControls(){
  const strip=el('globalControlStrip');
  const userBar=el('cloudUserBar'),gear=el('navigationGearBtn'),clock=el('clock');
  const left=el('desktopHeroGear'),right=el('desktopHeroIdentity');
+ const customer=el('customerSelectWrap'),employeeCharge=el('employeeChargeToggle');
+ const billControls=el('desktopBillingControls');
  if(desktop){
   if(gear.parentElement!==left)left.append(gear);
   if(userBar.parentElement!==right)right.append(userBar);
   if(clock.parentElement!==right)right.append(clock);
+  // Move the original controls, preserving listeners and the current selection.
+  if(customer.parentElement!==billControls)billControls.append(customer);
+  if(employeeCharge.parentElement!==billControls)billControls.append(employeeCharge);
  }else{
+  // Restore the original mobile/tablet control row and DOM order.
+  if(customer.parentElement!==strip)strip.insertBefore(customer,strip.firstChild);
+  if(employeeCharge.parentElement!==strip)customer.after(employeeCharge);
   if(clock.parentElement!==strip)strip.append(clock);
   if(userBar.parentElement!==strip)strip.append(userBar);
   if(gear.parentElement!==userBar)userBar.append(gear);
