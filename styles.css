@@ -815,3 +815,25 @@ body.desktop-hero-controls #desktopHeroIdentity #clock{
  white-space:nowrap;font-size:clamp(12px,.9vw,15px);
 }
 /* Preserve the GIF's visual center, without enlarging or shifting the header. */
+
+/* V1.0.12: integrate the existing customer controls into the bill panel on desktop.
+   No mobile/tablet style or control behavior changes. */
+.desktop-billing-controls{display:none}
+body.desktop-hero-controls #globalControlStrip{display:none!important}
+body.desktop-hero-controls #posPage .bill-panel{position:relative;overflow:visible}
+body.desktop-hero-controls #desktopBillingControls{
+ display:flex;align-items:center;gap:9px;direction:rtl;
+ flex:0 0 auto;width:100%;min-width:0;margin:0 0 10px;
+ padding:0 0 10px;border-bottom:1px solid #644a32;
+}
+body.desktop-hero-controls #desktopBillingControls .customer-select-wrap{
+ flex:1 1 auto;min-width:0;width:auto;max-width:none;
+}
+body.desktop-hero-controls #desktopBillingControls .desktop-customer-search{
+ height:42px;min-height:42px;padding:7px 12px;
+ font-size:15px;background:#172329;border-radius:8px;
+}
+body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
+ flex:0 0 auto;min-height:42px;height:42px;padding:7px 13px;
+ font-size:14px;white-space:nowrap;
+}
