@@ -520,3 +520,33 @@ body[data-layout-mode="desktop"] #managePage #auditPanel .audit-table{max-height
 .archive-audit-entry{padding:8px 10px;border-bottom:1px solid #ffffff20;font-size:12px}
 @media(max-width:730px){.archive-admin-panel{width:calc(100vw - 14px);padding:10px;height:94dvh;max-height:94dvh}.archive-admin-grid{grid-template-columns:1fr;flex:none}.archive-customer-list{max-height:30dvh}.archive-lines-list{max-height:37dvh}.archive-edit-form{grid-template-columns:1fr}.archive-line-row{align-items:flex-start;flex-wrap:wrap}}
 @media print{#archiveManagerModal{display:none!important}}
+
+
+/* V0.9.37 — fill the remaining desktop viewport with the two POS panels only.
+   Do not resize the header, global customer control, or tablet/mobile layouts. */
+@media screen and (min-width:1101px) and (min-height:700px){
+ body:not([data-layout-mode="mobile"]):not([data-layout-mode="tablet"]) .app-shell:has(#posPage.active){
+  height:100dvh;
+  min-height:700px;
+  overflow:hidden;
+ }
+ body:not([data-layout-mode="mobile"]):not([data-layout-mode="tablet"]) main:has(> #posPage.active){
+  display:flex;
+  flex-direction:column;
+  flex:1 1 auto;
+  min-height:0;
+  overflow:hidden;
+ }
+ body:not([data-layout-mode="mobile"]):not([data-layout-mode="tablet"]) #posPage.active{
+  display:flex;
+  flex:1 1 auto;
+  flex-direction:column;
+  min-height:0;
+  height:auto;
+ }
+ body:not([data-layout-mode="mobile"]):not([data-layout-mode="tablet"]) #posPage.active .work-grid{
+  flex:1 1 auto;
+  min-height:0;
+  height:100%;
+ }
+}
