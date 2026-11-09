@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='1.0.10';
+const APP_VERSION='1.0.11';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -364,9 +364,28 @@ const LAYOUT_OPTIONS=['auto','mobile','tablet','desktop'];
 function getSavedLayoutMode(){
  try{const val=localStorage.getItem(LAYOUT_STORAGE_KEY);return LAYOUT_OPTIONS.includes(val)?val:'auto';}catch{return 'auto';}
 }
+// Move the existing controls, never clone them: handlers and employee identity stay intact.
+function arrangeDesktopHeaderControls(){
+ const mode=document.body.dataset.layoutMode;
+ const desktop=(mode==='desktop'&&window.innerWidth>700)||(mode==='auto'&&window.innerWidth>=1101);
+ const strip=el('globalControlStrip');
+ const userBar=el('cloudUserBar'),gear=el('navigationGearBtn'),clock=el('clock');
+ const left=el('desktopHeroGear'),right=el('desktopHeroIdentity');
+ if(desktop){
+  if(gear.parentElement!==left)left.append(gear);
+  if(userBar.parentElement!==right)right.append(userBar);
+  if(clock.parentElement!==right)right.append(clock);
+ }else{
+  if(clock.parentElement!==strip)strip.append(clock);
+  if(userBar.parentElement!==strip)strip.append(userBar);
+  if(gear.parentElement!==userBar)userBar.append(gear);
+ }
+ document.body.classList.toggle('desktop-hero-controls',desktop);
+}
 function applyLayoutMode(mode){
  if(!LAYOUT_OPTIONS.includes(mode))mode='auto';
  document.body.dataset.layoutMode=mode;
+ arrangeDesktopHeaderControls();
  document.querySelectorAll('[data-layout-choice]').forEach(btn=>{
   const active=btn.dataset.layoutChoice===mode;
   btn.setAttribute('aria-pressed',String(active));
@@ -430,6 +449,7 @@ function events(){
    }
   }
  },true);
+ window.addEventListener('resize',arrangeDesktopHeaderControls);
  on('deviceLayoutBtn','click',openLayoutDialog);on('deviceLayoutClose','click',closeLayoutDialog);on('deviceLayoutBackdrop','click',closeLayoutDialog);for(const btn of document.querySelectorAll('[data-layout-choice]'))btn.addEventListener('click',()=>saveLayoutMode(btn.dataset.layoutChoice));for(const b of document.querySelectorAll('.tab'))b.onclick=()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));if(b.dataset.page==='reportsPage'&&RemotePos.active){renderReport();renderEmployeeChargeReport();}if(b.dataset.page==='systemPage'&&RemotePos.active&&RemotePos.employee?.owner_terminal===true)BackupManager.refresh();el('globalControlStrip').classList.toggle('not-pos-page',b.dataset.page!=='posPage');};on('navigationGearBtn','click',openNavigationMenu);on('navigationMenuClose','click',()=>closeNavigationMenu());on('navigationMenuBackdrop','click',()=>closeNavigationMenu());for(const b of document.querySelectorAll('[data-nav-page]'))b.addEventListener('click',()=>navigateFromMenu(b.dataset.navPage));on('customerInput','click',toggleCustomerDropdown);
  on('desktopCustomerSearch','focus',renderDesktopCustomerOptions);
  on('desktopCustomerSearch','click',renderDesktopCustomerOptions);
