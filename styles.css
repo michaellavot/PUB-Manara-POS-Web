@@ -580,11 +580,11 @@ body[data-layout-mode="desktop"] #managePage #auditPanel .audit-table{max-height
  font-size:17px;line-height:1.4;accent-color:auto;
 }
 
-/* V0.9.41: maintain touch scrolling and prevent accidental pull-to-refresh.
-   No visual changes to the desktop or mobile design. */
-@media (pointer:coarse){
- html,body{overscroll-behavior-y:contain}
- .products-grid,.category-grid,.bill-table-wrap,.scroll-table,.customer-dialog-results{
-  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
- }
+/* V0.9.42: same beer GIF inside Charge, with unchanged outer button dimensions. */
+#chargeBtn{position:relative;isolation:isolate;overflow:hidden}
+#chargeBtn .charge-button-label{position:relative;z-index:2;pointer-events:none}
+#chargeBtn .charge-button-beer-gif{
+ position:absolute;inset-inline-start:10px;top:50%;transform:translateY(-50%);
+ height:min(42px,85%);width:clamp(35px,9%,52px);
+ object-fit:contain;pointer-events:none;z-index:1;
 }
