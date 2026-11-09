@@ -846,3 +846,7 @@ body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
 .employee-removed-filter input{width:17px;height:17px;accent-color:#c7a16c}
 #employeeRows .tiny-btn.danger{background:#59302a;border-color:#ad5b48;color:#ffe3d9}
 #employeeRows .tiny-btn:disabled{opacity:.55;cursor:wait}
+
+/* V1.0.16: a visible in-dialog retry action when staff lookup fails. */
+#employeePicker .employee-picker-retry{align-self:center;flex:0 0 auto;margin:0 16px 16px;min-height:44px;padding:9px 18px}
+#employeePicker .employee-picker-retry:disabled{opacity:.65;cursor:wait}
