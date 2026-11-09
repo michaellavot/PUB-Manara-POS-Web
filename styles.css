@@ -620,3 +620,30 @@ body[data-layout-mode="desktop"] #managePage #auditPanel .audit-table{max-height
 #backupManagerMessage{margin-top:14px}
 #backupManagerMessage.backup-error{color:#f4a29a}
 @media(max-width:730px){.pos-simple-system-grid{grid-template-columns:1fr}.pos-backup-schedule{grid-template-columns:1fr 1fr}.pos-simple-system-section{padding:12px}}
+
+/* V1.0.1 — Employee charge report lives in its own dialog.
+   Do not modify page/global scrolling or other POS layouts. */
+.employee-charge-report-entry{display:flex;justify-content:flex-start;margin:10px 0 12px}
+.employee-charge-report-entry .button{min-height:42px}
+.employee-charge-modal{z-index:1250}
+.employee-charge-report-backdrop{position:absolute;inset:0;background:#02080bd8;backdrop-filter:blur(3px)}
+.employee-charge-modal .employee-charge-report{
+ position:relative;z-index:1;margin:0;width:min(1180px,100%);
+ height:min(88dvh,900px);max-height:calc(100dvh - 20px);min-height:0;
+ display:flex;flex-direction:column;gap:12px;padding:clamp(12px,2vw,22px);
+ overflow:hidden;
+}
+.employee-charge-modal-head{flex:0 0 auto;gap:12px;flex-wrap:wrap}
+.employee-charge-modal-head h2{margin:0}
+.employee-charge-modal .employee-charge-report-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:0 0 auto}
+.employee-charge-modal .employee-charge-report-filters select{flex:1 1 160px;max-width:100%;min-width:0}
+.employee-charge-modal .employee-charge-report-table{flex:1 1 auto;min-height:120px;max-height:none;overflow:auto}
+.employee-charge-modal .employee-charge-report-table .data-table{min-width:760px}
+.employee-charge-modal .employee-charge-person-totals{flex:0 0 auto;max-height:25dvh;overflow-y:auto}
+@media(max-width:730px){
+ .employee-charge-modal{padding:8px}
+ .employee-charge-modal .employee-charge-report{height:calc(100dvh - 16px);max-height:calc(100dvh - 16px);width:100%;padding:12px;gap:10px}
+ .employee-charge-modal-head h2{font-size:19px}
+ .employee-charge-modal .employee-charge-report-filters select{flex:1 1 120px}
+ .employee-charge-modal .employee-charge-report-table .data-table{min-width:760px}
+}
