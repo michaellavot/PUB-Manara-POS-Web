@@ -187,7 +187,7 @@ const RemotePos={
     const [customerRows,productRows,transactionRows,settingsRows]=await Promise.all([
       this.rows('customers','id,name,name_key,active,is_test_created'),
       this.rows('products','id,name,name_key,category,product_type,price,active,price_history,is_test_created'),
-      this.rows('transactions','id,client_operation_id,customer_name,kind,created_at,is_test,transaction_items!transaction_items_transaction_id_fkey(id,product_name,quantity,line_total,is_test,test_code)','created_at.asc'),
+      this.rows('transactions','id,client_operation_id,customer_name,operator_name,kind,created_at,is_test,transaction_items!transaction_items_transaction_id_fkey(id,product_name,quantity,line_total,is_test,test_code)','created_at.asc'),
       this.request('/rest/v1/pos_settings',{query:{select:'archive_imported',id:'eq.1'}})
     ]);
     this.customers=customerRows.map(c=>({id:c.id,name:c.name,normalized:c.name_key,active:c.active,isTestCreated:c.is_test_created===true}));
@@ -200,7 +200,7 @@ const RemotePos={
       const dateIso=`${part('year')}-${part('month')}-${part('day')}`;
       const time=d.toLocaleTimeString('en-GB',{timeZone:'Asia/Jerusalem',hour12:false});
       return(tx.transaction_items||[]).map(item=>({
-        id:item.id,operationId:tx.client_operation_id,customer:tx.customer_name,
+        id:item.id,operationId:tx.client_operation_id,customer:tx.customer_name,operatorName:tx.operator_name||'',
         customerKey:String(tx.customer_name||'').toLocaleLowerCase('he-IL').trim(),
         dateIso,time,drink:item.product_name,qty:item.quantity,price:Number(item.line_total),
         kind:tx.kind,legacyNumber:'',createdAt:tx.created_at,isTest:tx.is_test===true||item.is_test===true,testCode:item.test_code||''
