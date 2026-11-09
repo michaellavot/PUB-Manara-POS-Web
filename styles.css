@@ -579,3 +579,12 @@ body[data-layout-mode="desktop"] #managePage #auditPanel .audit-table{max-height
  flex:1 1 auto;padding:10px 14px;direction:rtl;text-align:right;
  font-size:17px;line-height:1.4;accent-color:auto;
 }
+
+/* V0.9.41: maintain touch scrolling and prevent accidental pull-to-refresh.
+   No visual changes to the desktop or mobile design. */
+@media (pointer:coarse){
+ html,body{overscroll-behavior-y:contain}
+ .products-grid,.category-grid,.bill-table-wrap,.scroll-table,.customer-dialog-results{
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+ }
+}
