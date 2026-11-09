@@ -600,3 +600,23 @@ body[data-layout-mode="desktop"] #managePage #auditPanel .audit-table{max-height
 #sqliteImportPanel .sqlite-price-decision{display:flex;flex-wrap:wrap;align-items:center;gap:10px;border:1px solid #755634;border-radius:8px;padding:9px 12px}
 #sqliteImportPanel .sqlite-price-decision span{flex:1 1 130px}
 #sqliteImportPanel .sqlite-price-decision select{flex:1 1 210px;max-width:100%}
+
+/* V0.9.45: owner system page - three tasks only. Old import panels retained
+   in markup for backwards compatibility but permanently hidden after migration. */
+#sqliteImportPanel,#archiveImportPanel,#ownerLegacyPanel,#ownerBackupPanel,#archiveManageBtn{display:none!important}
+#newSystemDashboard{grid-column:1/-1}
+.pos-simple-system-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px;align-items:start}
+.pos-simple-system-section{border:1px solid #61472e;border-radius:12px;background:#18262d;padding:16px;min-width:0}
+.pos-simple-system-section h3{margin:0 0 10px;font-size:18px;color:#ffe2b3}
+.pos-simple-system-section p{line-height:1.55}
+.pos-simple-system-section>.button{min-height:45px;max-width:100%}
+.pos-backup-schedule{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:end}
+.pos-backup-schedule label{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.pos-backup-schedule .pos-backup-toggle{grid-column:1/-1;flex-direction:row;gap:9px;align-items:center}
+.pos-backup-schedule .pos-backup-toggle input{width:20px;height:20px;accent-color:#3e966b}
+.pos-backup-schedule .button{min-height:43px}
+.pos-backup-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+.pos-backup-actions .button{flex:1 1 120px;white-space:normal}
+#backupManagerMessage{margin-top:14px}
+#backupManagerMessage.backup-error{color:#f4a29a}
+@media(max-width:730px){.pos-simple-system-grid{grid-template-columns:1fr}.pos-backup-schedule{grid-template-columns:1fr 1fr}.pos-simple-system-section{padding:12px}}
