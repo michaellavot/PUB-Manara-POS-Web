@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='0.9.32';
+const APP_VERSION='0.9.33';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -32,7 +32,7 @@ function openCustomerDialog(){el('customerDropdown').classList.remove('hidden');
 function closeCustomerDialog(restoreFocus=true){el('customerDropdown').classList.add('hidden');el('customerInput').setAttribute('aria-expanded','false');if(restoreFocus)el('customerInput').focus();}
 function toggleCustomerDropdown(){if(el('customerDropdown').classList.contains('hidden'))openCustomerDialog();else closeCustomerDialog();}
 function renderCustomerResults(){const search=norm(el('customerSearch').value);const results=state.customers.filter(c=>c.active&&norm(c.name).startsWith(search));const host=el('customerResults');host.replaceChildren();el('customerResultCount').textContent=results.length+' לקוחות';for(const c of results){const b=document.createElement('button');b.type='button';b.className='customer-result';b.setAttribute('aria-pressed',String(state.selectedCustomer?.id===c.id));b.innerHTML='<span></span><span aria-hidden="true">‹</span>';b.firstChild.textContent=c.name;b.onclick=()=>selectCustomer(c);host.append(b);}if(!results.length){const empty=document.createElement('div');empty.className='customer-results-empty';empty.textContent='לא נמצאו לקוחות מתאימים';host.append(empty);}}
-function selectCustomer(match){if(state.cart.length&&state.selectedCustomer?.id!==match.id&&!confirm('מעבר לקוח ינקה את החיוב הנוכחי. להמשיך?'))return;state.selectedCustomer=match;state.cart=[];state.cartHistory=[];state.selectedRow=-1;renderCustomer();renderBill();closeCustomerDialog();status('נבחר לקוח: '+match.name,'success');}
+function selectCustomer(match){state.selectedCustomer=match;renderCustomer();renderBill();closeCustomerDialog();status('נבחר לקוח: '+match.name,'success');}
 
 
 async function addCustomer(name,select=true){assertManage('create_customers');name=String(name||'').trim().replace(/\s+/g,' ');if(!name)throw new Error('יש להזין שם לקוח');const key=norm(name),old=state.customers.find(c=>c.normalized===key);if(old){if(old.active)throw new Error('לקוח בשם זה כבר קיים');if(!confirm(`הלקוח ${old.name} אינו פעיל. להפעיל אותו מחדש?`))return;if(RemotePos.active)await RemotePos.saveCustomer({...old,active:true,name,normalized:key});else await putRow('customers',{...old,active:true,name,normalized:key});}else{const row={id:uuid(),name,normalized:key,active:true};if(RemotePos.active)await RemotePos.saveCustomer(row);else await putRow('customers',row);}await refresh();if(select){state.selectedCustomer=state.customers.find(c=>c.normalized===key);renderCustomer();renderBill();}status('הלקוח נשמר','success');}
@@ -233,6 +233,38 @@ async function safeImportLegacy(){requireOwnerArchiveAccess();if(RemotePos.activ
 async function restoreBackup(file){requireOwnerArchiveAccess();if(RemotePos.active)throw new Error('שחזור ישיר בענן חסום כדי למנוע דריסה של עסקאות של עובדים אחרים. שמור את הגיבוי ופנה למנהל לשחזור מבוקר.');const data=JSON.parse(await file.text());validateBackup(data);if(!confirm('שחזור הגיבוי יחליף את כל הנתונים במכשיר זה. להמשיך?'))return;const old=await dbSnapshot();downloadBlob(new Blob([JSON.stringify(old,null,2)],{type:'application/json'}),`Manara_before_restore_${nowIso()}.json`);await dbReplaceFromBackup(data);state.selectedCustomer=null;state.cart=[];await refresh();alert('השחזור הושלם');}
 async function promptInstall(){if(state.installPrompt){await state.installPrompt.prompt();state.installPrompt=null;el('installBtn').classList.add('hidden');}else alert('התקנה זמינה כאשר האפליקציה נפתחת ב־Chrome/Edge דרך HTTPS או localhost. פתח את תפריט הדפדפן ובחר התקנה.');}
 function on(id,event,handler){el(id).addEventListener(event,e=>{try{Promise.resolve(handler(e)).catch(err=>{console.error(err);status(err.message,'error');alert(err.message);});}catch(err){console.error(err);status(err.message,'error');alert(err.message);}});}
+const LAYOUT_STORAGE_KEY='manara-pos-display-mode';
+const LAYOUT_OPTIONS=['auto','mobile','tablet','desktop'];
+function getSavedLayoutMode(){
+ try{const val=localStorage.getItem(LAYOUT_STORAGE_KEY);return LAYOUT_OPTIONS.includes(val)?val:'auto';}catch{return 'auto';}
+}
+function applyLayoutMode(mode){
+ if(!LAYOUT_OPTIONS.includes(mode))mode='auto';
+ document.body.dataset.layoutMode=mode;
+ document.querySelectorAll('[data-layout-choice]').forEach(btn=>{
+  const active=btn.dataset.layoutChoice===mode;
+  btn.setAttribute('aria-pressed',String(active));
+  btn.classList.toggle('selected',active);
+ });
+ const labels={auto:'אוטומטי — לפי רוחב המסך',mobile:'נייד — פריסה אנכית',tablet:'טאבלט — פריסה בינונית',desktop:'מחשב — פריסה רחבה'};
+ el('deviceLayoutCurrent').textContent='מצב נבחר: '+labels[mode];
+}
+function saveLayoutMode(mode){
+ if(!LAYOUT_OPTIONS.includes(mode))return;
+ try{localStorage.setItem(LAYOUT_STORAGE_KEY,mode);}catch(e){console.warn('תצוגה לא נשמרה במכשיר',e);}
+ applyLayoutMode(mode);
+ closeLayoutDialog();
+}
+function openLayoutDialog(){
+ el('deviceLayoutDialog').classList.remove('hidden');
+ el('deviceLayoutBtn').setAttribute('aria-expanded','true');
+ applyLayoutMode(getSavedLayoutMode());
+ el('deviceLayoutClose').focus();
+}
+function closeLayoutDialog(){
+ el('deviceLayoutDialog').classList.add('hidden');
+ el('deviceLayoutBtn').setAttribute('aria-expanded','false');
+}
 function openNavigationMenu(){
  if(!RemotePos.authenticated||!RemotePos.active)return;
  el('navigationMenu').classList.remove('hidden');
@@ -252,7 +284,7 @@ function navigateFromMenu(page){
  tab.click();
  closeNavigationMenu(false);
 }
-function events(){for(const b of document.querySelectorAll('.tab'))b.onclick=()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));};on('navigationGearBtn','click',openNavigationMenu);on('navigationMenuClose','click',()=>closeNavigationMenu());on('navigationMenuBackdrop','click',()=>closeNavigationMenu());for(const b of document.querySelectorAll('[data-nav-page]'))b.addEventListener('click',()=>navigateFromMenu(b.dataset.navPage));on('customerInput','click',toggleCustomerDropdown);on('customerDialogBackdrop','click',()=>closeCustomerDialog(false));on('customerDialogClose','click',()=>closeCustomerDialog());on('customerSearch','input',renderCustomerResults);on('customerSearch','keydown',e=>{if(e.key==='Enter'){const first=el('customerResults').querySelector('.customer-result');if(first)first.click();}else if(e.key==='ArrowDown'){e.preventDefault();el('customerResults').querySelector('.customer-result')?.focus();}});on('customerResults','keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const opts=[...el('customerResults').querySelectorAll('.customer-result')],i=opts.indexOf(document.activeElement);opts[(i+(e.key==='ArrowDown'?1:-1)+opts.length)%opts.length]?.focus();}});document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!el('navigationMenu').classList.contains('hidden'))closeNavigationMenu();else if(!el('employeePicker').classList.contains('hidden'))closeEmployeePicker();else if(!el('customerDropdown').classList.contains('hidden'))closeCustomerDialog();}});on('quickAddCustomerBtn','click',async()=>{const name=prompt('שם לקוח חדש');if(name!==null)await addCustomer(name);});on('resetCustomerBtn','click',()=>{if(state.cart.length&&!confirm('ניקוי לקוח יבטל את החיוב הנוכחי. להמשיך?'))return;state.selectedCustomer=null;state.cart=[];state.cartHistory=[];state.selectedRow=-1;renderCustomer();renderBill();closeCustomerDialog();});on('removeSelectedBtn','click',removeSelected);on('undoBtn','click',undoLast);on('clearBtn','click',clearBill);on('chargeBtn','click',()=>completeSale(false));on('chargeBtn','animationend',e=>{if(e.target===el('chargeBtn'))el('chargeBtn').classList.remove('charge-success');});on('refundBtn','click',()=>completeSale(true));on('customerForm','submit',async e=>{e.preventDefault();await addCustomer(new FormData(e.target).get('name'),false);e.target.reset();});on('productForm','submit',productSubmit);on('manageProducts','click',manageProductClick);on('manageCustomers','click',manageCustomerClick);
+function events(){on('deviceLayoutBtn','click',openLayoutDialog);on('deviceLayoutClose','click',closeLayoutDialog);on('deviceLayoutBackdrop','click',closeLayoutDialog);for(const btn of document.querySelectorAll('[data-layout-choice]'))btn.addEventListener('click',()=>saveLayoutMode(btn.dataset.layoutChoice));for(const b of document.querySelectorAll('.tab'))b.onclick=()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));};on('navigationGearBtn','click',openNavigationMenu);on('navigationMenuClose','click',()=>closeNavigationMenu());on('navigationMenuBackdrop','click',()=>closeNavigationMenu());for(const b of document.querySelectorAll('[data-nav-page]'))b.addEventListener('click',()=>navigateFromMenu(b.dataset.navPage));on('customerInput','click',toggleCustomerDropdown);on('customerDialogBackdrop','click',()=>closeCustomerDialog(false));on('customerDialogClose','click',()=>closeCustomerDialog());on('customerSearch','input',renderCustomerResults);on('customerSearch','keydown',e=>{if(e.key==='Enter'){const first=el('customerResults').querySelector('.customer-result');if(first)first.click();}else if(e.key==='ArrowDown'){e.preventDefault();el('customerResults').querySelector('.customer-result')?.focus();}});on('customerResults','keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const opts=[...el('customerResults').querySelectorAll('.customer-result')],i=opts.indexOf(document.activeElement);opts[(i+(e.key==='ArrowDown'?1:-1)+opts.length)%opts.length]?.focus();}});document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!el('deviceLayoutDialog').classList.contains('hidden'))closeLayoutDialog();else if(!el('navigationMenu').classList.contains('hidden'))closeNavigationMenu();else if(!el('employeePicker').classList.contains('hidden'))closeEmployeePicker();else if(!el('customerDropdown').classList.contains('hidden'))closeCustomerDialog();}});on('quickAddCustomerBtn','click',async()=>{const name=prompt('שם לקוח חדש');if(name!==null)await addCustomer(name);});on('resetCustomerBtn','click',()=>{if(state.cart.length&&!confirm('ניקוי לקוח יבטל את החיוב הנוכחי. להמשיך?'))return;state.selectedCustomer=null;state.cart=[];state.cartHistory=[];state.selectedRow=-1;renderCustomer();renderBill();closeCustomerDialog();});on('removeSelectedBtn','click',removeSelected);on('undoBtn','click',undoLast);on('clearBtn','click',clearBill);on('chargeBtn','click',()=>completeSale(false));on('chargeBtn','animationend',e=>{if(e.target===el('chargeBtn'))el('chargeBtn').classList.remove('charge-success');});on('refundBtn','click',()=>completeSale(true));on('customerForm','submit',async e=>{e.preventDefault();await addCustomer(new FormData(e.target).get('name'),false);e.target.reset();});on('productForm','submit',productSubmit);on('manageProducts','click',manageProductClick);on('manageCustomers','click',manageCustomerClick);
  on('openProductManager','click',()=>openCatalogManager('product'));
  on('openCustomerManager','click',()=>openCatalogManager('customer'));
  on('closeCatalogManager','click',closeCatalogManager);
@@ -653,7 +685,7 @@ function remoteEvents(){
  on('cloudSignOut','click',beginEmployeeSwitch);
  on('cancelEmployeeSwitch','click',cancelEmployeeSwitch);
 }
-async function init(){el('versionLabel').textContent='V'+APP_VERSION;const stamp=()=>el('clock').textContent=`${nowDisplay()} · ${clockTime().slice(0,5)}`;stamp();setInterval(stamp,30000);events();const today=nowIso();el('fromDate').value=today.slice(0,8)+'01';el('toDate').value=today;await openDatabase();await seedFirstTime();await refresh();remoteEvents();showCloudLogin('יש להתחבר כדי לעבוד על הארכיון המשותף.');if(navigator.onLine){const valid=await RemotePos.restoreSession();if(valid)try{await cloudAfterAuthentication();}catch(e){showCloudDataError(e);}}else el('loginMessage').textContent='אין אינטרנט — הנתונים המקומיים נשמרים, אך חיובים בענן דורשים חיבור.';el('installedVersion').textContent='V'+APP_VERSION;setInterval(()=>enforceShiftExpiry().catch(console.error),30000);
+async function init(){applyLayoutMode(getSavedLayoutMode());el('versionLabel').textContent='V'+APP_VERSION;const stamp=()=>el('clock').textContent=`${nowDisplay()} · ${clockTime().slice(0,5)}`;stamp();setInterval(stamp,30000);events();const today=nowIso();el('fromDate').value=today.slice(0,8)+'01';el('toDate').value=today;await openDatabase();await seedFirstTime();await refresh();remoteEvents();showCloudLogin('יש להתחבר כדי לעבוד על הארכיון המשותף.');if(navigator.onLine){const valid=await RemotePos.restoreSession();if(valid)try{await cloudAfterAuthentication();}catch(e){showCloudDataError(e);}}else el('loginMessage').textContent='אין אינטרנט — הנתונים המקומיים נשמרים, אך חיובים בענן דורשים חיבור.';el('installedVersion').textContent='V'+APP_VERSION;setInterval(()=>enforceShiftExpiry().catch(console.error),30000);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)enforceShiftExpiry().catch(console.error);});
  if('serviceWorker' in navigator&&location.protocol!=='file:')setupSoftwareUpdater().catch(console.warn);}
 
