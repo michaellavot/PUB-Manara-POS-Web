@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1152" viewBox="0 0 960 1152">
+ <defs>
+  <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+   <stop offset="0" stop-color="#100b08"/><stop offset=".17" stop-color="#20140e"/>
+   <stop offset=".39" stop-color="#0e0b0a"/><stop offset=".65" stop-color="#20130d"/>
+   <stop offset=".84" stop-color="#140d0a"/><stop offset="1" stop-color="#0b0a09"/>
+  </linearGradient>
+  <radialGradient id="amber" cx=".45" cy=".36" r=".68">
+   <stop offset="0" stop-color="#8c4a20" stop-opacity=".23"/>
+   <stop offset=".35" stop-color="#4e2b17" stop-opacity=".14"/>
+   <stop offset="1" stop-color="#090909" stop-opacity=".45"/>
+  </radialGradient>
+  <filter id="grain" x="0" y="0" width="100%" height="100%">
+   <feTurbulence type="fractalNoise" baseFrequency=".008 .19" numOctaves="3" seed="17" stitchTiles="stitch" result="n"/>
+   <feColorMatrix in="n" type="matrix" values=".37 0 0 0 0 .15 0 0 0 0 .07 0 0 0 0 0 0 0 .40 0" result="t"/>
+   <feBlend in="SourceGraphic" in2="t" mode="screen"/>
+  </filter>
+  <pattern id="grainlines" width="960" height="138" patternUnits="userSpaceOnUse">
+   <path d="M0 7 Q180 15 390 8 T960 13 M0 20 Q140 15 390 24 T960 21 M0 46 Q170 37 425 49 T960 42 M0 61 Q290 54 470 62 T960 59 M0 79 Q240 73 440 83 T960 77 M0 99 Q170 91 440 101 T960 95 M0 116 Q180 123 390 113 T960 120 M0 132 Q280 128 460 133 T960 129" fill="none" stroke="#af6733" stroke-opacity=".12" stroke-width="1.5"/>
+   <path d="M0 32 Q120 37 300 30 T700 36 T960 29 M0 85 Q210 91 460 85 T960 90 M0 108 Q280 102 500 110 T960 105" fill="none" stroke="#040303" stroke-opacity=".65" stroke-width="3"/>
+  </pattern>
+  <linearGradient id="vignette" x1="0" y1="0" x2="1" y2="0">
+   <stop offset="0" stop-color="#000" stop-opacity=".44"/><stop offset=".45" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".4"/>
+  </linearGradient>
+ </defs>
+ <rect width="960" height="1152" fill="url(#wood)"/>
+ <g opacity=".3" filter="url(#grain)"><rect width="960" height="1152" fill="#40210f"/></g>
+ <rect width="960" height="1152" fill="url(#grainlines)"/>
+ <g stroke="#020101" stroke-width="5" stroke-opacity=".68"><path d="M0 285H960M0 571H960M0 856H960M0 1142H960"/></g>
+ <g stroke="#a16637" stroke-width="1" stroke-opacity=".16"><path d="M0 290H960M0 574H960M0 858H960"/></g>
+ <rect width="960" height="1152" fill="url(#amber)"/>
+ <rect width="960" height="1152" fill="url(#vignette)"/>
+</svg>
