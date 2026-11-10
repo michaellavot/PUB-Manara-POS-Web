@@ -945,3 +945,13 @@ body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
   display:none!important;
  }
 }
+
+/* V2.0.4 draft guard dialogs — visual-only, existing page layout is unchanged. */
+.draft-guard-overlay{position:fixed;inset:0;z-index:11000;background:rgba(2,7,11,.9);display:grid;place-items:center;padding:16px;backdrop-filter:blur(5px)}
+.draft-guard-card{width:min(460px,100%);max-height:92dvh;overflow-y:auto;display:flex;flex-direction:column;gap:13px;background:linear-gradient(150deg,#203039,#10191e);border:1px solid #b68a53;border-radius:18px;box-shadow:0 18px 55px #000b;padding:24px 18px;text-align:center;direction:rtl;color:#f1e2c9}
+.draft-guard-card h2{margin:0;font-size:24px;color:#f3c685}
+.draft-guard-card p{margin:0;line-height:1.5}
+.draft-guard-summary{border:1px solid #886746;border-radius:12px;background:#19262c;padding:13px;font-size:16px;font-weight:700;overflow-wrap:anywhere}
+.draft-guard-actions{display:grid;gap:9px}
+.draft-guard-actions .button{min-height:48px;font-size:16px;border-radius:11px}
+@media(max-width:550px){.draft-guard-card{padding:19px 13px}.draft-guard-card h2{font-size:21px}}
