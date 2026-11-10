@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.0.2';
+const APP_VERSION='2.0.3';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -61,7 +61,7 @@ async function refresh({fromRemote=false,sections=null}={}){
 function linkedEmployeeCustomer(){return state.customers.find(c=>c.id===RemotePos.linkedCustomerId&&c.active)||null;}
 function renderCustomer(){
  const linked=state.employeeCharge?linkedEmployeeCustomer():null;
- el('customerSelectedText').textContent=state.employeeCharge?(linked?'חשבון עובד: '+linked.name+' · '+state.employeeChargePerson:'לא הוגדר חשבון עובד'):state.selectedCustomer?state.selectedCustomer.name:'לקוח';
+ el('customerSelectedText').textContent=state.employeeCharge?(linked?'חשבון עובד: '+linked.name+' · '+state.employeeChargePerson:'לא הוגדר חשבון עובד'):state.selectedCustomer?state.selectedCustomer.name:'בחר לקוח';
  el('customerInput').disabled=state.employeeCharge;
  const desktopSearch=el('desktopCustomerSearch');
  if(desktopSearch){
