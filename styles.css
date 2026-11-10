@@ -868,3 +868,17 @@ body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
 .qr-share-link{margin:12px 16px;word-break:break-all;overflow-wrap:anywhere;color:#d9bd99;font-size:12px;line-height:1.5;text-align:center}
 .qr-share-panel .customer-picker-actions{margin-top:auto}
 @media(max-width:450px){.qr-report-share-section{padding:10px}.qr-share-panel{max-height:88dvh}}
+
+/* V2.0.2 — compact, persistent Supabase connection state beside employee and clock */
+.cloud-connection-indicator{display:inline-flex;align-items:center;justify-content:center;gap:6px;max-width:180px;min-height:29px;padding:4px 9px;border-radius:999px;border:1px solid #826548;background:#242c2d;color:#e6d4bd;font-size:11px;font-weight:650;line-height:1.2;white-space:nowrap;user-select:none}
+.cloud-connection-dot{width:8px;height:8px;flex:0 0 8px;border-radius:50%;background:#cfa258;box-shadow:0 0 0 2px rgba(207,162,88,.12)}
+.cloud-connection-indicator[data-connection="online"]{border-color:#327654;color:#c9f6da;background:#142b23}
+.cloud-connection-indicator[data-connection="online"] .cloud-connection-dot{background:#49c786;box-shadow:0 0 0 2px rgba(73,199,134,.15)}
+.cloud-connection-indicator[data-connection="degraded"]{border-color:#947040;color:#ffe1a0;background:#352918}
+.cloud-connection-indicator[data-connection="degraded"] .cloud-connection-dot{background:#e4ad4c}
+.cloud-connection-indicator[data-connection="offline"]{border-color:#a04b4c;color:#ffd7d6;background:#381d22}
+.cloud-connection-indicator[data-connection="offline"] .cloud-connection-dot{background:#ed6767}
+.cloud-connection-indicator[data-connection="checking"] .cloud-connection-dot{animation:cloud-connection-pulse 1.5s ease-in-out infinite}
+@keyframes cloud-connection-pulse{50%{opacity:.4}}
+@media(prefers-reduced-motion:reduce){.cloud-connection-indicator .cloud-connection-dot{animation:none!important}}
+@media(max-width:550px){.cloud-connection-indicator{font-size:10px;min-height:25px;padding:3px 6px;max-width:132px}.cloud-connection-dot{width:7px;height:7px;flex-basis:7px}}
