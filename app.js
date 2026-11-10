@@ -251,7 +251,7 @@ function chooseProductCategory(category){
  closeProductCategoryOptions(true);
 }
 function productCategoryKeydown(event){
- if(event.key==='Escape'){if(!el('productCategoryOptions').classList.contains('hidden')){event.preventDefault();closeProductCategoryOptions(true);}return;}
+ if(event.key==='Escape'){if(!el('productCategoryOptions').classList.contains('hidden')){event.preventDefault();event.stopPropagation();closeProductCategoryOptions(true);}return;}
  if(!['ArrowDown','ArrowUp','Enter',' '].includes(event.key))return;
  event.preventDefault();
  if(el('productCategoryOptions').classList.contains('hidden'))openProductCategoryOptions();
@@ -642,7 +642,7 @@ function events(){
  on('cancelNewProductCategory','click',closeNewProductCategory);
  on('newProductCategoryClose','click',closeNewProductCategory);
  on('newProductCategoryBackdrop','click',closeNewProductCategory);
- on('newProductCategoryPanel','keydown',event=>{if(event.key==='Escape'){event.preventDefault();closeNewProductCategory();el('newProductCategoryBtn').focus();}});
+ on('newProductCategoryPanel','keydown',event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();closeNewProductCategory();el('newProductCategoryBtn').focus();}});
  document.addEventListener('pointerdown',event=>{if(!el('productCategoryOptions').classList.contains('hidden')&&!event.target.closest('.product-category-select'))closeProductCategoryOptions();});
  on('newProductCategoryName','keydown',event=>{if(event.key==='Enter'){event.preventDefault();confirmProductCategory();}});
 
@@ -654,7 +654,7 @@ function events(){
  on('catalogSelectAll','change',e=>{for(const r of catalogVisibleRows()){if(e.target.checked)state.catalogSelections.add(r.id);else state.catalogSelections.delete(r.id);}renderManage();});
  for(const id of ['manageProducts','manageCustomers'])on(id,'change',e=>{const box=e.target.closest('input[data-catalog-id]');if(!box)return;if(box.checked)state.catalogSelections.add(box.dataset.catalogId);else state.catalogSelections.delete(box.dataset.catalogId);renderCatalogSelection();});
  on('catalogBulkDelete','click',()=>deleteSelectedCatalog().catch(e=>{el('catalogManagerMessage').textContent='מחיקה לא בוצעה: '+e.message;status('מחיקה לא בוצעה: '+e.message,'error');}));
- document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('manageCatalogModal').classList.contains('hidden'))closeCatalogManager();});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('manageCatalogModal').classList.contains('hidden')&&el('newProductCategoryPanel').classList.contains('hidden')&&el('productCategoryOptions').classList.contains('hidden'))closeCatalogManager();});
  on('showInactiveProductsBtn','click',()=>{state.showInactiveProducts=!state.showInactiveProducts;state.catalogSelections.clear();renderManage();});
  on('showInactiveCustomersBtn','click',()=>{state.showInactiveCustomers=!state.showInactiveCustomers;state.catalogSelections.clear();renderManage();});
  on('refreshAuditBtn','click',async()=>{if(RemotePos.active)await refresh();});
