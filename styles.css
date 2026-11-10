@@ -957,3 +957,17 @@ body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
 @media(max-width:550px){.draft-guard-card{padding:19px 13px}.draft-guard-card h2{font-size:21px}}
 
 .draft-review-pill{position:fixed;right:calc(12px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:2450;border:1px solid #cfaa68;background:#473018;color:#fff0d5;box-shadow:0 5px 16px #000a;max-width:calc(100vw - 24px)}
+
+/* V2.0.5 — maintenance banner, icon only on status row (not the toggle). */
+.mode-banner.development-banner{
+ display:flex;align-items:center;justify-content:center;gap:10px;
+ padding:9px 12px;background:linear-gradient(90deg,#432614,#70451c,#432614);
+ color:#fff2cd;border-bottom:2px solid #ebad58;
+ box-shadow:inset 0 -1px 0 #f4c77f33,0 3px 12px #0005;
+ font-size:clamp(12px,2.9vw,15px);font-weight:800;line-height:1.4;
+}
+.maintenance-banner-icon{
+ display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+ font-size:clamp(21px,4vw,27px);line-height:1;
+ filter:drop-shadow(0 0 5px #ffc46dba) drop-shadow(0 0 10px #efa54865);
+}
