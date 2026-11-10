@@ -6,6 +6,7 @@ const POS_CLOUD_URL='https://vvrilytybmrutxzeknab.supabase.co';
 const POS_PUBLISHABLE_KEY='sb_publishable_igJ3C6h4Mm7qkkBMcj2Qjw_aSZW5z4d';
 const POS_SESSION_KEY='manara-pos-web-supabase-session-v1';
 const POS_TEST_KEY='manara-pos-web-owner-test-toggle-v1';
+const POS_MAINTENANCE_KEY='manara-pos-maintenance-device-v205';
 const POS_STAFF_ENDPOINT=POS_CLOUD_URL+'/functions/v1/pos-staff-auth';
 const RemotePos={
  active:false,session:null,employee:null,linkedCustomerId:null,testMode:false,isImported:false,users:[],products:[],customers:[],archive:[],priceHistory:[],audit:[],poll:null,socket:null,reconnect:null,loading:false,onChange:null,statusCallback:null,seq:0,authenticated:false,staffAdminUnlocked:false,_transactionRows:[],_lastFullSync:0,_realtimeConnected:false,_pendingChanges:[],_retrySync:false,networkStatus:'checking',networkCallback:null,networkPoll:null,_networkProbe:null,_networkCheckedAt:0,_networkGeneration:0,
@@ -257,8 +258,8 @@ const RemotePos={
    }
    this.employee=entry;this.authenticated=true;
    try{await this.refreshStaffAdminStatus();}catch{this.staffAdminUnlocked=false;}
-   if(entry.is_owner!==true)localStorage.removeItem(POS_TEST_KEY);
-   this.testMode=entry.is_owner===true&&localStorage.getItem(POS_TEST_KEY)==='on';
+   localStorage.removeItem(POS_TEST_KEY); // Superseded by owner-authorized device maintenance.
+   this.testMode=Boolean(this.maintenanceGrant());
    return entry;
  },
  async signOut(){
@@ -268,12 +269,49 @@ const RemotePos={
    this.stop();this.session=null;this.employee=null;this.authenticated=false;
    this.active=false;this.testMode=false;this.staffAdminUnlocked=false;
    localStorage.removeItem(POS_SESSION_KEY);localStorage.removeItem(POS_TEST_KEY);
+   // Owner's verified device grant persists when staff switch or sign out.
  },
- setTestMode(enabled){
-   if(this.employee?.is_owner!==true)throw new Error('רק בעל החשבון רשאי להפעיל ניסיון');
-   this.testMode=enabled===true;
-   localStorage.setItem(POS_TEST_KEY,this.testMode?'on':'off');
+ maintenanceGrant(){
+   try{
+    const grant=JSON.parse(localStorage.getItem(POS_MAINTENANCE_KEY)||'null');
+    if(!grant||typeof grant.token!=='string'||!/^[-0-9a-f]{36}$/i.test(grant.token)||
+       grant.deviceId!==localStorage.getItem('manara_device_id'))return null;
+    return grant;
+   }catch{return null;}
  },
+ maintenanceToken(){
+   const grant=this.maintenanceGrant();
+   if(!grant||Date.parse(grant.expiresAt)<=Date.now())
+     throw new Error('הרשאת מצב התחזוקה פגה או חסרה. חיובים חסומים עד הפעלה מחודשת של הבעלים.');
+   return grant.token;
+ },
+ async setMaintenanceMode(enabled,deviceId){
+   if(this.employee?.is_owner!==true||!this.authenticated)throw new Error('רק בעל החשבון רשאי להפעיל או לכבות מצב תחזוקה');
+   if(!deviceId)throw new Error('חסר מזהה מכשיר');
+   if(enabled){
+    const token=crypto.randomUUID();
+    const result=await this.request('/rest/v1/rpc/pos_maintenance_control',{
+      method:'POST',body:{p_device_id:deviceId,p_token:token,p_enabled:true}
+    });
+    if(!result?.enabled||!result?.expires_at)throw new Error('השרת לא אישר מצב תחזוקה');
+    try{
+     localStorage.setItem(POS_MAINTENANCE_KEY,JSON.stringify({deviceId,token,expiresAt:result.expires_at}));
+    }catch(e){
+     await this.request('/rest/v1/rpc/pos_maintenance_control',{
+      method:'POST',body:{p_device_id:deviceId,p_token:token,p_enabled:false}
+     });
+     throw new Error('שמירת הרשאת התחזוקה במכשיר נכשלה; ההפעלה בוטלה.');
+    }
+    this.testMode=true;
+   }else{
+    await this.request('/rest/v1/rpc/pos_maintenance_control',{
+     method:'POST',body:{p_device_id:deviceId,p_token:'',p_enabled:false}
+    });
+    localStorage.removeItem(POS_MAINTENANCE_KEY);
+    this.testMode=false;
+   }
+ },
+ setTestMode(){throw new Error('יש להשתמש באימות תחזוקה של הבעלים מול השרת');},
  async rows(table,select='*',order=''){
    const all=[];
    for(let from=0;from<50000;from+=1000){const data=await this.request(`/rest/v1/${table}`,{query:{select,...(order?{order}:{})},headers:{Range:`${from}-${from+999}`}});if(!Array.isArray(data))throw new Error('שגיאה בקריאת נתונים מהשרת');all.push(...data);if(data.length<1000)return all;}
@@ -402,14 +440,16 @@ const RemotePos={
     return this.request('/rest/v1/rpc/submit_pos_transaction_v094',{
      method:'POST',body:{p_operation_id:operationId,p_customer_id:customerId,p_kind:kind,
       p_items:items.map(i=>({product_id:i.productId,quantity:i.qty,unit_price:i.unitPrice})),
-      p_device_id:deviceId,p_is_test:this.testMode}
+      p_device_id:deviceId,p_is_test:this.testMode},
+     headers:this.testMode?{'x-pos-maintenance-token':this.maintenanceToken()}:{}
     });
  },
  async submitEmployeeCharge({operationId,kind,items,deviceId,personName}){
   return this.request('/rest/v1/rpc/submit_pos_employee_charge_v0939',{method:'POST',body:{
     p_operation_id:operationId,p_kind:kind,
     p_items:items.map(i=>({product_id:i.productId,quantity:i.qty,unit_price:i.unitPrice})),
-    p_device_id:deviceId,p_person_name:personName,p_is_test:this.testMode===true}});
+    p_device_id:deviceId,p_person_name:personName,p_is_test:this.testMode===true},
+   headers:this.testMode?{'x-pos-maintenance-token':this.maintenanceToken()}:{}});
  },
  async employeeChargeReport(employeeId=null){
   return this.request('/rest/v1/rpc/pos_employee_charge_report_v0938',{method:'POST',body:{p_employee_id:employeeId}});
