@@ -781,10 +781,12 @@ function renderPermissions(){
  renderManage();
  renderAudit();
 }
-async function activateCloud(){
- DraftGuard.ready=false;DraftGuard.blocked=false;
- el('draftReviewBtn').classList.add('hidden');
- state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;state.pendingOperation=null;
+async function activateCloud({resetForLogin=false}={}){
+ if(resetForLogin){
+  DraftGuard.ready=false;DraftGuard.blocked=false;
+  el('draftReviewBtn').classList.add('hidden');
+  state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;state.pendingOperation=null;
+ }
  state.employeeCharge=false;state.employeeChargePerson='';
  await RemotePos.start();
  await refresh({fromRemote:true});
@@ -840,7 +842,7 @@ async function toggleTrialMode(){
  renderCustomer();renderBill();renderReport();renderModeControls();
  status(newValue?'ניסיון הופעל — חיובים יסומנו D':'מצב ניסיון כבוי — יופיעו רק עסקאות אמת','success');
 }
-async function cloudAfterAuthentication(){await activateCloud();navigateFromMenu('posPage');leaveCloudLogin();await DraftGuard.restoreAfterLogin();}
+async function cloudAfterAuthentication(){await activateCloud({resetForLogin:true});navigateFromMenu('posPage');leaveCloudLogin();await DraftGuard.restoreAfterLogin();}
 async function loginCloud(event){
  event.preventDefault();
  if(!softwareUpdate.verified){
@@ -859,7 +861,7 @@ async function loginCloud(event){
   newSessionAuthenticated=true;
   el('cloudPin').value='';
   // The previous employee is retained until the new employee has fully loaded.
-  await activateCloud();
+  await activateCloud({resetForLogin:true});
   // Show the POS only after the new employee has authenticated and loaded.
   navigateFromMenu('posPage');
   state.switchingEmployee=false;
@@ -876,7 +878,7 @@ async function loginCloud(event){
   el('cloudPin').value='';
   if(newSessionAuthenticated&&previous){
    RemotePos.restoreSwitchSession(previous);
-   try{await activateCloud();await DraftGuard.restoreAfterLogin();}catch(restoreError){console.error('Failed to refresh previous employee session',restoreError);}
+   try{await activateCloud({resetForLogin:true});await DraftGuard.restoreAfterLogin();}catch(restoreError){console.error('Failed to refresh previous employee session',restoreError);}
   }
   showCloudLogin(e.message);
  }finally{btn.disabled=false;el('cancelEmployeeSwitch').disabled=false;}
