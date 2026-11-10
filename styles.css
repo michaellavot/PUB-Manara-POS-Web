@@ -955,3 +955,5 @@ body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
 .draft-guard-actions{display:grid;gap:9px}
 .draft-guard-actions .button{min-height:48px;font-size:16px;border-radius:11px}
 @media(max-width:550px){.draft-guard-card{padding:19px 13px}.draft-guard-card h2{font-size:21px}}
+
+.draft-review-pill{position:fixed;right:calc(12px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:2450;border:1px solid #cfaa68;background:#473018;color:#fff0d5;box-shadow:0 5px 16px #000a;max-width:calc(100vw - 24px)}
