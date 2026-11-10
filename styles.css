@@ -971,3 +971,17 @@ body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
  font-size:clamp(21px,4vw,27px);line-height:1;
  filter:drop-shadow(0 0 5px #ffc46dba) drop-shadow(0 0 10px #efa54865);
 }
+
+/* V2.0.6 — controlled product category picker; doesn't change other forms. */
+.product-category-field{flex:1 1 170px;min-width:155px;display:flex;flex-direction:column;gap:5px}
+.product-category-label{font-size:12px;color:var(--text);font-weight:650}
+.product-category-row{display:flex;gap:6px;align-items:stretch;min-width:0}
+.product-category-row select.field{flex:1 1 auto;width:100%;min-width:0;cursor:pointer}
+.product-category-add{flex:0 0 43px;min-width:43px;min-height:42px;padding:0;font-size:26px;line-height:1}
+.product-new-category{display:flex;flex-direction:column;gap:6px;background:#142128;border:1px solid #83603b;border-radius:10px;padding:10px}
+.product-new-category.hidden{display:none!important}
+.product-new-category label{font-size:12px;font-weight:650}
+.product-new-category-row{display:flex;align-items:stretch;gap:6px;flex-wrap:wrap}
+.product-new-category-row .field{flex:1 1 115px}
+.product-new-category-row .button{flex:0 0 auto}
+@media(max-width:600px){.product-category-field{flex:1 1 100%}.product-category-row select.field{min-height:44px}}
