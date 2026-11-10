@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.0.8';
+const APP_VERSION='2.0.9';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -490,8 +490,9 @@ function fillQrCustomerOptions(){
   const item=document.createElement('option');item.value=name;item.textContent=name;selector.append(item);
  }
  if([...selector.options].some(x=>x.value===prior))selector.value=prior;
+ if(typeof ReportPickers!=='undefined')ReportPickers.sync();
 }
-function fillReportCustomers(){const field=el('reportCustomer'),prior=field.value;field.replaceChildren();const all=new Set([...state.customers.map(c=>c.name),...state.archive.filter(r=>Boolean(r.isTest)===(RemotePos.active&&RemotePos.testMode===true)).map(r=>r.customer)]);const blank=document.createElement('option');blank.value='';blank.textContent='כל הלקוחות';field.append(blank);for(const name of [...all].sort((a,b)=>a.localeCompare(b,'he'))){const opt=document.createElement('option');opt.value=name;opt.textContent=name;field.append(opt);}if([...field.options].some(x=>x.value===prior))field.value=prior;fillQrCustomerOptions();}
+function fillReportCustomers(){const field=el('reportCustomer'),prior=field.value;field.replaceChildren();const all=new Set([...state.customers.map(c=>c.name),...state.archive.filter(r=>Boolean(r.isTest)===(RemotePos.active&&RemotePos.testMode===true)).map(r=>r.customer)]);const blank=document.createElement('option');blank.value='';blank.textContent='כל הלקוחות';field.append(blank);for(const name of [...all].sort((a,b)=>a.localeCompare(b,'he'))){const opt=document.createElement('option');opt.value=name;opt.textContent=name;field.append(opt);}if([...field.options].some(x=>x.value===prior))field.value=prior;fillQrCustomerOptions();if(typeof ReportPickers!=='undefined')ReportPickers.sync();}
 function reportRowsRaw(){
  const full=canViewFullReports();
  if(!RemotePos.active||!RemotePos.authenticated)return [];
@@ -1461,6 +1462,7 @@ async function init(){
  const today=nowIso();
  el('fromDate').value=today.slice(0,8)+'01';el('toDate').value=today;
  el('qrFromDate').value=today.slice(0,8)+'01';el('qrToDate').value=today;
+ ReportPickers.init();
  await openDatabase();await seedFirstTime();await refresh();
  remoteEvents();
  // Verify the installed version BEFORE restoring a session or unlocking the POS.
