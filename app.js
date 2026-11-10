@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.0.7';
+const APP_VERSION='2.0.8';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -204,11 +204,18 @@ function productCategoryNames(){
  }
  return [...names.values()].sort((a,b)=>a.localeCompare(b,'he'));
 }
+// Dropdown entries are active-category names only; inactive categories stay in
+// productCategoryNames() for duplicate validation and historical preservation.
+function activeProductCategoryNames(){
+ const activeKeys=new Set(state.products.filter(p=>p.active===true).map(p=>norm(p.category)));
+ return productCategoryNames().filter(name=>activeKeys.has(norm(name)));
+}
 function renderProductCategoryOptions(preferred=null){
  const input=el('productCategorySelect');
  const previous=preferred??input.value;
- const categories=productCategoryNames();
- if(stagedProductCategory&&categories.some(name=>norm(name)===norm(stagedProductCategory)))stagedProductCategory=null;
+ const categories=activeProductCategoryNames();
+ // A new category must never silently collide with a historical inactive one.
+ if(stagedProductCategory&&productCategoryNames().some(name=>norm(name)===norm(stagedProductCategory)))stagedProductCategory=null;
  const canonical=categories.find(name=>norm(name)===norm(previous));
  input.value=canonical||((stagedProductCategory&&norm(previous)===norm(stagedProductCategory))?stagedProductCategory:'');
  el('productCategorySelectedText').textContent=input.value+(stagedProductCategory&&input.value===stagedProductCategory?' (חדשה)':'')||'בחר קטגוריה';
@@ -243,7 +250,7 @@ function toggleProductCategoryOptions(){
  else closeProductCategoryOptions();
 }
 function chooseProductCategory(category){
- const canonical=productCategoryNames().find(name=>norm(name)===norm(category));
+ const canonical=activeProductCategoryNames().find(name=>norm(name)===norm(category));
  if(!canonical&&!(stagedProductCategory&&norm(category)===norm(stagedProductCategory)))return;
  const selected=canonical||stagedProductCategory;
  if(stagedProductCategory&&norm(selected)!==norm(stagedProductCategory))stagedProductCategory=null;
@@ -296,6 +303,12 @@ function confirmProductCategory(){
  }
  const existing=productCategoryNames().find(name=>norm(name)===norm(category));
  if(existing){
+  // Preserve inactive-only categories but do not reintroduce them into the
+  // picker. An inactive historical category must not become a new duplicate.
+  if(!activeProductCategoryNames().some(name=>norm(name)===norm(existing))){
+   notice.textContent='השם כבר קיים בקטגוריה היסטורית ללא מוצרים פעילים. לא ניתן ליצור כפילות; יש לבחור שם אחר.';
+   return;
+  }
   stagedProductCategory=null;
   renderProductCategoryOptions(existing);
   closeNewProductCategory();
@@ -312,8 +325,8 @@ function confirmProductCategory(){
 async function productSubmit(event){event.preventDefault();assertManage('create_products');
  const f=new FormData(event.target),chosen=String(f.get('category')||'').trim();
  const type=String(f.get('type')||'').trim(),price=amount(f.get('price'));
- const canonical=productCategoryNames().find(name=>norm(name)===norm(chosen));
- const isStaged=Boolean(stagedProductCategory&&norm(stagedProductCategory)===norm(chosen));
+ const canonical=activeProductCategoryNames().find(name=>norm(name)===norm(chosen));
+ const isStaged=Boolean(stagedProductCategory&&norm(stagedProductCategory)===norm(chosen)&&!productCategoryNames().some(name=>norm(name)===norm(chosen)));
  if(!chosen||(!canonical&&!isStaged))throw new Error('יש לבחור קטגוריה מהרשימה או להוסיף קטגוריה חדשה באמצעות +');
  const category=canonical||stagedProductCategory;
  if(!type||price<0)throw new Error('יש למלא משקה ומחיר תקין');const name=productLabel(category,type),existing=state.products.find(p=>p.normalized===norm(name));if(existing){if(existing.active)throw new Error('משקה בשם זה כבר קיים');if(!confirm('המשקה לא פעיל. להפעיל אותו מחדש?'))return;if(RemotePos.active)await RemotePos.saveProduct({...existing,active:true,category,type,price},{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:'הפעלה מחדש'});else await putRow('products',{...existing,active:true,category,type,price});}else{const row={id:uuid(),category,type,name,normalized:norm(name),price,active:true};if(RemotePos.active)await RemotePos.saveProduct(row,{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:'הוספת משקה'});else await putRow('products',row);}if(!RemotePos.active)await putRow('priceHistory',{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:existing?'הפעלה מחדש':'הוספת משקה'});event.target.reset();resetProductCategoryEditor();await refresh();status('מוצר נשמר','success');}
