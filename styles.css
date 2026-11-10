@@ -985,3 +985,68 @@ body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
 .product-new-category-row .field{flex:1 1 115px}
 .product-new-category-row .button{flex:0 0 auto}
 @media(max-width:600px){.product-category-field{flex:1 1 100%}.product-category-row select.field{min-height:44px}}
+
+/* V2.0.7 category modal and picker: never stretch adjacent product inputs. */
+#productForm.inline-form{
+ display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1.15fr) minmax(0,.8fr) auto;
+ align-items:end;gap:8px;width:100%;min-width:0;
+}
+#productForm.inline-form>.field{width:100%;height:44px;min-height:44px;max-height:44px;align-self:end}
+#productForm.inline-form>button[type="submit"]{height:44px;min-height:44px;align-self:end}
+#productForm .product-category-field{min-width:0;flex:none;gap:5px;position:relative}
+#productForm .product-category-row{min-width:0;align-items:stretch}
+#productForm .product-category-select{position:relative;flex:1 1 0;min-width:0}
+#productForm .product-category-trigger{
+ display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:right;
+ min-width:0;width:100%;height:44px;min-height:44px;cursor:pointer;font:inherit;
+ white-space:nowrap;overflow:hidden;
+}
+#productForm .product-category-trigger>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#productForm .product-category-chevron{font-size:21px;color:#d7b17a;flex:0 0 auto}
+#productForm .product-category-add{flex:0 0 44px;min-width:44px;height:44px;min-height:44px;max-height:44px;align-self:end}
+#productForm .product-category-options{
+ position:absolute;top:calc(100% + 5px);inset-inline:0;z-index:2100;
+ max-height:min(340px,48dvh);overflow-y:auto;overscroll-behavior:contain;
+ background:linear-gradient(150deg,#1b2a30,#0d171d);
+ border:1px solid #ad804c;border-radius:12px;box-shadow:0 18px 44px #000c;
+ padding:7px;scrollbar-color:#8e6539 #172127;scrollbar-width:thin;
+}
+#productForm .product-category-options.hidden{display:none!important}
+#productForm .product-category-option{
+ display:flex;align-items:center;width:100%;min-height:44px;text-align:right;
+ border:1px solid transparent;border-bottom-color:#6f57402e;background:transparent;
+ border-radius:8px;padding:11px 13px;color:#eee0cd;font:inherit;cursor:pointer;
+}
+#productForm .product-category-option:hover,
+#productForm .product-category-option:focus-visible{background:#59412880;border-color:#b48a53}
+#productForm .product-category-option[aria-selected="true"]{background:#4c39254d;color:#ffe0ac}
+#productForm .product-category-empty{padding:14px;color:#b7aa98;margin:0}
+.product-category-modal{
+ position:fixed;inset:0;z-index:2600;display:grid;place-items:center;
+ padding:16px;direction:rtl;
+}
+.product-category-modal.hidden{display:none!important}
+.product-category-modal-backdrop{position:absolute;inset:0;background:#02080be0;backdrop-filter:blur(5px)}
+.product-category-modal-card{
+ position:relative;width:min(400px,100%);max-height:90dvh;overflow:auto;
+ background:linear-gradient(150deg,#1b2a30,#0d171d);
+ border:1px solid #ad804c;border-radius:17px;
+ box-shadow:0 24px 75px #000c;color:#f1e1c8;
+}
+.product-category-modal-card .customer-dialog-heading{padding:13px 16px}
+.product-category-modal-card .customer-dialog-heading h2{font-size:19px;margin:0}
+.product-category-modal-body{padding:17px;display:flex;flex-direction:column;gap:11px}
+.product-category-modal-body>label{font-size:14px;font-weight:650}
+.product-category-modal-body>.field{min-height:46px;font-size:16px}
+.product-category-modal-body .small-note{min-height:16px;margin:0;color:#f2c78e}
+.product-category-modal-actions{display:flex;gap:10px}
+.product-category-modal-actions>.button{flex:1;min-height:44px}
+@media(max-width:800px){
+ #productForm.inline-form{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px}
+ #productForm .product-category-field{grid-column:1/-1}
+ #productForm.inline-form>button[type="submit"]{grid-column:1/-1}
+}
+@media(max-width:420px){
+ #productForm.inline-form{grid-template-columns:1fr}
+ #productForm .product-category-field,#productForm.inline-form>button[type="submit"]{grid-column:1}
+}
