@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.0.6';
+const APP_VERSION='2.0.7';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -205,27 +205,66 @@ function productCategoryNames(){
  return [...names.values()].sort((a,b)=>a.localeCompare(b,'he'));
 }
 function renderProductCategoryOptions(preferred=null){
- const select=el('productCategorySelect');
- const old=preferred??select.value;
- const categories=productCategoryNames(),existing=categories.find(x=>norm(x)===norm(old));
- if(stagedProductCategory&&categories.some(x=>norm(x)===norm(stagedProductCategory))){
-  stagedProductCategory=null;
+ const input=el('productCategorySelect');
+ const previous=preferred??input.value;
+ const categories=productCategoryNames();
+ if(stagedProductCategory&&categories.some(name=>norm(name)===norm(stagedProductCategory)))stagedProductCategory=null;
+ const canonical=categories.find(name=>norm(name)===norm(previous));
+ input.value=canonical||((stagedProductCategory&&norm(previous)===norm(stagedProductCategory))?stagedProductCategory:'');
+ el('productCategorySelectedText').textContent=input.value+(stagedProductCategory&&input.value===stagedProductCategory?' (חדשה)':'')||'בחר קטגוריה';
+ const box=el('productCategoryOptions');box.replaceChildren();
+ for(const category of [...categories,...(stagedProductCategory?[stagedProductCategory]:[])]){
+  const btn=document.createElement('button');
+  btn.type='button';btn.className='product-category-option';
+  btn.setAttribute('role','option');
+  btn.setAttribute('aria-selected',String(norm(input.value)===norm(category)));
+  btn.textContent=category+(stagedProductCategory===category?' (חדשה)':'');
+  btn.addEventListener('click',()=>chooseProductCategory(category));
+  box.append(btn);
  }
- select.replaceChildren();
- const placeholder=document.createElement('option');
- placeholder.value='';placeholder.textContent='בחר קטגוריה';placeholder.disabled=true;
- select.append(placeholder);
- for(const category of categories){
-  const option=document.createElement('option');option.value=category;option.textContent=category;
-  select.append(option);
+ if(!categories.length&&!stagedProductCategory){
+  const empty=document.createElement('p');empty.className='product-category-empty';
+  empty.textContent='אין קטגוריות. לחץ + ליצירת קטגוריה חדשה';box.append(empty);
  }
- if(stagedProductCategory){
-  const option=document.createElement('option');option.value=stagedProductCategory;
-  option.textContent=stagedProductCategory+' (חדשה)';select.append(option);
+}
+function closeProductCategoryOptions(returnFocus=false){
+ el('productCategoryOptions').classList.add('hidden');
+ el('productCategoryButton').setAttribute('aria-expanded','false');
+ if(returnFocus)el('productCategoryButton').focus();
+}
+function openProductCategoryOptions(){
+ if(!canManage('create_products'))return;
+ renderProductCategoryOptions();
+ el('productCategoryOptions').classList.remove('hidden');
+ el('productCategoryButton').setAttribute('aria-expanded','true');
+}
+function toggleProductCategoryOptions(){
+ if(el('productCategoryOptions').classList.contains('hidden'))openProductCategoryOptions();
+ else closeProductCategoryOptions();
+}
+function chooseProductCategory(category){
+ const canonical=productCategoryNames().find(name=>norm(name)===norm(category));
+ if(!canonical&&!(stagedProductCategory&&norm(category)===norm(stagedProductCategory)))return;
+ const selected=canonical||stagedProductCategory;
+ if(stagedProductCategory&&norm(selected)!==norm(stagedProductCategory))stagedProductCategory=null;
+ renderProductCategoryOptions(selected);
+ closeProductCategoryOptions(true);
+}
+function productCategoryKeydown(event){
+ if(event.key==='Escape'){if(!el('productCategoryOptions').classList.contains('hidden')){event.preventDefault();closeProductCategoryOptions(true);}return;}
+ if(!['ArrowDown','ArrowUp','Enter',' '].includes(event.key))return;
+ event.preventDefault();
+ if(el('productCategoryOptions').classList.contains('hidden'))openProductCategoryOptions();
+ const options=[...el('productCategoryOptions').querySelectorAll('.product-category-option')];
+ if(!options.length)return;
+ const current=options.indexOf(document.activeElement);
+ if(event.key==='Enter'||event.key===' '){
+  if(current>=0)options[current].click();
+  else options[0].focus();
+ }else{
+  const next=current<0?(event.key==='ArrowDown'?0:options.length-1):(current+(event.key==='ArrowDown'?1:-1)+options.length)%options.length;
+  options[next].focus();
  }
- const value=existing||((stagedProductCategory&&norm(old)===norm(stagedProductCategory))?stagedProductCategory:'');
- select.value=value;
- if(!value)select.selectedIndex=0;
 }
 function closeNewProductCategory(){
  el('newProductCategoryPanel').classList.add('hidden');
@@ -235,14 +274,16 @@ function closeNewProductCategory(){
 }
 function resetProductCategoryEditor(){
  stagedProductCategory=null;
+ closeProductCategoryOptions();
  closeNewProductCategory();
  renderProductCategoryOptions('');
 }
 function toggleNewProductCategory(){
  assertManage('create_products');
- const panel=el('newProductCategoryPanel');
- if(!panel.classList.contains('hidden')){closeNewProductCategory();return;}
- panel.classList.remove('hidden');
+ closeProductCategoryOptions();
+ const dialog=el('newProductCategoryPanel');
+ if(!dialog.classList.contains('hidden')){closeNewProductCategory();return;}
+ dialog.classList.remove('hidden');
  el('newProductCategoryBtn').setAttribute('aria-expanded','true');
  el('newProductCategoryName').focus();
 }
@@ -258,12 +299,14 @@ function confirmProductCategory(){
   stagedProductCategory=null;
   renderProductCategoryOptions(existing);
   closeNewProductCategory();
+  el('productCategoryButton').focus();
   status('הקטגוריה כבר קיימת — נבחרה הקטגוריה המקורית','');
   return;
  }
  stagedProductCategory=category;
  renderProductCategoryOptions(category);
  closeNewProductCategory();
+ el('productCategoryButton').focus();
  status('הקטגוריה החדשה תישמר לאחר הוספת המשקה הראשון','');
 }
 async function productSubmit(event){event.preventDefault();assertManage('create_products');
@@ -336,7 +379,7 @@ function openCatalogManager(entity){
  el('catalogSearch').focus();
 }
 function closeCatalogManager(){
- closeNewProductCategory();stagedProductCategory=null;
+ closeProductCategoryOptions();closeNewProductCategory();stagedProductCategory=null;
  el('manageCatalogModal').classList.add('hidden');
  state.catalogDialog=null;state.catalogSearch='';state.catalogSelections.clear();
 }
@@ -591,11 +634,18 @@ function events(){
  document.addEventListener('pointerdown',event=>{
   if(!el('desktopCustomerSelect').contains(event.target))closeDesktopCustomerOptions();
  });on('customerDialogBackdrop','click',()=>closeCustomerDialog(false));on('customerDialogClose','click',()=>closeCustomerDialog());on('customerSearch','input',renderCustomerResults);on('customerSearch','keydown',e=>{if(e.key==='Enter'){const first=el('customerResults').querySelector('.customer-result');if(first)first.click();}else if(e.key==='ArrowDown'){e.preventDefault();el('customerResults').querySelector('.customer-result')?.focus();}});on('customerResults','keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const opts=[...el('customerResults').querySelectorAll('.customer-result')],i=opts.indexOf(document.activeElement);opts[(i+(e.key==='ArrowDown'?1:-1)+opts.length)%opts.length]?.focus();}});document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!el('deviceLayoutDialog').classList.contains('hidden'))closeLayoutDialog();else if(!el('navigationMenu').classList.contains('hidden'))closeNavigationMenu();else if(!el('employeePicker').classList.contains('hidden'))closeEmployeePicker();else if(!el('customerDropdown').classList.contains('hidden'))closeCustomerDialog();}});on('quickAddCustomerBtn','click',async()=>{const name=prompt('שם לקוח חדש');if(name!==null)await addCustomer(name);});on('resetCustomerBtn','click',()=>{if(state.pendingOperation||DraftGuard.blocked){alert('יש לברר תחילה את מצב העסקה הקודמת.');return;}if(state.cart.length&&!confirm('ניקוי לקוח יבטל את החיוב הנוכחי. להמשיך?'))return;state.selectedCustomer=null;state.cart=[];state.cartHistory=[];state.selectedRow=-1;renderCustomer();renderBill();closeDesktopCustomerOptions();closeCustomerDialog();});on('removeSelectedBtn','click',removeSelected);on('undoBtn','click',undoLast);on('clearBtn','click',clearBill);on('chargeBtn','click',()=>completeSale(false));on('chargeBtn','animationend',e=>{if(e.target===el('chargeBtn'))el('chargeBtn').classList.remove('charge-success');});on('refundBtn','click',()=>completeSale(true));on('customerForm','submit',async e=>{e.preventDefault();await addCustomer(new FormData(e.target).get('name'),false);e.target.reset();});on('productForm','submit',productSubmit);
+ on('productCategoryButton','click',toggleProductCategoryOptions);
+ on('productCategoryButton','keydown',productCategoryKeydown);
+ on('productCategoryOptions','keydown',productCategoryKeydown);
  on('newProductCategoryBtn','click',toggleNewProductCategory);
  on('confirmNewProductCategory','click',confirmProductCategory);
  on('cancelNewProductCategory','click',closeNewProductCategory);
+ on('newProductCategoryClose','click',closeNewProductCategory);
+ on('newProductCategoryBackdrop','click',closeNewProductCategory);
+ on('newProductCategoryPanel','keydown',event=>{if(event.key==='Escape'){event.preventDefault();closeNewProductCategory();el('newProductCategoryBtn').focus();}});
+ document.addEventListener('pointerdown',event=>{if(!el('productCategoryOptions').classList.contains('hidden')&&!event.target.closest('.product-category-select'))closeProductCategoryOptions();});
  on('newProductCategoryName','keydown',event=>{if(event.key==='Enter'){event.preventDefault();confirmProductCategory();}});
- on('productCategorySelect','change',()=>{if(stagedProductCategory&&norm(el('productCategorySelect').value)!==norm(stagedProductCategory)){stagedProductCategory=null;renderProductCategoryOptions(el('productCategorySelect').value);}});
+
  on('manageProducts','click',manageProductClick);on('manageCustomers','click',manageCustomerClick);
  on('openProductManager','click',()=>openCatalogManager('product'));
  on('openCustomerManager','click',()=>openCatalogManager('customer'));
