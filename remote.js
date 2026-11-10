@@ -404,7 +404,8 @@ const RemotePos={
  async saveCustomer(row){
    const existing=this.customers.some(c=>c.id===row.id);
    if(!existing)return this.request('/rest/v1/rpc/pos_create_catalog_v098',{
-     method:'POST',body:{p_entity:'customer',p_name:row.name,p_is_test:this.testMode===true}
+     method:'POST',body:{p_entity:'customer',p_name:row.name,p_is_test:this.testMode===true},
+     headers:this.testMode?{'x-pos-maintenance-token':this.maintenanceToken(),'x-pos-device-id':localStorage.getItem('manara_device_id')||''}:{}
    });
    return this.request('/rest/v1/customers',{
      method:'PATCH',query:{id:`eq.${row.id}`},
@@ -415,7 +416,8 @@ const RemotePos={
    const existing=this.products.some(p=>p.id===row.id);
    if(!existing)return this.request('/rest/v1/rpc/pos_create_catalog_v098',{
      method:'POST',body:{p_entity:'product',p_name:row.name,
-      p_category:row.category,p_product_type:row.type,p_price:row.price,p_is_test:this.testMode===true}
+      p_category:row.category,p_product_type:row.type,p_price:row.price,p_is_test:this.testMode===true},
+     headers:this.testMode?{'x-pos-maintenance-token':this.maintenanceToken(),'x-pos-device-id':localStorage.getItem('manara_device_id')||''}:{}
    });
    const history=historyRecord?[...this.priceHistory.filter(h=>h.productName===row.name),historyRecord]:null;
    const payload={name:row.name,category:row.category,product_type:row.type,price:row.price,
