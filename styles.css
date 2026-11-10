@@ -1050,3 +1050,53 @@ body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
  #productForm.inline-form{grid-template-columns:1fr}
  #productForm .product-category-field,#productForm.inline-form>button[type="submit"]{grid-column:1}
 }
+
+/* V2.0.9 — Report/QR themed, keyboard-friendly customer and date selectors. */
+#reportControls label,#qrLimitedFilters label{position:relative;min-width:0}
+#reportControls .report-original-field,#qrLimitedFilters .report-original-field{display:none!important}
+.report-picker-trigger.field{
+ display:flex;align-items:center;justify-content:space-between;gap:10px;
+ margin-top:3px;min-height:44px;width:100%;font:inherit;text-align:right;
+ cursor:pointer;white-space:nowrap;overflow:hidden;
+}
+.report-picker-trigger.field>span:last-child{font-size:21px;flex:0 0 auto;color:#d6b17a}
+.report-picker-trigger.field:disabled{opacity:.48;cursor:not-allowed}
+.report-picker-modal{position:fixed;inset:0;z-index:2600;display:grid;place-items:center;padding:16px;direction:rtl}
+.report-picker-modal.hidden{display:none!important}
+.report-picker-backdrop{position:absolute;inset:0;background:rgba(2,8,12,.86);backdrop-filter:blur(5px)}
+.report-picker-card{
+ position:relative;width:min(440px,100%);max-height:min(690px,92dvh);
+ display:flex;flex-direction:column;overflow:hidden;
+ background:linear-gradient(150deg,#1b2a30,#0d171d);color:#f1e1c8;
+ border:1px solid #ad804c;border-radius:17px;box-shadow:0 24px 78px #000c;
+}
+.report-picker-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 17px;border-bottom:1px solid #705337}
+.report-picker-heading h2{color:#ffe3b5;font-size:21px;margin:0}
+.report-picker-body{display:flex;flex-direction:column;gap:10px;padding:14px 16px;min-height:0}
+.report-picker-body.hidden{display:none!important}
+#reportPickerSearch{flex:0 0 auto;min-height:48px;font-size:16px}
+#reportPickerCount{margin:0}
+.report-picker-customers{min-height:70px;overflow-y:auto;overscroll-behavior:contain;scrollbar-color:#8e6539 #172127;padding:0 2px 3px}
+.report-picker-customer{display:flex;align-items:center;width:100%;min-height:48px;padding:11px 14px;border:1px solid transparent;border-bottom-color:#6f57402e;border-radius:8px;text-align:right;background:transparent;color:#eee0cd;cursor:pointer;font:inherit}
+.report-picker-customer:hover,.report-picker-customer:focus-visible{background:#59412880;border-color:#b48a53}
+.report-picker-customer[aria-selected="true"]{background:#4c39254d;color:#ffe0ac}
+.report-picker-empty{text-align:center;color:#bea98d;padding:20px}
+.report-calendar-heading{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:6px;text-align:center}
+.report-calendar-heading strong{font-size:18px;color:#ffe2b6}
+.report-calendar-heading button{min-height:43px;padding:6px;font-size:23px}
+.report-calendar-weekdays,.report-calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.report-calendar-weekdays{text-align:center;color:#c9ad86;font-size:13px;padding:10px 0 2px}
+.report-calendar-days{direction:rtl}
+.report-calendar-day{border:1px solid #5b4937;background:#192830;color:#f5e7d4;border-radius:8px;aspect-ratio:1;min-height:37px;font:inherit;cursor:pointer}
+.report-calendar-day:hover,.report-calendar-day:focus-visible{background:#664729;border-color:#d5a766}
+.report-calendar-day[aria-pressed="true"]{background:#85572e;border-color:#ecc080;color:#fff;font-weight:bold}
+.report-calendar-day.today{box-shadow:inset 0 0 0 1px #d3a775}
+.report-calendar-actions{display:flex;justify-content:space-between;gap:12px;margin-top:8px}
+.report-calendar-actions button{flex:1;min-height:42px}
+@media(max-width:480px){
+ .report-picker-modal{padding:9px}
+ .report-picker-card{max-height:90dvh}
+ .report-picker-body{padding:12px}
+ .report-calendar-weekdays,.report-calendar-days{gap:3px}
+ .report-calendar-day{min-height:38px}
+}
