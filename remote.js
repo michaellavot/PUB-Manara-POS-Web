@@ -8,8 +8,51 @@ const POS_SESSION_KEY='manara-pos-web-supabase-session-v1';
 const POS_TEST_KEY='manara-pos-web-owner-test-toggle-v1';
 const POS_STAFF_ENDPOINT=POS_CLOUD_URL+'/functions/v1/pos-staff-auth';
 const RemotePos={
- active:false,session:null,employee:null,linkedCustomerId:null,testMode:false,isImported:false,users:[],products:[],customers:[],archive:[],priceHistory:[],audit:[],poll:null,socket:null,reconnect:null,loading:false,onChange:null,statusCallback:null,seq:0,authenticated:false,staffAdminUnlocked:false,_transactionRows:[],_lastFullSync:0,_realtimeConnected:false,_pendingChanges:[],_retrySync:false,
+ active:false,session:null,employee:null,linkedCustomerId:null,testMode:false,isImported:false,users:[],products:[],customers:[],archive:[],priceHistory:[],audit:[],poll:null,socket:null,reconnect:null,loading:false,onChange:null,statusCallback:null,seq:0,authenticated:false,staffAdminUnlocked:false,_transactionRows:[],_lastFullSync:0,_realtimeConnected:false,_pendingChanges:[],_retrySync:false,networkStatus:'checking',networkCallback:null,networkPoll:null,_networkProbe:null,_networkCheckedAt:0,_networkGeneration:0,
  setStatus(message,kind=''){if(typeof this.statusCallback==='function')this.statusCallback(message,kind);},
+ setNetworkStatus(mode){
+  if(!['online','degraded','checking','offline'].includes(mode))return;
+  if(this.networkStatus===mode)return;
+  this.networkStatus=mode;
+  if(typeof this.networkCallback==='function')this.networkCallback(mode);
+ },
+ async checkConnection(force=false){
+  if(!this.active||!this.authenticated)return false;
+  if(this._networkProbe)return this._networkProbe;
+  if(!force&&Date.now()-this._networkCheckedAt<12000&&this.networkStatus!=='checking')return this.networkStatus!=='offline';
+  const generation=this._networkGeneration;
+  const job=(async()=>{
+   if(!navigator.onLine){this.setNetworkStatus('offline');this._networkCheckedAt=Date.now();return false;}
+   if(this.networkStatus==='offline')this.setNetworkStatus('checking');
+   const controller=new AbortController();
+   const timeout=setTimeout(()=>controller.abort(),6500);
+   try{
+    // Tiny authenticated GET: never POST a financial transaction to test connectivity.
+    const response=await fetch(POS_CLOUD_URL+'/rest/v1/pos_settings?select=id&id=eq.1',{
+     method:'GET',cache:'no-store',signal:controller.signal,headers:this.apiHeaders()
+    });
+    if(generation!==this._networkGeneration)return false;
+    if(response.status===401||response.status===403){
+     // Permission/session failure is not proof that the network is offline.
+     this.setNetworkStatus('checking');return false;
+    }
+    if(!response.ok){this.setNetworkStatus('offline');return false;}
+    this._networkCheckedAt=Date.now();
+    this.setNetworkStatus(this._realtimeConnected?'online':'degraded');
+    return true;
+   }catch(error){
+    if(generation===this._networkGeneration){this._networkCheckedAt=Date.now();this.setNetworkStatus('offline');}
+    return false;
+   }finally{clearTimeout(timeout);}
+  })();
+  this._networkProbe=job;
+  try{return await job;}finally{if(this._networkProbe===job)this._networkProbe=null;}
+ },
+ async requireConnectionBeforeCharge(){
+  if(!this.active||!this.authenticated)throw new Error('נדרשת התחברות לקופה');
+  // Always revalidate immediately before a new financial write, even if status appeared green.
+  if(!await this.checkConnection(true))throw new Error('לא אומת חיבור לשרת. ההזמנה נשמרה במסך ולא נשלח חיוב.');
+ },
  apiHeaders(jwt=this.session?.access_token){return {apikey:POS_PUBLISHABLE_KEY,Authorization:'Bearer '+(jwt||POS_PUBLISHABLE_KEY),'Content-Type':'application/json'};},
  async request(path,{method='GET',body,query,headers={}}={}){
    this.assertShift();
@@ -17,7 +60,12 @@ const RemotePos={
    const url=new URL(path,POS_CLOUD_URL);
    if(query)for(const [key,value] of Object.entries(query))url.searchParams.set(key,value);
    let response;
-   try{response=await fetch(url.toString(),{method,headers:{...this.apiHeaders(),...headers},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});}catch{throw new Error('אין חיבור לשרת. לא נשמרה עסקה.');}
+   try{response=await fetch(url.toString(),{method,headers:{...this.apiHeaders(),...headers},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});}catch{
+    // A transaction can have reached the server before the response was lost.
+    // Never claim it was not saved; the idempotency key remains available for reconciliation.
+    this.setNetworkStatus('offline');
+    throw new Error('הקשר לשרת אבד. ייתכן שפעולה שנשלחה נקלטה; יש לבדוק את הארכיון לפני ניסיון חוזר.');
+   }
    if(response.status===401){this.setStatus('ההתחברות פגה. יש להתחבר מחדש','error');throw new Error('יש להתחבר מחדש לשרת');}
    if(!response.ok){let error;try{error=await response.json();}catch{}throw new Error(error?.message||error?.error_description||`שגיאת שרת ${response.status}`);}
    if(response.status===204)return null;
@@ -377,6 +425,11 @@ const RemotePos={
  },
  async start(){
   this.stop();await this.loadAll();this.watchRealtime();
+  this.setNetworkStatus('checking');
+  void this.checkConnection(true);
+  this.networkPoll=setInterval(()=>{if(this.active&&!document.hidden)void this.checkConnection(true);},30000);
+  this._offline=()=>{this.setNetworkStatus('offline');};
+  window.addEventListener('offline',this._offline);
   // Reconcile occasionally to recover missed websocket events; never pull full archive every 12 seconds.
   this.poll=setInterval(()=>{
    if(!navigator.onLine||!this.active||document.hidden)return;
@@ -384,9 +437,9 @@ const RemotePos={
    const interval=this._realtimeConnected?15*60*1000:2*60*1000;
    if(elapsed>=interval)this.refreshQuietly();
   },30000);
-  this._online=()=>{this.watchRealtime();this.refreshQuietly();};
+  this._online=()=>{this.setNetworkStatus('checking');void this.checkConnection(true);this.watchRealtime();this.refreshQuietly();};
   window.addEventListener('online',this._online);
-  this._visible=()=>{if(!document.hidden&&navigator.onLine&&this.active&&Date.now()-this._lastFullSync>2*60*1000)this.refreshQuietly();};
+  this._visible=()=>{if(document.hidden||!this.active)return;void this.checkConnection(true);if(navigator.onLine&&Date.now()-this._lastFullSync>2*60*1000)this.refreshQuietly();};
   document.addEventListener('visibilitychange',this._visible);
  },
  async refreshQuietly(changes=null){
@@ -410,6 +463,7 @@ const RemotePos={
     }
     if(this.onChange)await this.onChange(sections);
     this.setStatus('מסונכרן עם כל הקופות','success');
+    if(this.networkStatus!=='offline')this.setNetworkStatus(this._realtimeConnected?'online':'degraded');
    }
   }catch(error){
    // A full reconciliation is safer than dropping an event when a network request fails.
@@ -431,6 +485,7 @@ const RemotePos={
     let msg;try{msg=JSON.parse(e.data);}catch{return;}
     if(msg.event==='phx_reply'&&msg.topic==='realtime:manara-pos'){
      joined=msg.payload?.status==='ok';this._realtimeConnected=joined;
+     if(this.networkStatus!=='offline'&&this.networkStatus!=='checking')this.setNetworkStatus(joined?'online':'degraded');
      if(!joined)this.setStatus('Realtime לא התחבר — בדיקת גיבוי מחזורית פעילה','');
     }
     if(msg.event==='postgres_changes'&&joined){
@@ -449,6 +504,7 @@ const RemotePos={
    ws.onclose=()=>{
     if(this.socket===ws)this.socket=null;
     this._realtimeConnected=false;
+    if(this.networkStatus==='online')this.setNetworkStatus('degraded');
     this.setStatus('Realtime מנותק — בדיקת גיבוי מחזורית פעילה','');
     clearTimeout(this.reconnect);
     if(this.active)this.reconnect=setTimeout(()=>this.watchRealtime(),6000);
@@ -461,5 +517,5 @@ const RemotePos={
   }catch{this._realtimeConnected=false;this.setStatus('בדיקת גיבוי מחזורית פעילה','');}
  },
 
- stop(){if(this.poll){clearInterval(this.poll);this.poll=null;}clearInterval(this.heartbeat);clearTimeout(this.reconnect);clearTimeout(this._debounce);if(this.socket){const s=this.socket;this.socket=null;try{s.onclose=null;s.close();}catch{}}if(this._online)window.removeEventListener('online',this._online);if(this._visible)document.removeEventListener('visibilitychange',this._visible);this._pendingChanges=[];this._retrySync=false;this._realtimeConnected=false;}
+ stop(){this._networkGeneration++;if(this.networkPoll){clearInterval(this.networkPoll);this.networkPoll=null;}if(this._offline)window.removeEventListener('offline',this._offline);if(this.poll){clearInterval(this.poll);this.poll=null;}clearInterval(this.heartbeat);clearTimeout(this.reconnect);clearTimeout(this._debounce);if(this.socket){const s=this.socket;this.socket=null;try{s.onclose=null;s.close();}catch{}}if(this._online)window.removeEventListener('online',this._online);if(this._visible)document.removeEventListener('visibilitychange',this._visible);this._pendingChanges=[];this._retrySync=false;this._realtimeConnected=false;this._networkProbe=null;this._networkCheckedAt=0;this.setNetworkStatus('checking');}
 };
