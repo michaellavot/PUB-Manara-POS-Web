@@ -36,7 +36,7 @@ const ArchiveAdmin=(()=>{
    const select=add('button',undefined,'button archive-client-select');
    select.type='button';select.classList.toggle('active',state.selectedKey===item.key);
    select.append(add('strong',item.name));
-   select.append(add('small',item.count+' שורות פעילות · '+item.total.toLocaleString('he-IL',{maximumFractionDigits:2})+' ₪'+(item.isTest?' · ניסיון':'')));
+   select.append(add('small',item.count+' שורות פעילות · '+item.total.toLocaleString('he-IL',{maximumFractionDigits:2})+' ₪'+(item.isTest?' · תחזוקה':'')));
    select.addEventListener('click',()=>{state.selectedKey=item.key;renderCustomers();renderLines();});
    const edit=add('button','✎','button secondary archive-small-btn');
    edit.type='button';edit.title='ערוך שם לקוח';edit.setAttribute('aria-label','ערוך '+item.name);
