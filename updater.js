@@ -33,8 +33,15 @@ function showUpdateDialog(){
  el('updateDialogTitle').textContent='עדכון תוכנה חובה';
  el('updateDialogVersion').textContent='PUB Manara POS Web · V'+info.version;
  const changes=el('updateChanges');changes.replaceChildren();
- for(const change of (Array.isArray(info.changes)?info.changes:[])){
-  const li=document.createElement('li');li.textContent=String(change);changes.append(li);
+ // Compact release notes: current improvements only, one short line each.
+ const entries=(Array.isArray(info.changes)?info.changes:[])
+  .map(value=>String(value).trim())
+  .filter(value=>value&&!/לא שונ|ללא שינוי|נשאר.*ללא שינוי|לא יימחקו/.test(value))
+  .slice(0,5);
+ for(const change of entries){
+  const li=document.createElement('li');
+  li.textContent=change.length>95?change.slice(0,92).trimEnd()+'…':change;
+  changes.append(li);
  }
  if(!changes.children.length){const li=document.createElement('li');li.textContent='שיפורים ועדכוני מערכת';changes.append(li);}
  el('applyUpdateBtn').classList.remove('hidden');
