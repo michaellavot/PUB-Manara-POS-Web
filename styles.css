@@ -869,16 +869,16 @@ body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
 .qr-share-panel .customer-picker-actions{margin-top:auto}
 @media(max-width:450px){.qr-report-share-section{padding:10px}.qr-share-panel{max-height:88dvh}}
 
-/* V2.0.2 — compact, persistent Supabase connection state beside employee and clock */
+/* V2.0.2 — compact, persistent Supabase connection state beside employee and clock.
+   Emoji presentation only: no changes to network status or transaction logic. */
 .cloud-connection-indicator{display:inline-flex;align-items:center;justify-content:center;gap:6px;max-width:180px;min-height:29px;padding:4px 9px;border-radius:999px;border:1px solid #826548;background:#242c2d;color:#e6d4bd;font-size:11px;font-weight:650;line-height:1.2;white-space:nowrap;user-select:none}
-.cloud-connection-dot{width:8px;height:8px;flex:0 0 8px;border-radius:50%;background:#cfa258;box-shadow:0 0 0 2px rgba(207,162,88,.12)}
+.cloud-connection-dot{display:inline-grid;place-items:center;width:23px;height:23px;flex:0 0 23px;border-radius:50%;background:transparent;box-shadow:none;line-height:1}
+.cloud-connection-dot::before{content:"🤨";font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif;font-size:20px;line-height:1;filter:drop-shadow(0 0 4px rgba(232,184,46,.58)) drop-shadow(0 0 8px rgba(232,184,46,.27))}
 .cloud-connection-indicator[data-connection="online"]{border-color:#327654;color:#c9f6da;background:#142b23}
-.cloud-connection-indicator[data-connection="online"] .cloud-connection-dot{background:#49c786;box-shadow:0 0 0 2px rgba(73,199,134,.15)}
+.cloud-connection-indicator[data-connection="online"] .cloud-connection-dot::before{content:"😃";filter:drop-shadow(0 0 4px rgba(41,214,93,.7)) drop-shadow(0 0 9px rgba(41,214,93,.3))}
 .cloud-connection-indicator[data-connection="degraded"]{border-color:#947040;color:#ffe1a0;background:#352918}
-.cloud-connection-indicator[data-connection="degraded"] .cloud-connection-dot{background:#e4ad4c}
+.cloud-connection-indicator[data-connection="degraded"] .cloud-connection-dot::before{content:"🤨"}
 .cloud-connection-indicator[data-connection="offline"]{border-color:#a04b4c;color:#ffd7d6;background:#381d22}
-.cloud-connection-indicator[data-connection="offline"] .cloud-connection-dot{background:#ed6767}
-.cloud-connection-indicator[data-connection="checking"] .cloud-connection-dot{animation:cloud-connection-pulse 1.5s ease-in-out infinite}
-@keyframes cloud-connection-pulse{50%{opacity:.4}}
-@media(prefers-reduced-motion:reduce){.cloud-connection-indicator .cloud-connection-dot{animation:none!important}}
-@media(max-width:550px){.cloud-connection-indicator{font-size:10px;min-height:25px;padding:3px 6px;max-width:132px}.cloud-connection-dot{width:7px;height:7px;flex-basis:7px}}
+.cloud-connection-indicator[data-connection="offline"] .cloud-connection-dot::before{content:"😡";filter:drop-shadow(0 0 4px rgba(240,74,74,.68)) drop-shadow(0 0 9px rgba(240,74,74,.29))}
+.cloud-connection-indicator[data-connection="checking"] .cloud-connection-dot::before{content:"🤨"}
+@media(max-width:550px){.cloud-connection-indicator{font-size:10px;min-height:25px;padding:3px 6px;max-width:132px}.cloud-connection-dot{width:21px;height:21px;flex-basis:21px}.cloud-connection-dot::before{font-size:18px}}
