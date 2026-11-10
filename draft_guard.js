@@ -70,7 +70,7 @@ const DraftGuard={
   });
  },
  async authorizeDeparture(action){
-  if(state.busy||state.pendingOperation){alert('יש עסקה שממתינה לאימות. בדוק את הארכיון לפני יציאה או החלפת עובד.');return false;}
+  if(state.busy||state.pendingOperation||this.blocked){alert('יש עסקה שממתינה לאימות או טיוטה נעולה. בדוק את הארכיון לפני יציאה או החלפת עובד.');return false;}
   if(!state.cart.length)return true;
   return this.ask('ההזמנה טרם חויבה. מעבר זה עלול לבטל את הפריטים שבחרת.','המשך ללא חיוב');
  },
