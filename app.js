@@ -861,10 +861,10 @@ async function loginCloud(event){
   navigateFromMenu('posPage');
   state.switchingEmployee=false;
   leaveCloudLogin();
-  await DraftGuard.restoreAfterLogin();
   if(previous){const oldId=previous.employee?.id||previous.employee?.employee_id||previous.employee?.user_id||previous.employee?.display_name;
    const oldKey=DraftGuard.prefix+encodeURIComponent(String(previous.session.user.id))+':'+encodeURIComponent(String(oldId));
-   if(oldId&&oldKey!==DraftGuard.employeeKey())try{localStorage.removeItem(oldKey);}catch(e){console.warn(e);}}
+   if(oldId)try{localStorage.removeItem(oldKey);}catch(e){console.warn(e);}}
+  await DraftGuard.restoreAfterLogin();
   if(previous){
    try{await RemotePos.revokePriorSession(previous);}
    catch(e){console.warn(e);status(e.message,'error');}
