@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=0.9.29">
   <link rel="icon" href="assets/app_icon_192.png?v=0.9.29">
   <link rel="apple-touch-icon" href="assets/app_icon_192.png?v=0.9.29">
-  <link rel="stylesheet" href="styles.css?v=2.0.8">
+  <link rel="stylesheet" href="styles.css?v=2.0.9">
 <style id="startupScreenCriticalStyle">
 /* Startup must be usable before styles.css and scripts have loaded. */
 #startupScreen{
@@ -162,12 +162,12 @@
           <p class="small-note">שינויים בלקוחות ובמשקאות: מי ביצע, מה שונה ומתי. זמין למנהלים בלבד.</p>
           <div class="scroll-table audit-table"><table class="data-table"><thead><tr><th>תאריך ושעה</th><th>מבצע</th><th>פריט/לקוח</th><th>שינוי</th><th>פרטים</th></tr></thead><tbody id="auditRows"></tbody></table></div>
         </div></section>
-      <section id="reportsPage" class="page"><div class="panel reports-panel"><div class="panel-head"><h2>דוחות וארכיון</h2><span id="reportAccessNote" class="small-note">כולל חיובים וזיכויים</span></div><div id="reportControls" class="report-controls"><label>מתאריך <input class="field" id="fromDate" type="date"></label><label>עד תאריך <input class="field" id="toDate" type="date"></label><label>לקוח <select class="field" id="reportCustomer"><option value="">כל הלקוחות</option></select></label><label>סוג דוח <select class="field" id="reportType"><option value="movements">תנועות חיוב</option><option value="byCustomer">סיכום לפי לקוח</option><option value="byProduct">סיכום לפי משקה</option><option value="endDay">סגירת יום</option></select></label><button id="showReportBtn" class="button primary">הצג</button><button id="exportExcelBtn" class="button secondary">Excel</button><button id="exportCsvBtn" class="button secondary">CSV</button><button id="printBtn" class="button secondary">PDF / הדפסה</button></div><div id="qrReportShareSection" class="qr-report-share-section hidden">
+      <section id="reportsPage" class="page"><div class="panel reports-panel"><div class="panel-head"><h2>דוחות וארכיון</h2><span id="reportAccessNote" class="small-note">כולל חיובים וזיכויים</span></div><div id="reportControls" class="report-controls"><label>מתאריך <input class="field report-original-field" id="fromDate" type="date"><button type="button" class="field report-picker-trigger" data-report-picker="fromDate" aria-haspopup="dialog" aria-label="בחירת תאריך"><span data-date-label="fromDate">בחר תאריך</span><span aria-hidden="true">▦</span></button></label><label>עד תאריך <input class="field report-original-field" id="toDate" type="date"><button type="button" class="field report-picker-trigger" data-report-picker="toDate" aria-haspopup="dialog" aria-label="בחירת תאריך"><span data-date-label="toDate">בחר תאריך</span><span aria-hidden="true">▦</span></button></label><label>לקוח <select class="field report-original-field" id="reportCustomer"><option value="">כל הלקוחות</option></select><button type="button" class="field report-picker-trigger" data-report-picker="reportCustomer" aria-haspopup="dialog" aria-label="בחירת לקוח">כל הלקוחות <span aria-hidden="true">⌄</span></button></label><label>סוג דוח <select class="field" id="reportType"><option value="movements">תנועות חיוב</option><option value="byCustomer">סיכום לפי לקוח</option><option value="byProduct">סיכום לפי משקה</option><option value="endDay">סגירת יום</option></select></label><button id="showReportBtn" class="button primary">הצג</button><button id="exportExcelBtn" class="button secondary">Excel</button><button id="exportCsvBtn" class="button secondary">CSV</button><button id="printBtn" class="button secondary">PDF / הדפסה</button></div><div id="qrReportShareSection" class="qr-report-share-section hidden">
   <div class="qr-report-share-heading"><strong>שיתוף תנועות לקוח ב־QR</strong><span class="small-note">שיתוף בהרשאה נפרדת, לקריאה בלבד ולמשך 7 ימים</span></div>
   <div id="qrLimitedFilters" class="report-controls hidden">
-   <label>מתאריך <input id="qrFromDate" class="field" type="date"></label>
-   <label>עד תאריך <input id="qrToDate" class="field" type="date"></label>
-   <label>לקוח <select id="qrReportCustomer" class="field"><option value="">בחר לקוח</option></select></label>
+   <label>מתאריך <input id="qrFromDate" class="field report-original-field" type="date"><button type="button" class="field report-picker-trigger" data-report-picker="qrFromDate" aria-haspopup="dialog" aria-label="בחירת תאריך"><span data-date-label="qrFromDate">בחר תאריך</span><span aria-hidden="true">▦</span></button></label>
+   <label>עד תאריך <input id="qrToDate" class="field report-original-field" type="date"><button type="button" class="field report-picker-trigger" data-report-picker="qrToDate" aria-haspopup="dialog" aria-label="בחירת תאריך"><span data-date-label="qrToDate">בחר תאריך</span><span aria-hidden="true">▦</span></button></label>
+   <label>לקוח <select id="qrReportCustomer" class="field report-original-field"><option value="">בחר לקוח</option></select><button type="button" class="field report-picker-trigger" data-report-picker="qrReportCustomer" aria-haspopup="dialog" aria-label="בחירת לקוח">בחר לקוח <span aria-hidden="true">⌄</span></button></label>
   </div>
   <button id="createCustomerQrBtn" class="button secondary" type="button">▦ יצירת QR לדוח הלקוח</button>
   <p id="qrReportStatus" role="status" class="small-note"></p>
@@ -233,7 +233,7 @@
  <div id="archiveImportPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא הארכיון ממחשב הפאב המקורי</h2></div>
         <p class="small-note" id="archiveImportNotice">העבר את הנתונים רק לאחר פתיחת הקופה במחשב הפאב המקורי. לפני ההעברה ירד קובץ גיבוי.</p>
         <button type="button" class="button primary" id="cloudImportFromSystemBtn">גבה וייבא ארכיון מהמחשב הזה</button>
-      </div><div id="ownerBackupPanel" class="panel hidden"><div class="panel-head"><h2>גיבוי ושחזור</h2></div><p id="remoteSystemNotice">העותק המקומי נשאר במכשיר. אחרי מעבר לענן, כל הקופות משתמשות במסד המשותף.</p><div class="stack-buttons"><button id="downloadBackup" class="button primary">הורד גיבוי JSON</button><label class="file-input">שחזור גיבוי מלא (מחליף נתונים) <input id="restoreFile" type="file" accept=".json,application/json"></label></div><p class="small-note">הורד גיבוי בתחילת ובסיום משמרת. אין למחוק את נתוני הדפדפן לפני סיום העברת הארכיון.</p><p id="cloudSync" class="sync-msg"></p></div><div id="ownerLegacyPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא מהקופה הישנה</h2></div><p>ייבוא CSV מהארכיון הישן או JSON שנוצר מקובץ SQLite באמצעות הכלי המצורף. חשבונות כרדיט ישנים מסוג C0001 או C-0001 אינם מיובאים.</p><label class="file-input">בחר ארכיון CSV או JSON <input id="legacyInput" type="file" accept=".csv,.json,text/csv,application/json"></label><div class="import-preview hidden" id="importPreview"></div><div id="legacyNotice" class="small-note"></div></div><div class="panel"><div class="system-meta-controls"><small id="versionLabel">V2.0.8</small><button id="updateBadge" class="update-badge hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button><span class="chip" id="storageLabel">מתחבר לשרת…</span><button id="trialToggleBtn" type="button" class="button mode-switch hidden" aria-pressed="false">תחזוקה: כבוי</button><button id="installBtn" type="button" class="button install hidden">התקן אפליקציה</button></div><button type="button" id="cloudSignOut" class="button secondary system-switch-employee">החלף עובד</button><button id="employeeSignOutBtn" type="button" class="button secondary system-switch-employee" title="יציאת עובד ונעילת הקופה" aria-label="יציאת עובד">יציאת עובד</button><button id="installBtnSystem" class="button primary" type="button">התקן כאפליקציה</button><button id="deviceLayoutBtn" class="button secondary" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="deviceLayoutDialog">מצב תצוגה</button><button id="archiveManageBtn" class="button primary hidden" type="button">ניהול ארכיון</button><div class="updater-system"><strong>שיתוף האפליקציה</strong><p class="small-note">קוד QR לסריקה ולהתקנת הקופה ממכשיר נוסף.</p><button id="shareAppQrBtn" class="button secondary" type="button">▦ שיתוף האפליקציה</button></div><div class="updater-system"><strong>עדכוני תוכנה</strong><p class="small-note">גרסה מותקנת: <span id="installedVersion">V2.0.8</span> · <span id="updateStatus">אין עדכון ידוע</span></p><button id="checkUpdatesBtn" class="button secondary" type="button">בדוק עדכונים</button></div></div></div></section>
+      </div><div id="ownerBackupPanel" class="panel hidden"><div class="panel-head"><h2>גיבוי ושחזור</h2></div><p id="remoteSystemNotice">העותק המקומי נשאר במכשיר. אחרי מעבר לענן, כל הקופות משתמשות במסד המשותף.</p><div class="stack-buttons"><button id="downloadBackup" class="button primary">הורד גיבוי JSON</button><label class="file-input">שחזור גיבוי מלא (מחליף נתונים) <input id="restoreFile" type="file" accept=".json,application/json"></label></div><p class="small-note">הורד גיבוי בתחילת ובסיום משמרת. אין למחוק את נתוני הדפדפן לפני סיום העברת הארכיון.</p><p id="cloudSync" class="sync-msg"></p></div><div id="ownerLegacyPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא מהקופה הישנה</h2></div><p>ייבוא CSV מהארכיון הישן או JSON שנוצר מקובץ SQLite באמצעות הכלי המצורף. חשבונות כרדיט ישנים מסוג C0001 או C-0001 אינם מיובאים.</p><label class="file-input">בחר ארכיון CSV או JSON <input id="legacyInput" type="file" accept=".csv,.json,text/csv,application/json"></label><div class="import-preview hidden" id="importPreview"></div><div id="legacyNotice" class="small-note"></div></div><div class="panel"><div class="system-meta-controls"><small id="versionLabel">V2.0.9</small><button id="updateBadge" class="update-badge hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button><span class="chip" id="storageLabel">מתחבר לשרת…</span><button id="trialToggleBtn" type="button" class="button mode-switch hidden" aria-pressed="false">תחזוקה: כבוי</button><button id="installBtn" type="button" class="button install hidden">התקן אפליקציה</button></div><button type="button" id="cloudSignOut" class="button secondary system-switch-employee">החלף עובד</button><button id="employeeSignOutBtn" type="button" class="button secondary system-switch-employee" title="יציאת עובד ונעילת הקופה" aria-label="יציאת עובד">יציאת עובד</button><button id="installBtnSystem" class="button primary" type="button">התקן כאפליקציה</button><button id="deviceLayoutBtn" class="button secondary" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="deviceLayoutDialog">מצב תצוגה</button><button id="archiveManageBtn" class="button primary hidden" type="button">ניהול ארכיון</button><div class="updater-system"><strong>שיתוף האפליקציה</strong><p class="small-note">קוד QR לסריקה ולהתקנת הקופה ממכשיר נוסף.</p><button id="shareAppQrBtn" class="button secondary" type="button">▦ שיתוף האפליקציה</button></div><div class="updater-system"><strong>עדכוני תוכנה</strong><p class="small-note">גרסה מותקנת: <span id="installedVersion">V2.0.9</span> · <span id="updateStatus">אין עדכון ידוע</span></p><button id="checkUpdatesBtn" class="button secondary" type="button">בדוק עדכונים</button></div></div></div></section>
     </main>
   </div>
 
@@ -301,6 +301,28 @@
         <p id="archiveDbNotice" class="small-note" role="status"></p>
       </section>
     </section>
+  </div>
+  <!-- V2.0.9 custom report pickers; original inputs remain authoritative for filtering. -->
+  <div id="reportPickerModal" class="report-picker-modal hidden" role="dialog" aria-modal="true" aria-labelledby="reportPickerTitle" dir="rtl">
+    <div id="reportPickerBackdrop" class="report-picker-backdrop"></div>
+    <div class="report-picker-card">
+      <header class="report-picker-heading"><h2 id="reportPickerTitle">בחירה</h2><button id="reportPickerClose" type="button" aria-label="סגור" class="customer-dialog-close">×</button></header>
+      <div id="reportCustomerPickerView" class="report-picker-body hidden">
+        <input id="reportPickerSearch" type="search" class="field" autocomplete="off" placeholder="חיפוש לקוח...">
+        <p id="reportPickerCount" class="small-note"></p>
+        <div id="reportPickerCustomers" class="report-picker-customers" role="listbox" aria-label="בחירת לקוח"></div>
+      </div>
+      <div id="reportCalendarPickerView" class="report-picker-body hidden">
+        <div class="report-calendar-heading">
+          <button id="reportCalendarPrev" type="button" aria-label="חודש קודם" class="button secondary">‹</button>
+          <strong id="reportCalendarMonth"></strong>
+          <button id="reportCalendarNext" type="button" aria-label="חודש הבא" class="button secondary">›</button>
+        </div>
+        <div class="report-calendar-weekdays" aria-hidden="true"><span>א׳</span><span>ב׳</span><span>ג׳</span><span>ד׳</span><span>ה׳</span><span>ו׳</span><span>ש׳</span></div>
+        <div id="reportCalendarDays" class="report-calendar-days" role="group" aria-label="בחירת יום"></div>
+        <div class="report-calendar-actions"><button id="reportCalendarToday" class="button secondary" type="button">היום</button><button id="reportCalendarClear" class="button ghost" type="button">נקה תאריך</button></div>
+      </div>
+    </div>
   </div>
   <div id="updateDialog" class="update-modal hidden" role="dialog" aria-modal="true" aria-labelledby="updateDialogTitle">
     <div class="update-modal-shade"></div>
@@ -481,9 +503,10 @@
     </div>
    </div>
   </div>
-  <script src="db.js"></script><script src="remote.js?v=2.0.8"></script><script src="xlsx.js"></script><script src="updater.js?v=2.0.8"></script><script src="archive_admin.js?v=2.0.8"></script><script src="legacy_db_import.js?v=2.0.8"></script>
-<script src="backup_manager.js?v=2.0.8"></script>
-<script src="qrcode.min.js?v=2.0.8"></script>
-<script src="draft_guard.js?v=2.0.8"></script>
-<script src="app.js?v=2.0.8"></script>
+  <script src="db.js"></script><script src="remote.js?v=2.0.9"></script><script src="xlsx.js"></script><script src="updater.js?v=2.0.9"></script><script src="archive_admin.js?v=2.0.9"></script><script src="legacy_db_import.js?v=2.0.9"></script>
+<script src="backup_manager.js?v=2.0.9"></script>
+<script src="qrcode.min.js?v=2.0.9"></script>
+<script src="draft_guard.js?v=2.0.9"></script>
+<script src="report_widgets.js?v=2.0.9"></script>
+<script src="app.js?v=2.0.9"></script>
 </body></html>
