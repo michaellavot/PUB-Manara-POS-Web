@@ -882,3 +882,66 @@ body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
 .cloud-connection-indicator[data-connection="offline"] .cloud-connection-dot::before{content:"😡";filter:drop-shadow(0 0 4px rgba(240,74,74,.68)) drop-shadow(0 0 9px rgba(240,74,74,.29))}
 .cloud-connection-indicator[data-connection="checking"] .cloud-connection-dot::before{content:"🤨"}
 @media(max-width:550px){.cloud-connection-indicator{font-size:10px;min-height:25px;padding:3px 6px;max-width:132px}.cloud-connection-dot{width:21px;height:21px;flex-basis:21px}.cloud-connection-dot::before{font-size:18px}}
+
+/* V2.0.3 — mobile-only two-row POS header. The original interactive nodes
+   and their event listeners remain in place; desktop/tablet styles stay intact. */
+@media (max-width:730px){
+ body:not(.desktop-hero-controls) .global-control-strip{
+  display:grid!important;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  grid-template-rows:minmax(36px,auto) minmax(49px,auto);
+  align-items:stretch!important;
+  column-gap:7px;
+  row-gap:10px;
+  height:auto;
+  min-height:0;
+  padding:11px 9px;
+  margin:8px 12px 10px;
+ }
+ body:not(.desktop-hero-controls) .global-control-strip #cloudConnectionStatus{
+  grid-column:1/4;grid-row:1;align-self:stretch;justify-self:stretch;
+  width:100%;max-width:none;min-width:0;padding:5px 6px;
+  font-size:clamp(10px,2.8vw,12px);
+ }
+ body:not(.desktop-hero-controls) .global-control-strip #cloudConnectionText{
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+ }
+ body:not(.desktop-hero-controls) .global-control-strip #clock{
+  grid-column:4/7;grid-row:1;align-self:stretch;justify-self:stretch;
+  display:flex;align-items:center;justify-content:center;
+  width:100%;min-width:0;max-width:none;min-height:36px;
+  padding:5px 4px;order:initial;white-space:nowrap;
+  font-size:clamp(10px,2.8vw,13px);
+ }
+ body:not(.desktop-hero-controls) .global-control-strip .customer-select-wrap{
+  grid-column:1/4;grid-row:2;min-width:0;max-width:none;width:100%;
+ }
+ body:not(.desktop-hero-controls) .global-control-strip .customer-main-button{
+  width:100%;height:100%;min-height:49px;padding:8px 10px;
+  font-size:clamp(15px,4vw,19px);gap:6px;
+ }
+ body:not(.desktop-hero-controls) .global-control-strip #employeeChargeToggle{
+  grid-column:4/6;grid-row:2;width:100%;min-width:0;min-height:49px;
+  padding:8px 5px;font-size:clamp(11px,3vw,14px);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ }
+ body:not(.desktop-hero-controls) .global-control-strip #cloudUserBar{
+  grid-column:6/7;grid-row:2;align-self:stretch;justify-self:stretch;
+  display:flex;align-items:stretch;justify-content:center;
+  min-width:0;width:100%;gap:0;
+ }
+ body:not(.desktop-hero-controls) .global-control-strip #cloudUserBar #cloudUser{
+  display:none!important;
+ }
+ body:not(.desktop-hero-controls) .global-control-strip #cloudUserBar .navigation-gear{
+  flex:1 1 auto;width:100%;min-width:0;height:100%;min-height:49px;
+  padding:0!important;font-size:0!important;
+  border:1px solid #aa8252;border-radius:12px;
+ }
+ body:not(.desktop-hero-controls) .global-control-strip #cloudUserBar .navigation-gear::after{
+  content:"⋮";font-size:24px;line-height:1;
+ }
+ body:not(.desktop-hero-controls) .global-control-strip.not-pos-page .customer-select-wrap{
+  display:none!important;
+ }
+}
