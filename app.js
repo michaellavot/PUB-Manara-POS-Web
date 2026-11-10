@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.0.1';
+const APP_VERSION='2.0.2';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -167,7 +167,22 @@ function renderBill(){const body=el('billBody');body.replaceChildren();if(!state
 function clearBill(){if(!state.cart.length&&!state.selectedCustomer&&!state.employeeCharge)return;if(state.cart.length&&!confirm('לנקות את החיוב הנוכחי?'))return;state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;resetEmployeeCharge();renderBill();status('החיוב נוקה');}
 function removeSelected(){if(!state.cart.length)return;const index=state.selectedRow>=0?state.selectedRow:state.cart.length-1;const removed=state.cart.splice(index,1)[0];state.cartHistory=state.cartHistory.filter(a=>a.id!==removed.id);state.selectedRow=Math.min(index,state.cart.length-1);renderBill();status('השורה הוסרה');}
 function undoLast(){if(!state.cart.length)return;const last=state.cartHistory.pop();if(last){const index=state.cart.findIndex(r=>r.id===last.id);if(index>=0){const row=state.cart[index];row.qty-=last.qty;if(row.qty<=0)state.cart.splice(index,1);else row.price=Math.round(row.qty*row.unitPrice*100)/100;}}else state.cart.pop();state.selectedRow=state.cart.length-1;renderBill();status('הפעולה האחרונה בוטלה');}
-async function completeSale(refund=false){if(state.busy)return;if(!RemotePos.active||!RemotePos.authenticated){showCloudLogin('יש להתחבר לפני חיוב או זיכוי');return;}const onEmployee=state.employeeCharge,personName=state.employeeChargePerson,customer=onEmployee?linkedEmployeeCustomer():state.selectedCustomer;if(!customer){toastCustomer();status('יש לבחור לקוח לפני חיוב','error');return;}if(onEmployee&&!personName.trim()){status('חסר שם אדם לחיוב עובד','error');return;}if(!state.cart.length){status('לא נבחרו משקאות','error');return;}if(RemotePos.active&&!RemotePos.testMode&&!RemotePos.isImported){const message='לא ניתן לשמור חיוב או זיכוי במצב עבודה: ארכיון הפאב המקורי טרם יובא למערכת. לא נשמרה עסקה. ניתן להשתמש בכפתור ניסיון בחשבון הבעלים לצורך בדיקות.';status(message,'error');alert(message);return;}if(refund&&!confirm(`לשמור זיכוי עסקה ללקוח ${customer.name} בסך ${currency(state.cart.reduce((s,r)=>s+r.price,0))}?`))return;state.busy=true;el('chargeBtn').disabled=true;el('refundBtn').disabled=true;try{const d=new Date(),op=uuid(),time=d.toTimeString().slice(0,8),dateIso=nowIso(),sign=refund?-1:1;const rows=state.cart.map(c=>({id:uuid(),operationId:op,customer:customer.name,customerKey:norm(customer.name),dateIso,time,drink:c.drink,qty:c.qty,price:Math.round(c.price*sign*100)/100,legacyNumber:'',kind:refund?'refund':'sale'}));if(RemotePos.active){
+function renderCloudConnection(mode='checking'){
+ const indicator=el('cloudConnectionStatus');
+ if(!indicator)return;
+ const config={
+  online:['מחובר לענן','השרת זמין וחיבור העדכונים בזמן אמת פעיל.'],
+  degraded:['סנכרון מושהה','השרת זמין; עדכונים בזמן אמת מושהים, והסנכרון התקופתי ממשיך.'],
+  checking:['בודק חיבור…','בודק את החיבור מול שרת הקופה.'],
+  offline:['אין חיבור לשרת','לא אומת חיבור לשרת. חיובים חדשים חסומים עד לחידוש הקשר.']
+ };
+ const current=config[mode]||config.checking;
+ indicator.dataset.connection=mode;
+ el('cloudConnectionText').textContent=current[0];
+ indicator.title=current[1];
+ indicator.setAttribute('aria-label',current[1]);
+}
+async function completeSale(refund=false){if(state.busy)return;if(!RemotePos.active||!RemotePos.authenticated){showCloudLogin('יש להתחבר לפני חיוב או זיכוי');return;}const onEmployee=state.employeeCharge,personName=state.employeeChargePerson,customer=onEmployee?linkedEmployeeCustomer():state.selectedCustomer;if(!customer){toastCustomer();status('יש לבחור לקוח לפני חיוב','error');return;}if(onEmployee&&!personName.trim()){status('חסר שם אדם לחיוב עובד','error');return;}if(!state.cart.length){status('לא נבחרו משקאות','error');return;}if(RemotePos.active&&!RemotePos.testMode&&!RemotePos.isImported){const message='לא ניתן לשמור חיוב או זיכוי במצב עבודה: ארכיון הפאב המקורי טרם יובא למערכת. לא נשמרה עסקה. ניתן להשתמש בכפתור ניסיון בחשבון הבעלים לצורך בדיקות.';status(message,'error');alert(message);return;}if(refund&&!confirm(`לשמור זיכוי עסקה ללקוח ${customer.name} בסך ${currency(state.cart.reduce((s,r)=>s+r.price,0))}?`))return;state.busy=true;el('chargeBtn').disabled=true;el('refundBtn').disabled=true;try{await RemotePos.requireConnectionBeforeCharge();const d=new Date(),op=uuid(),time=d.toTimeString().slice(0,8),dateIso=nowIso(),sign=refund?-1:1;const rows=state.cart.map(c=>({id:uuid(),operationId:op,customer:customer.name,customerKey:norm(customer.name),dateIso,time,drink:c.drink,qty:c.qty,price:Math.round(c.price*sign*100)/100,legacyNumber:'',kind:refund?'refund':'sale'}));if(RemotePos.active){
   const fingerprint=JSON.stringify({customer:customer.id,onEmployee,personName,refund,isTest:RemotePos.testMode===true,items:state.cart.map(x=>[x.productId,x.qty,x.unitPrice])});
   if(!state.pendingOperation||state.pendingOperation.fingerprint!==fingerprint){state.pendingOperation={fingerprint,op:uuid()};}
   if(onEmployee)await RemotePos.submitEmployeeCharge({operationId:state.pendingOperation.op,kind:refund?'refund':'sale',items:state.cart,deviceId:getDeviceId(),personName});
@@ -613,6 +628,8 @@ async function employeeSignOut(){
 function resetLockedWorkspace(message){
  RemotePos.onChange=null;
  RemotePos.statusCallback=null;
+ RemotePos.networkCallback=null;
+ renderCloudConnection('checking');
  state.switchingEmployee=false;
  state.cart=[];state.cartHistory=[];state.selectedCustomer=null;state.selectedRow=-1;
  state.employeeCharge=false;state.employeeChargePerson='';state.pendingOperation=null;
@@ -779,6 +796,8 @@ async function activateCloud(){
   }
  };
  RemotePos.statusCallback=(msg,kind)=>{el('cloudSync').textContent=msg;el('cloudSync').className='sync-msg '+(kind||'');};
+ RemotePos.networkCallback=renderCloudConnection;
+ renderCloudConnection(RemotePos.networkStatus);
  RemotePos.setStatus('מסונכרן עם כל הקופות','success');
  if(!RemotePos.isImported)status('ארכיון הפאב טרם יובא. חיובי אמת נעולים עד לייבוא.','');
  renderPermissions();
@@ -1256,6 +1275,7 @@ function failStartup(error){
 async function init(){
  applyLayoutMode(getSavedLayoutMode());
  el('versionLabel').textContent='V'+APP_VERSION;
+ renderCloudConnection('checking');
  const stamp=()=>el('clock').textContent=`${nowDisplay()} · ${clockTime().slice(0,5)}`;
  stamp();setInterval(stamp,30000);
  setStartupMessage('מכין את מסכי הקופה…');
