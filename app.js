@@ -395,13 +395,14 @@ function arrangeDesktopHeaderControls(){
  const mode=document.body.dataset.layoutMode;
  const desktop=(mode==='desktop'&&window.innerWidth>700)||(mode==='auto'&&window.innerWidth>=1101);
  const strip=el('globalControlStrip');
- const userBar=el('cloudUserBar'),gear=el('navigationGearBtn'),clock=el('clock');
+ const userBar=el('cloudUserBar'),gear=el('navigationGearBtn'),clock=el('clock'),connection=el('cloudConnectionStatus');
  const left=el('desktopHeroGear'),right=el('desktopHeroIdentity');
  const customer=el('customerSelectWrap'),employeeCharge=el('employeeChargeToggle');
  const billControls=el('desktopBillingControls');
  if(desktop){
   if(gear.parentElement!==left)left.append(gear);
   if(userBar.parentElement!==right)right.append(userBar);
+  if(connection.parentElement!==right)right.append(connection);
   if(clock.parentElement!==right)right.append(clock);
   // Move the original controls, preserving listeners and the current selection.
   if(customer.parentElement!==billControls)billControls.append(customer);
@@ -410,6 +411,7 @@ function arrangeDesktopHeaderControls(){
   // Restore the original mobile/tablet control row and DOM order.
   if(customer.parentElement!==strip)strip.insertBefore(customer,strip.firstChild);
   if(employeeCharge.parentElement!==strip)customer.after(employeeCharge);
+  if(connection.parentElement!==strip)strip.append(connection);
   if(clock.parentElement!==strip)strip.append(clock);
   if(userBar.parentElement!==strip)strip.append(userBar);
   if(gear.parentElement!==userBar)userBar.append(gear);
