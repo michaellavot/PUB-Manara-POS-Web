@@ -28,18 +28,25 @@ const DraftGuard={
    pending:state.pendingOperation?{fingerprint:state.pendingOperation.fingerprint,op:state.pendingOperation.op}:null};
  },
  save(){
-  if(!this.ready||!RemotePos.authenticated)return;
-  const key=this.employeeKey();if(!key)return;
+  if(!this.ready||!RemotePos.authenticated)return false;
+  const key=this.employeeKey();if(!key)return false;
   try{
-   if(!state.cart.length&&!state.pendingOperation){localStorage.removeItem(key);return;}
+   if(!state.cart.length&&!state.pendingOperation){localStorage.removeItem(key);return true;}
    localStorage.setItem(key,JSON.stringify(this.snapshot()));
+   return true;
   }catch(e){console.error('לא ניתן לשמור טיוטת הזמנה במכשיר',e);
    const node=document.getElementById('status');
    if(node)node.textContent='אזהרה: שמירת טיוטה מקומית נכשלה. אל תסגור את הקופה לפני סיום ההזמנה.';
+   return false;
   }
  },
- // The synchronous save must happen before a financial request leaves the device.
- markPending(){this.save();},
+ // A payment is not sent until its stable operation ID has been persisted locally.
+ markPending(){
+  if(!this.save()){
+   state.pendingOperation=null;
+   throw new Error('שמירת מזהה החיוב במכשיר נכשלה. לא נשלח חיוב לשרת.');
+  }
+ },
  totals(){
   return {count:state.cart.reduce((n,x)=>n+Number(x.qty||0),0),
    amount:state.cart.reduce((n,x)=>n+Number(x.price||0),0)};
