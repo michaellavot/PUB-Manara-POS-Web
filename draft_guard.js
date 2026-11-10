@@ -85,7 +85,7 @@ const DraftGuard={
   const customer=data.employeeCharge?null:state.customers.find(x=>x.id===data.customerId&&x.active);
   if(!data.employeeCharge&&!customer)throw new Error('הלקוח בטיוטה אינו פעיל או אינו קיים');
   if(data.employeeCharge&&!linkedEmployeeCustomer())throw new Error('חשבון העובד המקושר אינו זמין');
-  if(data.testMode!==(RemotePos.testMode===true))throw new Error('מצב הניסיון השתנה מאז שמירת הטיוטה');
+  if(data.testMode!==(RemotePos.testMode===true))throw new Error('מצב התחזוקה השתנה מאז שמירת הטיוטה');
   if(!data.items.length||data.items.length>200)throw new Error('טיוטה ריקה או לא תקינה');
   const items=data.items.map(x=>{
    const p=state.products.find(p=>p.id===x.productId&&p.active);
