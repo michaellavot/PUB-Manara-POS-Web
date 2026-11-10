@@ -271,7 +271,7 @@ async function deleteSelectedCatalog(){
   const lines=(preview.items||[]).filter(x=>x.allowed).reduce((n,x)=>n+Number(x.test_lines||0),0);
   if(!eligible){alert(`לא ניתן למחוק אף אחת מ-${ids.length} הרשומות שנבחרו. ניתן להשבית רשומות עם היסטוריית אמת או נתונים ישנים עם עסקאות D.`);return;}
   const names=(preview.items||[]).filter(x=>!x.allowed).map(x=>x.name).slice(0,8).join(', ');
-  const message=`נבחרו ${ids.length} רשומות.\nניתן למחוק לצמיתות: ${eligible}.\nחסומות למחיקה: ${blocked}${names?' ('+names+')':''}.\nשורות ניסיון D שיוסרו: ${lines}.\n\nרשומות חסומות יישארו ללא שינוי, ועסקאות אמת לא יימחקו. להמשיך?`;
+  const message=`נבחרו ${ids.length} רשומות.\nניתן למחוק לצמיתות: ${eligible}.\nחסומות למחיקה: ${blocked}${names?' ('+names+')':''}.\nשורות תחזוקה D שיוסרו: ${lines}.\n\nרשומות חסומות יישארו ללא שינוי, ועסקאות אמת לא יימחקו. להמשיך?`;
   if(!confirm(message))return;
   const typed=prompt(`אישור סופי למחיקה מרובה של ${eligible} רשומות.\nיש להקליד: מחק`);
   if(typed!=='מחק'){if(typed!==null)alert('המחיקה בוטלה');return;}
@@ -301,7 +301,7 @@ function renderAudit(){
    else if(entry.action==='created')details=entry.entity_type==='product'?`מחיר ${currency(newer.price)}`:'לקוח חדש';
    else if(entry.action==='activated')details='הוחזר לרשימות הפעילות';
    else if(entry.action==='deactivated')details='הוסר ממסכי המכירה';
-   else if(entry.action==='deleted')details=`נמחקו ${Number(newer.removed_test_lines||0)} שורות D · ${Number(newer.affected_test_transactions||0)} עסקאות ניסיון קשורות`;
+   else if(entry.action==='deleted')details=`נמחקו ${Number(newer.removed_test_lines||0)} שורות D · ${Number(newer.affected_test_transactions||0)} עסקאות תחזוקה קשורות`;
    else if(entry.entity_type==='employee')details='פעולת ניהול עובדים';
    else details='פרטי הפריט עודכנו';
    const tr=document.createElement('tr');
@@ -324,11 +324,11 @@ async function deleteCatalogRecord(entity,record){
  if(preview.allowed!==true){
    const reason=realCount>0?
       `ל-${record.name} יש ${realCount} הפניות בעסקאות אמת. לא ניתן למחוק לצמיתות — אפשר להשבית.`:
-      `הפריט ${record.name} לא נוצר במצב ניסיון וכבר משתתף ב-${trialCount} עסקאות D. ניתן להשביתו בלבד.`;
+      `הפריט ${record.name} לא נוצר במצב תחזוקה וכבר משתתף ב-${trialCount} עסקאות D. ניתן להשביתו בלבד.`;
    alert(reason);return;
  }
  const kind=entity==='product'?'המשקה':'הלקוח';
- const first=`מחיקה לצמיתות של ${kind} "${record.name}"?\n\nהמחיקה תסיר ${lineCount} שורות D הקשורות אליו מתוך ${trialCount} עסקאות ניסיון.\nהמחיקה אינה ניתנת לביטול. עסקאות אמת לא יימחקו.\n\nלהמשיך?`;
+ const first=`מחיקה לצמיתות של ${kind} "${record.name}"?\n\nהמחיקה תסיר ${lineCount} שורות D הקשורות אליו מתוך ${trialCount} עסקאות תחזוקה.\nהמחיקה אינה ניתנת לביטול. עסקאות אמת לא יימחקו.\n\nלהמשיך?`;
  if(!confirm(first))return;
  const typed=prompt(`אישור סופי למחיקה לצמיתות של "${record.name}".\nלהשלמת המחיקה הקלד: מחק`);
  if(typed!=='מחק'){if(typed!==null)alert('המחיקה בוטלה: יש להקליד בדיוק "מחק".');return;}
@@ -336,7 +336,7 @@ async function deleteCatalogRecord(entity,record){
  if(done.deleted!==true)throw new Error('השרת לא אישר את המחיקה');
  if(state.selectedCustomer?.id===record.id)state.selectedCustomer=null;
  await refresh();
- status(`נמחק לצמיתות: ${record.name}. נמחקו ${lineCount} שורות ניסיון. הפעולה נרשמה ביומן.`,'success');
+ status(`נמחק לצמיתות: ${record.name}. נמחקו ${lineCount} שורות תחזוקה. הפעולה נרשמה ביומן.`,'success');
 }
 async function manageProductClick(e){const b=e.target.closest('button[data-product]');if(!b)return;if(b.dataset.action==='edit')assertManage('change_prices');if(b.dataset.action==='toggle')assertManage('toggle_products');const p=state.products.find(p=>p.id===b.dataset.product);if(!p)return;if(b.dataset.action==='delete'){await deleteCatalogRecord('product',p);return;}if(b.dataset.action==='toggle'){if(!confirm(`${p.active?'להסתיר את המשקה':'להחזיר את המשקה'} ${p.name}?`))return;if(RemotePos.active)await RemotePos.saveProduct({...p,active:!p.active});else await putRow('products',{...p,active:!p.active});}else{const val=prompt('מחיר חדש עבור '+p.name,String(p.price));if(val===null)return;const price=amount(val);if(price<0)throw new Error('מחיר לא יכול להיות שלילי');if(RemotePos.active)await RemotePos.saveProduct({...p,price},{id:uuid(),productName:p.name,oldPrice:p.price,newPrice:price,changedAt:new Date().toISOString(),note:'שינוי מחיר'});else{await putRow('products',{...p,price});await putRow('priceHistory',{id:uuid(),productName:p.name,oldPrice:p.price,newPrice:price,changedAt:new Date().toISOString(),note:'שינוי מחיר'});}}await refresh();}
 async function manageCustomerClick(e){const b=e.target.closest('button[data-customer]');if(!b)return;if(b.dataset.action==='rename'&&RemotePos.employee?.is_owner!==true)throw new Error('שינוי שם לקוח שמור לבעלים');if(b.dataset.action==='toggle')assertManage('toggle_customers');const c=state.customers.find(c=>c.id===b.dataset.customer);if(!c)return;if(b.dataset.action==='delete'){await deleteCatalogRecord('customer',c);return;}if(b.dataset.action==='toggle'){if(!confirm(`${c.active?'למחוק את הלקוח מהרשימה הפעילה':'לשחזר את הלקוח'} ${c.name}?\nהיסטוריית המכירות תישמר.`))return;if(RemotePos.active)await RemotePos.saveCustomer({...c,active:!c.active});else await putRow('customers',{...c,active:!c.active});}else{const next=prompt('שם לקוח חדש',c.name);if(next===null)return;const newName=next.trim();if(!newName)throw new Error('שם לקוח לא יכול להיות ריק');if(state.customers.some(x=>x.id!==c.id&&x.normalized===norm(newName)))throw new Error('שם לקוח כבר קיים');if(RemotePos.active)await RemotePos.saveCustomer({...c,name:newName,normalized:norm(newName)});else await putRow('customers',{...c,name:newName,normalized:norm(newName)}); /* historical transaction name remains unchanged for audit */}await refresh();}
@@ -776,7 +776,7 @@ function renderPermissions(){
  for(const id of ['downloadBackup','restoreFile','legacyInput'])el(id).disabled=!owner;
  if(!owner){state.pendingImport=null;el('importPreview').classList.add('hidden');el('restoreFile').value='';el('legacyInput').value='';}
  if(!RemotePos.isImported&&owner)
-  el('archiveImportNotice').textContent='ארכיון הפאב טרם יובא. במצב הרגיל החיובים חסומים עד לייבוא מהמחשב המקורי. אפשר לבצע ניסיונות D לאחר אימות בעלים.';
+  el('archiveImportNotice').textContent='ארכיון הפאב טרם יובא. במצב הרגיל החיובים חסומים עד לייבוא מהמחשב המקורי. אפשר לבצע עסקאות תחזוקה D לאחר אימות בעלים.';
  renderModeControls();
  renderManage();
  renderAudit();
@@ -930,7 +930,7 @@ async function unlockAdmin(event){
   await refresh();
   renderPermissions();
   await renderEmployeeList();
-  status('ניהול מערכת נפתח ל־30 דקות. רק החשבון שלך מורשה לניסיון ולפעולות ניהול.','success');
+  status('ניהול מערכת נפתח ל־30 דקות. רק החשבון שלך מורשה להפעלת תחזוקה ולפעולות ניהול.','success');
  }catch(e){el('adminPassword').value='';el('adminMessage').textContent=e.message;}
  finally{btn.disabled=false;}
 }
