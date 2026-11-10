@@ -826,7 +826,7 @@ function renderModeControls(){
  button.textContent=maintenance?'תחזוקה: פעיל':'תחזוקה: כבוי';
  button.setAttribute('aria-pressed',String(maintenance));
  el('modeBanner').classList.toggle('hidden',!maintenance||!RemotePos.authenticated);
- el('modeBanner').textContent=maintenance?'🛠️ מצב תחזוקה — אין חיובי אמת · העסקאות מסומנות D ואינן נכללות בדוחות העבודה':'';
+ el('modeBanner').innerHTML=maintenance?'<span class="maintenance-banner-icon" aria-hidden="true">🛠️</span><span>מצב תחזוקה — אין חיובי אמת · העסקאות מסומנות D ואינן נכללות בדוחות העבודה</span>':'';
  el('modeBanner').classList.toggle('development-banner',maintenance);
  el('modeBanner').classList.remove('live-banner');
  el('cloudBackToTest').classList.add('hidden');
