@@ -403,10 +403,16 @@ const RemotePos={
  },
  async saveCustomer(row){
    const existing=this.customers.some(c=>c.id===row.id);
-   if(!existing)return this.request('/rest/v1/rpc/pos_create_catalog_v098',{
-     method:'POST',body:{p_entity:'customer',p_name:row.name,p_is_test:this.testMode===true},
-     headers:this.testMode?{'x-pos-maintenance-token':this.maintenanceToken(),'x-pos-device-id':localStorage.getItem('manara_device_id')||''}:{}
-   });
+   if(!existing){
+    if(this.testMode)return this.request('/rest/v1/rpc/pos_create_catalog_v099',{
+     method:'POST',body:{p_entity:'customer',p_name:row.name,p_category:null,
+      p_product_type:null,p_price:null,p_is_test:true,
+      p_maintenance_token:this.maintenanceToken(),p_device_id:localStorage.getItem('manara_device_id')||''}
+    });
+    return this.request('/rest/v1/rpc/pos_create_catalog_v098',{
+     method:'POST',body:{p_entity:'customer',p_name:row.name,p_is_test:false}
+    });
+   }
    return this.request('/rest/v1/customers',{
      method:'PATCH',query:{id:`eq.${row.id}`},
      body:{name:row.name,active:row.active!==false},headers:{Prefer:'return=minimal'}
@@ -414,11 +420,17 @@ const RemotePos={
  },
  async saveProduct(row,historyRecord=null){
    const existing=this.products.some(p=>p.id===row.id);
-   if(!existing)return this.request('/rest/v1/rpc/pos_create_catalog_v098',{
+   if(!existing){
+    if(this.testMode)return this.request('/rest/v1/rpc/pos_create_catalog_v099',{
      method:'POST',body:{p_entity:'product',p_name:row.name,
-      p_category:row.category,p_product_type:row.type,p_price:row.price,p_is_test:this.testMode===true},
-     headers:this.testMode?{'x-pos-maintenance-token':this.maintenanceToken(),'x-pos-device-id':localStorage.getItem('manara_device_id')||''}:{}
-   });
+      p_category:row.category,p_product_type:row.type,p_price:row.price,p_is_test:true,
+      p_maintenance_token:this.maintenanceToken(),p_device_id:localStorage.getItem('manara_device_id')||''}
+    });
+    return this.request('/rest/v1/rpc/pos_create_catalog_v098',{
+     method:'POST',body:{p_entity:'product',p_name:row.name,
+      p_category:row.category,p_product_type:row.type,p_price:row.price,p_is_test:false}
+    });
+   }
    const history=historyRecord?[...this.priceHistory.filter(h=>h.productName===row.name),historyRecord]:null;
    const payload={name:row.name,category:row.category,product_type:row.type,price:row.price,
       active:row.active!==false,...(history?{price_history:history}:{})};
@@ -439,19 +451,24 @@ const RemotePos={
     });
  },
  async submit({operationId,customerId,kind,items,deviceId}){
-    return this.request('/rest/v1/rpc/submit_pos_transaction_v094',{
-     method:'POST',body:{p_operation_id:operationId,p_customer_id:customerId,p_kind:kind,
-      p_items:items.map(i=>({product_id:i.productId,quantity:i.qty,unit_price:i.unitPrice})),
-      p_device_id:deviceId,p_is_test:this.testMode},
-     headers:this.testMode?{'x-pos-maintenance-token':this.maintenanceToken()}:{}
-    });
+    const body={p_operation_id:operationId,p_customer_id:customerId,p_kind:kind,
+     p_items:items.map(i=>({product_id:i.productId,quantity:i.qty,unit_price:i.unitPrice})),
+     p_device_id:deviceId,p_is_test:this.testMode===true};
+    if(this.testMode){
+     body.p_maintenance_token=this.maintenanceToken();
+     return this.request('/rest/v1/rpc/submit_pos_transaction_v095',{method:'POST',body});
+    }
+    return this.request('/rest/v1/rpc/submit_pos_transaction_v094',{method:'POST',body});
  },
  async submitEmployeeCharge({operationId,kind,items,deviceId,personName}){
-  return this.request('/rest/v1/rpc/submit_pos_employee_charge_v0939',{method:'POST',body:{
-    p_operation_id:operationId,p_kind:kind,
-    p_items:items.map(i=>({product_id:i.productId,quantity:i.qty,unit_price:i.unitPrice})),
-    p_device_id:deviceId,p_person_name:personName,p_is_test:this.testMode===true},
-   headers:this.testMode?{'x-pos-maintenance-token':this.maintenanceToken()}:{}});
+    const body={p_operation_id:operationId,p_kind:kind,
+     p_items:items.map(i=>({product_id:i.productId,quantity:i.qty,unit_price:i.unitPrice})),
+     p_device_id:deviceId,p_person_name:personName,p_is_test:this.testMode===true};
+    if(this.testMode){
+     body.p_maintenance_token=this.maintenanceToken();
+     return this.request('/rest/v1/rpc/submit_pos_employee_charge_v094',{method:'POST',body});
+    }
+    return this.request('/rest/v1/rpc/submit_pos_employee_charge_v0939',{method:'POST',body});
  },
  async employeeChargeReport(employeeId=null){
   return this.request('/rest/v1/rpc/pos_employee_charge_report_v0938',{method:'POST',body:{p_employee_id:employeeId}});
