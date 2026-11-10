@@ -1270,6 +1270,7 @@ function remoteEvents(){
  on('cloudRetryBtn','click',async()=>{try{await cloudAfterAuthentication();}catch(e){showCloudDataError(e);}});
  on('cloudSignOut','click',beginEmployeeSwitch);
  on('employeeSignOutBtn','click',employeeSignOut);
+ on('draftReviewBtn','click',()=>DraftGuard.restoreAfterLogin());
  on('cancelEmployeeSwitch','click',cancelEmployeeSwitch);
 }
 function setStartupMessage(message){
