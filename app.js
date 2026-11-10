@@ -633,6 +633,7 @@ async function employeeSignOut(){
 }
 function resetLockedWorkspace(message){
  DraftGuard.ready=false;DraftGuard.blocked=false;
+ el('draftReviewBtn').classList.add('hidden');
  RemotePos.onChange=null;
  RemotePos.statusCallback=null;
  RemotePos.networkCallback=null;
@@ -781,6 +782,7 @@ function renderPermissions(){
 }
 async function activateCloud(){
  DraftGuard.ready=false;DraftGuard.blocked=false;
+ el('draftReviewBtn').classList.add('hidden');
  state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;state.pendingOperation=null;
  state.employeeCharge=false;state.employeeChargePerson='';
  await RemotePos.start();
