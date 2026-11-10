@@ -198,7 +198,7 @@ let stagedProductCategory=null;
 function productCategoryNames(){
  const names=new Map();
  for(const item of state.products){
-  const category=String(item.category||'').normalize('NFKC').replace(/\\s+/g,' ').trim();
+  const category=String(item.category||'').normalize('NFKC').replace(/\s+/g,' ').trim();
   const key=norm(category);
   if(key&&!names.has(key))names.set(key,category);
  }
@@ -248,7 +248,7 @@ function toggleNewProductCategory(){
 }
 function confirmProductCategory(){
  assertManage('create_products');
- const category=String(el('newProductCategoryName').value||'').normalize('NFKC').replace(/\\s+/g,' ').trim();
+ const category=String(el('newProductCategoryName').value||'').normalize('NFKC').replace(/\s+/g,' ').trim();
  const notice=el('productCategoryMessage');
  if(!category||category.length>80){
   notice.textContent='יש להזין שם קטגוריה באורך 1 עד 80 תווים';return;
@@ -595,6 +595,7 @@ function events(){
  on('confirmNewProductCategory','click',confirmProductCategory);
  on('cancelNewProductCategory','click',closeNewProductCategory);
  on('newProductCategoryName','keydown',event=>{if(event.key==='Enter'){event.preventDefault();confirmProductCategory();}});
+ on('productCategorySelect','change',()=>{if(stagedProductCategory&&norm(el('productCategorySelect').value)!==norm(stagedProductCategory)){stagedProductCategory=null;renderProductCategoryOptions(el('productCategorySelect').value);}});
  on('manageProducts','click',manageProductClick);on('manageCustomers','click',manageCustomerClick);
  on('openProductManager','click',()=>openCatalogManager('product'));
  on('openCustomerManager','click',()=>openCatalogManager('customer'));
