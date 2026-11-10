@@ -112,6 +112,7 @@ const DraftGuard={
   document.getElementById('draftRecoveryRestore').textContent=pending?'בדקתי בארכיון — נסה עם אותו מזהה':'שחזר הזמנה';
   document.getElementById('draftRecoveryDiscard').textContent=pending?'העסקה נמצאה בארכיון — סגור טיוטה':'מחק טיוטה';
   modal.classList.remove('hidden');
+  const review=document.getElementById('draftReviewBtn');if(review)review.classList.add('hidden');
   this.blocked=pending;
   const result=await new Promise(resolve=>{
    const yes=document.getElementById('draftRecoveryRestore'),no=document.getElementById('draftRecoveryDiscard');
@@ -127,6 +128,7 @@ const DraftGuard={
    catch(e){alert('לא ניתן לשחזר טיוטה: '+e.message+'. הטיוטה נשמרה לבדיקה.');this.blocked=true;}
   }else this.blocked=true;
   this.ready=!this.blocked;
+  if(review)review.classList.toggle('hidden',!this.blocked);
  },
  beforeUnload(event){
   if(!this.ready||(!state.cart.length&&!state.pendingOperation))return;
