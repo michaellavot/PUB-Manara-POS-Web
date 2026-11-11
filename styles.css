@@ -1227,3 +1227,21 @@ body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
  .product-manager-top{gap:6px}
  .product-manager-top .button{font-size:13px}
 }
+
+/* V2.0.13 — product manager clean category home */
+#manageCatalogModal.product-catalog-mode .catalog-manager-controls .catalog-search-label{display:none!important}
+#manageCatalogModal.product-catalog-mode .catalog-manager-controls:has(> .catalog-select-label.hidden):has(> #catalogBulkDelete.hidden){display:none}
+#productManagerContent .product-manager-top{display:flex;flex-direction:column;align-items:stretch;gap:13px;flex:none}
+#productManagerContent .product-manager-add-row{display:flex;justify-content:center;align-items:center;width:100%}
+#productManagerContent .product-manager-add-featured{display:inline-flex;align-items:center;justify-content:center;gap:11px;min-height:54px;min-width:min(260px,100%);max-width:100%;padding:12px 26px;border-radius:15px;border:1px solid #d3a566;background:linear-gradient(145deg,#a46d39,#83512d 65%,#714327);box-shadow:0 5px 20px #0005,inset 0 1px #ffe4ac66;color:#fff2dc;font-size:18px;font-weight:750;letter-spacing:.1px;transition:transform .15s ease,box-shadow .15s ease,filter .15s ease}
+#productManagerContent .product-manager-add-featured:hover{filter:brightness(1.14);box-shadow:0 7px 23px #0008,inset 0 1px #ffe4ac7a;transform:translateY(-1px)}
+#productManagerContent .product-manager-add-featured:active{transform:translateY(1px)}
+#productManagerContent .product-manager-add-featured:focus-visible{outline:3px solid #ffde98;outline-offset:3px}
+#productManagerContent .product-manager-add-icon{display:inline-flex;align-items:center;justify-content:center;width:29px;height:29px;line-height:1;border:1px solid #f5c88d88;border-radius:9px;background:#f8d19b2b;font-size:24px}
+#productManagerContent .product-manager-toolbar{display:flex;justify-content:flex-start;align-items:center;gap:9px;flex-wrap:wrap}
+#productManagerContent .product-manager-toolbar .button{min-height:40px}
+@media(max-width:650px){
+ #productManagerContent .product-manager-top{gap:11px}
+ #productManagerContent .product-manager-add-featured{min-height:51px;font-size:16px;min-width:min(230px,100%);padding:10px 18px}
+ #productManagerContent .product-manager-toolbar{gap:7px}
+}
