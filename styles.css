@@ -1138,3 +1138,33 @@ body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
 
 /* Anchor the customer detail overlay to the management panel on desktop. */
 .catalog-manager-panel{position:relative}
+
+/* V2.0.11 — standalone customer movements and QR dialogs */
+.customer-action-modal{z-index:2350}
+.customer-action-panel{width:min(760px,100%);max-height:90dvh;overflow:hidden;color:#f3e0c5}
+.customer-action-modal .customer-dialog-heading{flex:0 0 auto}
+.customer-action-content{display:flex;flex-direction:column;gap:12px;overflow-y:auto;min-height:0;padding:16px}
+.customer-action-name{color:#f9d8a5;font-size:20px;overflow-wrap:anywhere}
+.customer-action-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.customer-action-filters label{display:flex;flex-direction:column;min-width:0;gap:5px;color:#d2b48b;font-size:13px}
+.customer-action-modal .report-original-field{display:none!important}
+.customer-action-modal .report-picker-trigger{margin-top:0}
+.customer-action-table-wrap{overflow:auto;max-height:47dvh;border:1px solid #775639;border-radius:9px}
+.customer-action-table{width:100%;border-collapse:collapse}
+.customer-action-table th,.customer-action-table td{padding:9px 10px;text-align:right;white-space:nowrap}
+.customer-action-table th{position:sticky;top:0;background:#25353c;z-index:1;color:#f9d6a5}
+.customer-action-table td{border-bottom:1px solid #6d533544}
+.customer-action-footer{display:flex;justify-content:flex-end;padding:11px 16px 15px;border-top:1px solid #6c553b;flex:0 0 auto}
+#customerQrModal .qr-report-share-section{margin:0;width:100%;align-items:stretch}
+#customerQrModal .qr-report-share-section .report-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#customerQrModal .qr-report-share-section .report-controls label{min-width:0}
+#customerQrModal #qrLimitedFilters>label:last-child{display:none!important}
+#customerQrModal #createCustomerQrBtn{align-self:stretch;min-height:46px}
+#customerQrModal #qrReportStatus{min-height:18px;margin:0}
+@media(max-width:520px){
+ .customer-action-modal{padding:9px}
+ .customer-action-panel{max-height:94dvh}
+ .customer-action-content{padding:12px}
+ .customer-action-table-wrap{max-height:53dvh}
+ .customer-action-table th,.customer-action-table td{font-size:12px;padding:9px 6px}
+}
