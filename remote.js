@@ -319,7 +319,7 @@ const RemotePos={
  },
  _transactionSelect:'id,client_operation_id,customer_name,operator_name,operator_id,employee_charge,employee_charge_user_id,employee_charge_person_name,kind,created_at,is_test,transaction_items!transaction_items_transaction_id_fkey(id,product_name,quantity,line_total,is_test,test_code,archived_deleted_at)',
  applyCustomers(rows){this.customers=rows.map(c=>({id:c.id,name:c.name,normalized:c.name_key,active:c.active,isTestCreated:c.is_test_created===true}));},
- applyProducts(rows){this.products=rows.map(p=>({id:p.id,name:p.name,normalized:p.name_key,category:p.category,type:p.product_type,price:Number(p.price),active:p.active,isTestCreated:p.is_test_created===true}));this.priceHistory=rows.flatMap(p=>Array.isArray(p.price_history)?p.price_history:[]);},
+ applyProducts(rows){this.products=rows.map(p=>({id:p.id,name:p.name,normalized:p.name_key,category:p.category,type:p.product_type,price:Number(p.price),active:p.active,isTestCreated:p.is_test_created===true,priceHistoryRows:Array.isArray(p.price_history)?p.price_history:[]}));this.priceHistory=rows.flatMap(p=>Array.isArray(p.price_history)?p.price_history:[]);},
  applyTransactions(transactionRows){
     this.archive=transactionRows.flatMap(tx=>{
       const d=new Date(tx.created_at);
