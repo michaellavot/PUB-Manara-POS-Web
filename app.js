@@ -627,7 +627,7 @@ async function productDetailAction(action){
  const owner=RemotePos.active&&RemotePos.employee?.is_owner===true;
  if(action==='details'){
   if(!owner)throw new Error('שינוי שם וקטגוריה שמור לבעלים');
-  const type=String(el('productDetailType').value||'').normalize('NFKC').trim().replace(/\\s+/g,' ');
+  const type=String(el('productDetailType').value||'').normalize('NFKC').trim().replace(/\s+/g,' ');
   const category=el('productDetailCategory').value;
   if(!type||type.length>80||!productCategoryNames().some(x=>norm(x)===norm(category)))throw new Error('שם או קטגוריה לא תקינים');
   const name=productLabel(category,type),normalized=norm(name);
