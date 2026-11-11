@@ -431,7 +431,7 @@ const RemotePos={
       p_category:row.category,p_product_type:row.type,p_price:row.price,p_is_test:false}
     });
    }
-   const history=historyRecord?[...this.priceHistory.filter(h=>h.productName===row.name),historyRecord]:null;
+   const history=historyRecord?[...(Array.isArray(row.priceHistoryRows)?row.priceHistoryRows:this.priceHistory.filter(h=>h.productName===row.name)),historyRecord]:null;
    const payload={name:row.name,category:row.category,product_type:row.type,price:row.price,
       active:row.active!==false,...(history?{price_history:history}:{})};
    return this.request('/rest/v1/products',{method:'PATCH',query:{id:`eq.${row.id}`},
