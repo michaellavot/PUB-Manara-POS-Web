@@ -1135,3 +1135,6 @@ body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
  .customer-detail-panel{max-height:93dvh;padding:15px}
  .customer-detail-actions{gap:8px}
 }
+
+/* Anchor the customer detail overlay to the management panel on desktop. */
+.catalog-manager-panel{position:relative}
