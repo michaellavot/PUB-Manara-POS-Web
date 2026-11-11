@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.0.12';
+const APP_VERSION='2.0.13';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -415,14 +415,16 @@ function openCatalogManager(entity){
  el('productManagerContent').classList.toggle('hidden',entity!=='product');
  el('customerManagerContent').classList.toggle('hidden',entity!=='customer');
  el('manageCatalogModal').classList.remove('hidden');
+ el('manageCatalogModal').classList.toggle('product-catalog-mode',entity==='product');
  if(entity==='product'){resetProductCategoryEditor();el('newProductCategoryBtn').classList.toggle('hidden',!canManage('create_products'));}
  renderManage();
- el('catalogSearch').focus();
+ (entity==='product'?(canManage('create_products')?el('productManagerAdd'):el('showInactiveProductsBtn')):el('catalogSearch')).focus();
 }
 function closeCatalogManager(){
  closeProductDetail();closeProductAdd();closeCustomerDetail(false);
  closeProductCategoryOptions();closeNewProductCategory();stagedProductCategory=null;
  el('manageCatalogModal').classList.add('hidden');
+ el('manageCatalogModal').classList.remove('product-catalog-mode');
  state.catalogDialog=null;state.catalogSearch='';state.catalogSelections.clear();state.customerBulkMode=false;state.productManagerCategory=null;state.productBulkMode=false;
 }
 async function deleteSelectedCatalog(){
