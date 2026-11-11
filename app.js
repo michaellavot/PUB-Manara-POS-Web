@@ -612,7 +612,7 @@ function renderProductDetail(){
  el('productDetailToggle').textContent=p.active?'השבת פריט':'הפעל פריט';
  el('productDetailDelete').classList.toggle('hidden',!owner);
  const history=el('productDetailHistoryRows');history.replaceChildren();
- const entries=state.priceHistory.filter(h=>norm(h.productName)===norm(p.name)).sort((a,b)=>String(b.changedAt||'').localeCompare(String(a.changedAt||'')));
+ const entries=(Array.isArray(p.priceHistoryRows)?p.priceHistoryRows:state.priceHistory.filter(h=>norm(h.productName)===norm(p.name))).slice().sort((a,b)=>String(b.changedAt||'').localeCompare(String(a.changedAt||'')));
  for(const h of entries.slice(0,60)){
   const line=document.createElement('div');line.className='product-detail-history-row';
   line.textContent=(h.changedAt?new Date(h.changedAt).toLocaleDateString('he-IL'):'—')+' · '+(h.oldPrice===undefined?'':currency(h.oldPrice)+' ← ')+(h.newPrice===undefined?'':currency(h.newPrice));
