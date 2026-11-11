@@ -625,6 +625,7 @@ async function productDetailAction(action){
  const p=state.products.find(x=>x.id===state.productDetailId);
  if(!p||state.catalogDialog!=='product')return;
  const owner=RemotePos.active&&RemotePos.employee?.is_owner===true;
+ if(state.busy||state.pendingOperation||state.cart.length)throw new Error('יש לסיים או לנקות את ההזמנה לפני עריכת פריט');
  if(action==='details'){
   if(!owner)throw new Error('שינוי שם וקטגוריה שמור לבעלים');
   const type=String(el('productDetailType').value||'').normalize('NFKC').trim().replace(/\s+/g,' ');
@@ -972,6 +973,13 @@ function events(){
   on(id,'click',()=>productDetailAction(action).catch(err=>{el('productDetailMessage').textContent=err.message;status(err.message,'error');}));
  }
  on('productDetailHistoryToggle','click',()=>el('productDetailHistory').classList.toggle('hidden'));
+ on('productManagerItems','change',e=>{
+  const check=e.target.closest('input[data-catalog-id]');
+  if(!check||!state.productBulkMode||RemotePos.employee?.is_owner!==true)return;
+  if(check.checked)state.catalogSelections.add(check.dataset.catalogId);
+  else state.catalogSelections.delete(check.dataset.catalogId);
+  renderCatalogSelection();
+ });
  on('manageProducts','click',manageProductClick);on('customerBulkModeBtn','click',()=>{if(RemotePos.employee?.is_owner!==true)return;state.customerBulkMode=!state.customerBulkMode;state.catalogSelections.clear();renderManage();});
  on('customerDetailClose','click',()=>closeCustomerDetail());
  on('customerDetailBackdrop','click',()=>closeCustomerDetail());
