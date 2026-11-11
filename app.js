@@ -550,10 +550,10 @@ function closeCustomerQr(){
  el('customerQrModal').classList.add('hidden');
  if(el('customerMovementsModal').classList.contains('hidden'))customerActionId=null;
 }
-function defaultCustomerActionDates(prefix){
+function defaultCustomerActionDates(fromId,toId){
  const today=nowIso();
- el(prefix+'From').value=today.slice(0,8)+'01';
- el(prefix+'To').value=today;
+ el(fromId).value=today.slice(0,8)+'01';
+ el(toId).value=today;
  if(typeof ReportPickers!=='undefined')ReportPickers.sync();
 }
 function openCustomerMovements(customer){
@@ -562,7 +562,7 @@ function openCustomerMovements(customer){
  closeCustomerQr();
  customerActionId=customer.id;
  el('customerMovementsName').textContent=customer.name;
- defaultCustomerActionDates('customerMovements');
+ defaultCustomerActionDates('customerMovementsFrom','customerMovementsTo');
  el('customerMovementsModal').classList.remove('hidden');
  renderCustomerMovements();
  el('customerMovementsClose').focus();
@@ -605,9 +605,8 @@ function openCustomerQr(customer){
  customerActionId=customer.id;
  el('customerQrName').textContent=customer.name;
  el('qrReportStatus').textContent='';
- defaultCustomerActionDates('qr');
+ defaultCustomerActionDates('qrFromDate','qrToDate');
  el('customerQrModal').classList.remove('hidden');
- el('qrFromDate').focus();
  el('customerQrClose').focus();
 }
 async function customerDetailAction(action){
