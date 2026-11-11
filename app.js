@@ -404,7 +404,7 @@ function renderManage(){
 }
 function openCatalogManager(entity){
  if(!['product','customer'].includes(entity))return;
- const permissions=entity==='product'?['create_products','change_prices','toggle_products']:['create_customers','toggle_customers'];
+ const permissions=entity==='product'?['create_products','change_prices','toggle_products']:['create_customers','toggle_customers','share_customer_qr','full_reports'];
  if(!permissions.some(canManage)&&RemotePos.employee?.is_owner!==true)return;
  state.catalogDialog=entity;state.catalogSearch='';state.catalogSelections.clear();state.customerBulkMode=false;state.customerDetailId=null;
  el('catalogManagerTitle').textContent=entity==='product'?'ניהול מוצרים':'ניהול לקוחות';
@@ -1077,7 +1077,7 @@ function renderPermissions(){
  el('customerForm').classList.toggle('hidden',!canManage('create_customers'));
  el('quickAddCustomerBtn').classList.toggle('hidden',!canManage('create_customers'));
  el('openProductManager').classList.toggle('hidden',!['create_products','change_prices','toggle_products'].some(canManage));
- el('openCustomerManager').classList.toggle('hidden',!['create_customers','toggle_customers'].some(canManage));
+ el('openCustomerManager').classList.toggle('hidden',!['create_customers','toggle_customers','share_customer_qr','full_reports'].some(canManage));
  el('catalogSelectAll').disabled=!owner;
  el('catalogSelectAll').closest('label').classList.toggle('hidden',!owner);
  el('catalogSelectionCount').classList.toggle('hidden',!owner);
