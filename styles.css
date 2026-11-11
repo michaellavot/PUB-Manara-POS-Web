@@ -1100,3 +1100,38 @@ body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
  .report-calendar-weekdays,.report-calendar-days{gap:3px}
  .report-calendar-day{min-height:38px}
 }
+
+/* V2.0.10 — streamlined customer management directory and customer detail card */
+.customer-directory-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0}
+.customer-directory{display:flex;flex-direction:column;min-height:120px;flex:1;overflow-y:auto;overscroll-behavior:contain;border:1px solid #765638;border-radius:11px;background:#111e24}
+.customer-directory-row{display:flex;align-items:stretch;min-height:54px;border-bottom:1px solid #59463066}
+.customer-directory-row:last-child{border-bottom:0}
+.customer-directory-row:nth-child(even){background:#fff1}
+.customer-directory-name{flex:1;min-width:0;display:flex;align-items:center;width:100%;padding:13px 16px;text-align:right;background:transparent;border:0;color:#f2dfc3;font:inherit;font-size:16px;cursor:pointer;touch-action:manipulation}
+.customer-directory-name:after{content:"‹";margin-inline-start:auto;color:#bd9663;font-size:23px}
+.customer-directory-name:hover,.customer-directory-name:focus-visible{background:#3c3226;outline:1px solid #ba8955}
+.customer-directory-check{display:flex;align-items:center;justify-content:center;min-width:42px;border-left:1px solid #59463066}
+.customer-directory-check input{width:18px;height:18px;accent-color:#ba8751}
+#customerManagerContent .catalog-manager-table{display:none!important}
+.customer-detail-overlay{position:absolute;inset:0;display:grid;place-items:center;padding:14px;z-index:7}
+.customer-detail-overlay.hidden{display:none!important}
+.customer-detail-backdrop{position:absolute;inset:0;background:#020709df;backdrop-filter:blur(3px)}
+.customer-detail-panel{position:relative;display:flex;flex-direction:column;gap:15px;max-height:calc(100dvh - 36px);overflow:auto;width:min(480px,100%);padding:20px;background:linear-gradient(155deg,#26343b,#0d171d);border:1px solid #b58a56;border-radius:16px;box-shadow:0 18px 60px #000a;color:#f4e5cb}
+.customer-detail-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.customer-detail-header h3{margin:0;color:#f8d6a2;font-size:21px}
+.customer-detail-info{background:#14232b;border:1px solid #69543a;border-radius:10px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.customer-detail-info strong{font-size:20px;overflow-wrap:anywhere}
+.customer-detail-status{color:#a1e8b9;background:#1d422d;border-radius:20px;padding:5px 10px;font-size:12px;white-space:nowrap}
+.customer-detail-status.inactive{color:#ffca9c;background:#593a24}
+.customer-detail-id{display:flex;justify-content:space-between;align-items:center;gap:12px;color:#ceb894;font-size:12px}
+.customer-detail-id code{font-size:11px;overflow-wrap:anywhere;max-width:65%;text-align:left;user-select:all}
+.customer-detail-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.customer-detail-actions button{white-space:normal;min-height:50px}
+.customer-detail-actions #customerDetailDelete{grid-column:1/-1}
+#customerDetailMessage{min-height:18px;color:#e5ad83;margin:0}
+@media(max-width:700px){
+ .customer-directory-name{min-height:58px;font-size:17px}
+ .customer-detail-overlay{position:fixed;inset:0;z-index:2800;padding:10px}
+ .customer-detail-panel{max-height:93dvh;padding:15px}
+ .customer-detail-actions{gap:8px}
+}
