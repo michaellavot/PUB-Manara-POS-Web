@@ -4,7 +4,7 @@
 const ReportPickers=(()=>{
  const $=id=>document.getElementById(id);
  const clientIds=new Set(['reportCustomer','qrReportCustomer']);
- const ids=['reportCustomer','qrReportCustomer','fromDate','toDate','qrFromDate','qrToDate'];
+ const ids=['reportCustomer','qrReportCustomer','fromDate','toDate','qrFromDate','qrToDate','customerMovementsFrom','customerMovementsTo'];
  let current=null,year=0,month=0,restoreFocus=null;
  const d2=x=>String(x).padStart(2,'0');
  const iso=(y,m,d)=>y+'-'+d2(m+1)+'-'+d2(d);
@@ -49,7 +49,7 @@ const ReportPickers=(()=>{
   const customer=clientIds.has(id);
   $('reportCustomerPickerView').classList.toggle('hidden',!customer);
   $('reportCalendarPickerView').classList.toggle('hidden',customer);
-  $('reportPickerTitle').textContent=customer?'בחירת לקוח':(id==='fromDate'||id==='qrFromDate'?'מתאריך':'עד תאריך');
+  $('reportPickerTitle').textContent=customer?'בחירת לקוח':(id==='fromDate'||id==='qrFromDate'||id==='customerMovementsFrom'?'מתאריך':'עד תאריך');
   $('reportPickerModal').classList.remove('hidden');
   if(customer){
    $('reportPickerSearch').value='';
