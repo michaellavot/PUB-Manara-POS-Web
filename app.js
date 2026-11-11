@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.0.10';
+const APP_VERSION='2.0.11';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -530,31 +530,91 @@ function openCustomerDetail(id){
  el('customerDetailClose').focus();
 }
 function closeCustomerDetail(focus=true){
+ closeCustomerMovements();
+ closeCustomerQr();
  const wasOpen=!el('customerDetailCard').classList.contains('hidden');
  el('customerDetailCard').classList.add('hidden');
  state.customerDetailId=null;
  if(wasOpen&&focus&&!el('manageCatalogModal').classList.contains('hidden'))el('catalogSearch').focus();
 }
+// Customer-specific dialogs: separate report and QR permissions, no navigation.
+let customerActionId=null;
+function customerActionRecord(){
+ return state.customers.find(x=>x.id===customerActionId)||null;
+}
+function closeCustomerMovements(){
+ el('customerMovementsModal').classList.add('hidden');
+ if(el('customerQrModal').classList.contains('hidden'))customerActionId=null;
+}
+function closeCustomerQr(){
+ el('customerQrModal').classList.add('hidden');
+ if(el('customerMovementsModal').classList.contains('hidden'))customerActionId=null;
+}
+function defaultCustomerActionDates(prefix){
+ const today=nowIso();
+ el(prefix+'From').value=today.slice(0,8)+'01';
+ el(prefix+'To').value=today;
+ if(typeof ReportPickers!=='undefined')ReportPickers.sync();
+}
+function openCustomerMovements(customer){
+ assertFullReportAccess();
+ if(!customer||state.customerDetailId!==customer.id)throw new Error('יש לפתוח תחילה כרטיס לקוח');
+ closeCustomerQr();
+ customerActionId=customer.id;
+ el('customerMovementsName').textContent=customer.name;
+ defaultCustomerActionDates('customerMovements');
+ el('customerMovementsModal').classList.remove('hidden');
+ renderCustomerMovements();
+ el('customerMovementsClose').focus();
+}
+function renderCustomerMovements(){
+ assertFullReportAccess();
+ if(el('customerMovementsModal').classList.contains('hidden'))return;
+ const customer=customerActionRecord();
+ if(!customer){closeCustomerMovements();return;}
+ const from=el('customerMovementsFrom').value,to=el('customerMovementsTo').value;
+ const tbody=el('customerMovementsRows');tbody.replaceChildren();
+ if(from&&to&&from>to){
+  el('customerMovementsSummary').textContent='תאריך התחלה גדול מתאריך סיום';
+  return;
+ }
+ const rows=state.archive.filter(row=>
+  Boolean(row.isTest)===(RemotePos.active&&RemotePos.testMode===true)&&
+  row.customer===customer.name&&
+  (!from||row.dateIso>=from)&&(!to||row.dateIso<=to)
+ ).sort((a,b)=>(b.dateIso||'').localeCompare(a.dateIso||'')||(b.time||'').localeCompare(a.time||''));
+ const total=rows.reduce((acc,row)=>acc+Number(row.price||0),0);
+ el('customerMovementsSummary').textContent=rows.length+' תנועות · סה״כ נטו '+currency(total);
+ for(const r of rows){
+  const tr=document.createElement('tr');
+  for(const val of [legacyDate(r.dateIso),r.drink,Number(r.qty),currency(r.price),r.kind==='refund'||r.price<0?'זיכוי':'חיוב']){
+   const td=document.createElement('td');td.textContent=val;tr.append(td);
+  }
+  tbody.append(tr);
+ }
+ if(!rows.length){
+  const tr=document.createElement('tr'),td=document.createElement('td');
+  td.colSpan=5;td.textContent='אין תנועות בטווח התאריכים שנבחר';
+  tr.append(td);tbody.append(tr);
+ }
+}
+function openCustomerQr(customer){
+ assertManage('share_customer_qr');
+ if(!customer||state.customerDetailId!==customer.id)throw new Error('יש לפתוח תחילה כרטיס לקוח');
+ closeCustomerMovements();
+ customerActionId=customer.id;
+ el('customerQrName').textContent=customer.name;
+ el('qrReportStatus').textContent='';
+ defaultCustomerActionDates('qr');
+ el('customerQrModal').classList.remove('hidden');
+ el('qrFromDate').focus();
+ el('customerQrClose').focus();
+}
 async function customerDetailAction(action){
  const customer=state.customers.find(x=>x.id===state.customerDetailId);
  if(!customer)return;
- if(action==='reports'||action==='qr'){
-  if(action==='reports')assertFullReportAccess();
-  else assertManage('share_customer_qr');
-  const full=canViewFullReports();
-  const target=action==='reports'||full?'reportCustomer':'qrReportCustomer';
-  // Existing selectors preserve both historic and inactive customer names.
-  const select=el(target);
-  if(![...select.options].some(o=>o.value===customer.name))throw new Error('הלקוח אינו זמין לבחירה בדוח');
-  select.value=customer.name;
-  select.dispatchEvent(new Event('change',{bubbles:true}));
-  if(typeof ReportPickers!=='undefined')ReportPickers.sync();
-  closeCatalogManager();
-  navigateFromMenu('reportsPage');
-  if(action==='qr')el('createCustomerQrBtn').focus();
-  else el('showReportBtn').focus();
-  return;
- }
+ if(action==='reports'){assertFullReportAccess();openCustomerMovements(customer);return;}
+ if(action==='qr'){assertManage('share_customer_qr');openCustomerQr(customer);return;}
  if(action==='rename'&&RemotePos.employee?.is_owner!==true)throw new Error('שינוי שם לקוח שמור לבעלים');
  if(action==='toggle')assertManage('toggle_customers');
  if(action==='delete'&&RemotePos.employee?.is_owner!==true)throw new Error('מחיקה לצמיתות שמורה לבעלים');
@@ -748,6 +808,14 @@ function events(){
  on('manageProducts','click',manageProductClick);on('customerBulkModeBtn','click',()=>{if(RemotePos.employee?.is_owner!==true)return;state.customerBulkMode=!state.customerBulkMode;state.catalogSelections.clear();renderManage();});
  on('customerDetailClose','click',()=>closeCustomerDetail());
  on('customerDetailBackdrop','click',()=>closeCustomerDetail());
+ on('customerMovementsClose','click',closeCustomerMovements);
+ on('customerMovementsBackdrop','click',closeCustomerMovements);
+ on('customerMovementsDone','click',closeCustomerMovements);
+ on('customerQrClose','click',closeCustomerQr);
+ on('customerQrBackdrop','click',closeCustomerQr);
+ on('customerQrDone','click',closeCustomerQr);
+ on('customerMovementsFrom','change',renderCustomerMovements);
+ on('customerMovementsTo','change',renderCustomerMovements);
  for(const [id,action] of [['customerDetailRename','rename'],['customerDetailToggle','toggle'],['customerDetailDelete','delete'],['customerDetailReports','reports'],['customerDetailQr','qr']])
   on(id,'click',()=>customerDetailAction(action).catch(error=>{el('customerDetailMessage').textContent=error.message;status(error.message,'error');}));
  on('manageCustomers','click',manageCustomerClick);
@@ -758,7 +826,7 @@ function events(){
  on('catalogSelectAll','change',e=>{for(const r of catalogVisibleRows()){if(e.target.checked)state.catalogSelections.add(r.id);else state.catalogSelections.delete(r.id);}renderManage();});
  for(const id of ['manageProducts','manageCustomers'])on(id,'change',e=>{const box=e.target.closest('input[data-catalog-id]');if(!box)return;if(box.checked)state.catalogSelections.add(box.dataset.catalogId);else state.catalogSelections.delete(box.dataset.catalogId);renderCatalogSelection();});
  on('catalogBulkDelete','click',()=>deleteSelectedCatalog().catch(e=>{el('catalogManagerMessage').textContent='מחיקה לא בוצעה: '+e.message;status('מחיקה לא בוצעה: '+e.message,'error');}));
- document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('customerDetailCard').classList.contains('hidden')){e.preventDefault();e.stopImmediatePropagation();closeCustomerDetail();return;}if(e.key==='Escape'&&!el('manageCatalogModal').classList.contains('hidden')&&el('newProductCategoryPanel').classList.contains('hidden')&&el('productCategoryOptions').classList.contains('hidden'))closeCatalogManager();});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('customerMovementsModal').classList.contains('hidden')){e.preventDefault();e.stopImmediatePropagation();closeCustomerMovements();return;}if(e.key==='Escape'&&!el('customerQrModal').classList.contains('hidden')){e.preventDefault();e.stopImmediatePropagation();closeCustomerQr();return;}if(e.key==='Escape'&&!el('customerDetailCard').classList.contains('hidden')){e.preventDefault();e.stopImmediatePropagation();closeCustomerDetail();return;}if(e.key==='Escape'&&!el('manageCatalogModal').classList.contains('hidden')&&el('newProductCategoryPanel').classList.contains('hidden')&&el('productCategoryOptions').classList.contains('hidden'))closeCatalogManager();});
  on('showInactiveProductsBtn','click',()=>{state.showInactiveProducts=!state.showInactiveProducts;state.catalogSelections.clear();renderManage();});
  on('showInactiveCustomersBtn','click',()=>{state.showInactiveCustomers=!state.showInactiveCustomers;state.catalogSelections.clear();renderManage();});
  on('refreshAuditBtn','click',async()=>{if(RemotePos.active)await refresh();});
@@ -956,17 +1024,21 @@ async function copyQrShareUrl(){
  catch(error){window.prompt('העתק קישור',activeQrShareUrl);}
 }
 async function createCustomerReportQr(){
- if(!canManage('share_customer_qr'))throw new Error('אין הרשאה לשיתוף דוח תנועות לקוח');
- const full=canViewFullReports(),customer=full?el('reportCustomer').value:el('qrReportCustomer').value;
- const from=full?el('fromDate').value:el('qrFromDate').value,to=full?el('toDate').value:el('qrToDate').value;
+ assertManage('share_customer_qr');
+ if(el('customerQrModal').classList.contains('hidden'))throw new Error('יש לפתוח כרטיס לקוח ולבחור שיתוף QR');
+ const record=customerActionRecord();
+ if(!record||record.id!==state.customerDetailId)throw new Error('כרטיס הלקוח נסגר. יש לפתוח אותו שוב.');
+ const customer=record.name;
+ const from=el('qrFromDate').value,to=el('qrToDate').value;
  const message=el('qrReportStatus'),btn=el('createCustomerQrBtn');
- if(!customer||!from||!to||from>to){message.textContent='בחר לקוח מסוים וטווח תאריכים תקין לפני יצירת QR.';return;}
+ if(!from||!to||from>to){message.textContent='בחר טווח תאריכים תקין לפני יצירת QR.';return;}
  btn.disabled=true;message.textContent='מכין צילום מצב של דוח הלקוח בענן…';
  try{
   if(RemotePos.session&&RemotePos.session.expires_at-Date.now()<75000)await RemotePos.refreshSession();
   const response=await RemotePos.staffAction('create_customer_share',{customer,from,to});
   if(!response?.token||!/^[0-9a-f]{64}$/.test(response.token))throw new Error('השרת לא החזיר קישור תקין');
   const url=POS_APP_SHARE_URL+'share.html#'+response.token;
+  closeCustomerQr();
   openQrShareDialog('דוח תנועות לקוח',url,customer+' · '+from+' עד '+to+' · '+response.count+' שורות · בתוקף ל־7 ימים');
   message.textContent='הדוח נוצר בהצלחה. הקישור פג לאחר 7 ימים.';
  }catch(error){message.textContent='שיתוף הדוח נכשל: '+error.message;}
@@ -993,8 +1065,7 @@ function renderPermissions(){
  const fullReports=canViewFullReports();
  el('reportControls').classList.toggle('hidden',!fullReports);
  const shareAllowed=canManage('share_customer_qr');
- el('qrReportShareSection').classList.toggle('hidden',!shareAllowed);
- el('qrLimitedFilters').classList.toggle('hidden',!shareAllowed||fullReports);
+ // QR sharing is now available only from the permission-checked customer card.
  el('employeeChargeReportOpen').classList.toggle('hidden',!RemotePos.active||!RemotePos.authenticated);
  if(!RemotePos.active||!RemotePos.authenticated)closeEmployeeChargeReport(false);
  el('reportAccessNote').textContent=fullReports?'כולל חיובים וזיכויים':'תנועות הקופה ב־24 השעות האחרונות; דוח חיובי עובד זמין בכפתור נפרד';
