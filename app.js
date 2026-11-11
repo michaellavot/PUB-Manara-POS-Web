@@ -1,12 +1,12 @@
 'use strict';
-const APP_VERSION='2.0.11';
+const APP_VERSION='2.0.12';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
  ['וודקה (צ\'ייסר)',10],['ויסקי (צ\'ייסר)',10],['ערק (צ\'ייסר)',10],["ג'ין (צ\'ייסר)",10],['טקילה (צ\'ייסר)',10],
  ['וודקה (מנה)',25],['ויסקי (מנה)',25],['ערק (מנה)',25],["ג'ין (מנה)",25],['טקילה (מנה)',25],['גינס',1]
 ];
-const state={pendingOperation:null,customers:[],products:[],archive:[],priceHistory:[],showInactiveProducts:false,showInactiveCustomers:false,selectedCustomer:null,employeeCharge:false,employeeChargePerson:'',category:null,cart:[],selectedRow:-1,cartHistory:[],busy:false,installPrompt:null,currentReport:{headers:[],rows:[],title:'דוח תנועות'},pendingImport:null,catalogDialog:null,catalogSearch:'',catalogSelections:new Set(),customerBulkMode:false,customerDetailId:null,availableEmployees:[],permissionEmployee:null,switchingEmployee:false};
+const state={pendingOperation:null,customers:[],products:[],archive:[],priceHistory:[],showInactiveProducts:false,showInactiveCustomers:false,selectedCustomer:null,employeeCharge:false,employeeChargePerson:'',category:null,cart:[],selectedRow:-1,cartHistory:[],busy:false,installPrompt:null,currentReport:{headers:[],rows:[],title:'דוח תנועות'},pendingImport:null,catalogDialog:null,catalogSearch:'',catalogSelections:new Set(),customerBulkMode:false,customerDetailId:null,productManagerCategory:null,productBulkMode:false,productDetailId:null,availableEmployees:[],permissionEmployee:null,switchingEmployee:false};
 const el=id=>document.getElementById(id);
 const norm=s=>String(s||'').normalize('NFKC').replace(/\s+/g,' ').trim().toLocaleLowerCase('he-IL');
 // Match each query word to the beginning of any word in the customer's full name, in any order.
@@ -329,14 +329,14 @@ async function productSubmit(event){event.preventDefault();assertManage('create_
  const isStaged=Boolean(stagedProductCategory&&norm(stagedProductCategory)===norm(chosen)&&!productCategoryNames().some(name=>norm(name)===norm(chosen)));
  if(!chosen||(!canonical&&!isStaged))throw new Error('יש לבחור קטגוריה מהרשימה או להוסיף קטגוריה חדשה באמצעות +');
  const category=canonical||stagedProductCategory;
- if(!type||price<0)throw new Error('יש למלא משקה ומחיר תקין');const name=productLabel(category,type),existing=state.products.find(p=>p.normalized===norm(name));if(existing){if(existing.active)throw new Error('משקה בשם זה כבר קיים');if(!confirm('המשקה לא פעיל. להפעיל אותו מחדש?'))return;if(RemotePos.active)await RemotePos.saveProduct({...existing,active:true,category,type,price},{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:'הפעלה מחדש'});else await putRow('products',{...existing,active:true,category,type,price});}else{const row={id:uuid(),category,type,name,normalized:norm(name),price,active:true};if(RemotePos.active)await RemotePos.saveProduct(row,{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:'הוספת משקה'});else await putRow('products',row);}if(!RemotePos.active)await putRow('priceHistory',{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:existing?'הפעלה מחדש':'הוספת משקה'});event.target.reset();resetProductCategoryEditor();await refresh();status('מוצר נשמר','success');}
+ if(!type||price<0)throw new Error('יש למלא משקה ומחיר תקין');const name=productLabel(category,type),existing=state.products.find(p=>p.normalized===norm(name));if(existing){if(existing.active)throw new Error('משקה בשם זה כבר קיים');if(!confirm('המשקה לא פעיל. להפעיל אותו מחדש?'))return;if(RemotePos.active)await RemotePos.saveProduct({...existing,active:true,category,type,price},{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:'הפעלה מחדש'});else await putRow('products',{...existing,active:true,category,type,price});}else{const row={id:uuid(),category,type,name,normalized:norm(name),price,active:true};if(RemotePos.active)await RemotePos.saveProduct(row,{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:'הוספת משקה'});else await putRow('products',row);}if(!RemotePos.active)await putRow('priceHistory',{id:uuid(),productName:name,newPrice:price,changedAt:new Date().toISOString(),note:existing?'הפעלה מחדש':'הוספת משקה'});event.target.reset();resetProductCategoryEditor();await refresh();closeProductAdd();status('מוצר נשמר','success');}
 function catalogVisibleRows(){
  const entity=state.catalogDialog;
  if(!entity)return [];
  const rows=entity==='product'?state.products:state.customers;
  const inactive=entity==='product'?state.showInactiveProducts:state.showInactiveCustomers;
  const search=norm(state.catalogSearch);
- return rows.filter(r=>(inactive?!r.active:r.active)&&(!search||norm(r.name).includes(search)));
+ return rows.filter(r=>(inactive?!r.active:r.active)&&(!search||norm(r.name).includes(search))&&(entity!=='product'||!state.productManagerCategory||norm(r.category)===norm(state.productManagerCategory)));
 }
 function renderCatalogSelection(){
  const rows=catalogVisibleRows(),ids=new Set(rows.map(r=>r.id));
@@ -345,10 +345,11 @@ function renderCatalogSelection(){
  all.checked=rows.length>0&&selected===rows.length;
  all.indeterminate=selected>0&&selected<rows.length;
  el('catalogSelectionCount').textContent=`${state.catalogSelections.size} נבחרו · ${rows.length} מוצגים`;
- el('catalogBulkDelete').classList.toggle('hidden',!(RemotePos.active&&RemotePos.employee?.is_owner===true)&&(state.catalogDialog!=='customer'||!state.customerBulkMode));
+ const bulkOpen=state.catalogDialog==='customer'?state.customerBulkMode:state.catalogDialog==='product'&&state.productBulkMode&&Boolean(state.productManagerCategory);
+ el('catalogBulkDelete').classList.toggle('hidden',!(RemotePos.active&&RemotePos.employee?.is_owner===true&&bulkOpen));
  el('catalogBulkDelete').disabled=state.catalogSelections.size===0;
- el('catalogSelectAllLabel').classList.toggle('hidden',state.catalogDialog==='customer'&&!state.customerBulkMode);
- el('catalogSelectionCount').classList.toggle('hidden',state.catalogDialog==='customer'&&!state.customerBulkMode);
+ el('catalogSelectAllLabel').classList.toggle('hidden',!bulkOpen);
+ el('catalogSelectionCount').classList.toggle('hidden',!bulkOpen);
 }
 const POS_STAFF_PERMISSIONS=['create_products','change_prices','toggle_products','create_customers','toggle_customers','full_reports','share_customer_qr','manage_system'];
 function canViewFullReports(){return RemotePos.active&&RemotePos.authenticated===true&&(RemotePos.employee?.owner_terminal===true||RemotePos.employee?.is_owner===true||RemotePos.employee?.permissions?.full_reports===true);}
@@ -367,6 +368,7 @@ function renderManage(){
   tr.innerHTML=`<td><input class="catalog-select-row" type="checkbox" data-catalog-id="${escapeHtml(p.id)}" aria-label="בחר ${escapeHtml(p.name)}" ${state.catalogSelections.has(p.id)?'checked':''} ${owner?'':'disabled'}></td><td>${escapeHtml(p.name)}</td><td>${escapeHtml(currency(p.price))}</td><td>${p.active?'פעיל':'לא פעיל'}</td><td>${canManage('change_prices')?`<button class="tiny-btn" data-product="${escapeHtml(p.id)}" data-action="edit">ערוך מחיר</button>`:''}${canManage('toggle_products')?`<button class="tiny-btn ${p.active?'danger':''}" data-product="${escapeHtml(p.id)}" data-action="toggle">${p.active?'השבת':'הפעל'}</button>`:''}${owner?`<button class="tiny-btn danger" data-product="${escapeHtml(p.id)}" data-action="delete">מחק לצמיתות</button>`:''}</td>`;
   productsHost.append(tr);
  }
+ if(state.catalogDialog==='product')renderProductManager();
  for(const customer of customers){
   const row=document.createElement('div');
   row.className='customer-directory-row';
@@ -406,7 +408,7 @@ function openCatalogManager(entity){
  if(!['product','customer'].includes(entity))return;
  const permissions=entity==='product'?['create_products','change_prices','toggle_products']:['create_customers','toggle_customers','share_customer_qr','full_reports'];
  if(!permissions.some(canManage)&&RemotePos.employee?.is_owner!==true)return;
- state.catalogDialog=entity;state.catalogSearch='';state.catalogSelections.clear();state.customerBulkMode=false;state.customerDetailId=null;
+ state.catalogDialog=entity;state.catalogSearch='';state.catalogSelections.clear();state.customerBulkMode=false;state.customerDetailId=null;state.productManagerCategory=null;state.productBulkMode=false;state.productDetailId=null;
  el('catalogManagerTitle').textContent=entity==='product'?'ניהול מוצרים':'ניהול לקוחות';
  el('catalogSearch').value='';
  el('catalogManagerMessage').textContent='';
@@ -418,10 +420,10 @@ function openCatalogManager(entity){
  el('catalogSearch').focus();
 }
 function closeCatalogManager(){
- closeCustomerDetail(false);
+ closeProductDetail();closeProductAdd();closeCustomerDetail(false);
  closeProductCategoryOptions();closeNewProductCategory();stagedProductCategory=null;
  el('manageCatalogModal').classList.add('hidden');
- state.catalogDialog=null;state.catalogSearch='';state.catalogSelections.clear();state.customerBulkMode=false;
+ state.catalogDialog=null;state.catalogSearch='';state.catalogSelections.clear();state.customerBulkMode=false;state.productManagerCategory=null;state.productBulkMode=false;
 }
 async function deleteSelectedCatalog(){
  if(!RemotePos.active||RemotePos.employee?.is_owner!==true)throw new Error('מחיקה מרובה זמינה רק בניהול מערכת לאחר אימות בעלים');
@@ -504,6 +506,161 @@ async function deleteCatalogRecord(entity,record){
  if(state.selectedCustomer?.id===record.id)state.selectedCustomer=null;
  await refresh();
  status(`נמחק לצמיתות: ${record.name}. נמחקו ${lineCount} שורות תחזוקה. הפעולה נרשמה ביומן.`,'success');
+}
+// V2.0.12: product category > item list > item detail.
+function initProductManagerUI(){
+ // Keep the existing, fully validated create-product form and its listeners.
+ el('productManagerAddSlot').append(el('productForm'));
+}
+function closeProductAdd(){el('productManagerAddModal').classList.add('hidden');closeProductCategoryOptions();closeNewProductCategory();}
+function openProductAdd(){
+ assertManage('create_products');
+ el('productForm').reset();resetProductCategoryEditor();
+ el('productManagerAddModal').classList.remove('hidden');
+ if(state.productManagerCategory&&activeProductCategoryNames().some(x=>norm(x)===norm(state.productManagerCategory)))renderProductCategoryOptions(state.productManagerCategory);
+ el('productCategoryButton').focus();
+}
+function productManagerCategories(){
+ const groups=new Map();
+ for(const p of state.products.filter(p=>p.active!==state.showInactiveProducts)){
+  const key=norm(p.category);
+  if(!key)continue;
+  if(!groups.has(key))groups.set(key,{name:p.category,count:0});
+  groups.get(key).count++;
+ }
+ return [...groups.values()].sort((a,b)=>a.name.localeCompare(b.name,'he'));
+}
+function renderProductManager(){
+ const showItems=Boolean(state.productManagerCategory);
+ const owner=RemotePos.active&&RemotePos.employee?.is_owner===true;
+ el('productManagerAdd').classList.toggle('hidden',!canManage('create_products'));
+ el('productManagerBack').classList.toggle('hidden',!showItems);
+ el('productBulkModeBtn').classList.toggle('hidden',!showItems||!owner);
+ el('productBulkModeBtn').textContent=state.productBulkMode?'סיים בחירה מרובה':'בחירה מרובה';
+ el('productBulkModeBtn').setAttribute('aria-pressed',String(state.productBulkMode));
+ el('productManagerCategories').classList.toggle('hidden',showItems);
+ el('productManagerItems').classList.toggle('hidden',!showItems);
+ el('productManagerSectionTitle').textContent=showItems?state.productManagerCategory:'בחר קטגוריה';
+ const cats=el('productManagerCategories');cats.replaceChildren();
+ if(!showItems){
+  for(const cat of productManagerCategories()){
+   const button=document.createElement('button');button.type='button';button.className='product-manager-category';
+   const title=document.createElement('strong');title.textContent=cat.name;
+   const count=document.createElement('small');count.textContent=cat.count+' פריטים';
+   button.append(title,count);
+   button.addEventListener('click',()=>{
+    state.productManagerCategory=cat.name;state.productBulkMode=false;state.catalogSelections.clear();
+    state.catalogSearch='';el('catalogSearch').value='';renderManage();
+   });
+   cats.append(button);
+  }
+  if(!cats.children.length){const text=document.createElement('p');text.className='small-note';text.textContent='אין קטגוריות להצגה';cats.append(text);}
+ }
+ const host=el('productManagerItems');host.replaceChildren();
+ if(showItems){
+  for(const p of catalogVisibleRows()){
+   const row=document.createElement('div');row.className='product-manager-item';row.setAttribute('role','listitem');
+   if(state.productBulkMode&&owner){
+    const check=document.createElement('input');check.type='checkbox';check.className='catalog-select-row';
+    check.dataset.catalogId=p.id;check.checked=state.catalogSelections.has(p.id);
+    check.setAttribute('aria-label','בחר '+p.name);row.append(check);
+   }
+   const button=document.createElement('button');button.type='button';button.className='product-manager-item-button';
+   const label=document.createElement('strong');label.textContent=p.type;
+   const price=document.createElement('span');price.textContent=currency(p.price);
+   button.append(label,price);button.addEventListener('click',()=>openProductDetail(p.id));
+   row.append(button);host.append(row);
+  }
+  if(!host.children.length){const text=document.createElement('p');text.className='small-note';text.textContent='לא נמצאו פריטים';host.append(text);}
+ }
+}
+function openProductDetail(id){
+ if(state.catalogDialog!=='product')return;
+ const p=state.products.find(x=>x.id===id);
+ if(!p)return;
+ state.productDetailId=id;
+ renderProductDetail();
+ el('productDetailModal').classList.remove('hidden');
+ el('productDetailClose').focus();
+}
+function closeProductDetail(){
+ el('productDetailModal').classList.add('hidden');
+ el('productDetailHistory').classList.add('hidden');
+ state.productDetailId=null;
+}
+function renderProductDetail(){
+ const p=state.products.find(x=>x.id===state.productDetailId);
+ if(!p){closeProductDetail();return;}
+ const owner=RemotePos.active&&RemotePos.employee?.is_owner===true;
+ el('productDetailName').textContent=p.name;
+ el('productDetailTitle').textContent='כרטיס פריט · '+p.type;
+ el('productDetailStatus').textContent=p.active?'פעיל':'לא פעיל';
+ el('productDetailStatus').classList.toggle('inactive',!p.active);
+ el('productDetailId').textContent=p.id;
+ const type=el('productDetailType'),category=el('productDetailCategory');
+ type.value=p.type;type.disabled=!owner;
+ category.replaceChildren();
+ for(const name of productCategoryNames()){
+  const option=document.createElement('option');option.value=name;option.textContent=name;category.append(option);
+ }
+ category.value=p.category;category.disabled=!owner;
+ el('productDetailSaveDetails').classList.toggle('hidden',!owner);
+ el('productDetailPrice').value=p.price;
+ el('productDetailPrice').disabled=!canManage('change_prices');
+ el('productDetailSavePrice').classList.toggle('hidden',!canManage('change_prices'));
+ el('productDetailToggle').classList.toggle('hidden',!canManage('toggle_products'));
+ el('productDetailToggle').textContent=p.active?'השבת פריט':'הפעל פריט';
+ el('productDetailDelete').classList.toggle('hidden',!owner);
+ const history=el('productDetailHistoryRows');history.replaceChildren();
+ const entries=state.priceHistory.filter(h=>norm(h.productName)===norm(p.name)).sort((a,b)=>String(b.changedAt||'').localeCompare(String(a.changedAt||'')));
+ for(const h of entries.slice(0,60)){
+  const line=document.createElement('div');line.className='product-detail-history-row';
+  line.textContent=(h.changedAt?new Date(h.changedAt).toLocaleDateString('he-IL'):'—')+' · '+(h.oldPrice===undefined?'':currency(h.oldPrice)+' ← ')+(h.newPrice===undefined?'':currency(h.newPrice));
+  history.append(line);
+ }
+ if(!entries.length)history.textContent='אין רישומי שינוי מחיר';
+ el('productDetailMessage').textContent='';
+}
+async function productDetailAction(action){
+ const p=state.products.find(x=>x.id===state.productDetailId);
+ if(!p||state.catalogDialog!=='product')return;
+ const owner=RemotePos.active&&RemotePos.employee?.is_owner===true;
+ if(action==='details'){
+  if(!owner)throw new Error('שינוי שם וקטגוריה שמור לבעלים');
+  const type=String(el('productDetailType').value||'').normalize('NFKC').trim().replace(/\\s+/g,' ');
+  const category=el('productDetailCategory').value;
+  if(!type||type.length>80||!productCategoryNames().some(x=>norm(x)===norm(category)))throw new Error('שם או קטגוריה לא תקינים');
+  const name=productLabel(category,type),normalized=norm(name);
+  if(state.products.some(x=>x.id!==p.id&&norm(x.name)===normalized))throw new Error('קיים מוצר אחר בשם זה');
+  if(norm(name)===norm(p.name)&&norm(category)===norm(p.category)&&type===p.type)return;
+  if(!confirm('לשמור שינוי שם / קטגוריה? תנועות עבר יישארו עם השם המקורי.'))return;
+  const next={...p,name,normalized,category,type};
+  if(RemotePos.active)await RemotePos.saveProduct(next);
+  else await putRow('products',next);
+ }else if(action==='price'){
+  assertManage('change_prices');
+  const price=amount(el('productDetailPrice').value);
+  if(price<0)throw new Error('המחיר לא יכול להיות שלילי');
+  if(price===p.price)return;
+  const history={id:uuid(),productName:p.name,oldPrice:p.price,newPrice:price,changedAt:new Date().toISOString(),note:'שינוי מחיר'};
+  if(RemotePos.active)await RemotePos.saveProduct({...p,price},history);
+  else{await putRow('products',{...p,price});await putRow('priceHistory',history);}
+ }else if(action==='toggle'){
+  assertManage('toggle_products');
+  if(!confirm((p.active?'להשבית':'להפעיל')+' את '+p.name+'?'))return;
+  if(RemotePos.active)await RemotePos.saveProduct({...p,active:!p.active});
+  else await putRow('products',{...p,active:!p.active});
+ }else if(action==='delete'){
+  if(!owner)throw new Error('מחיקה לצמיתות שמורה לבעלים');
+  await deleteCatalogRecord('product',p);
+  if(!state.products.some(x=>x.id===p.id))closeProductDetail();
+  else renderProductDetail();
+  return;
+ }
+ await refresh();
+ if(state.products.some(x=>x.id===p.id))renderProductDetail();
+ else closeProductDetail();
+ status('פרטי המוצר נשמרו','success');
 }
 async function manageProductClick(e){const b=e.target.closest('button[data-product]');if(!b)return;if(b.dataset.action==='edit')assertManage('change_prices');if(b.dataset.action==='toggle')assertManage('toggle_products');const p=state.products.find(p=>p.id===b.dataset.product);if(!p)return;if(b.dataset.action==='delete'){await deleteCatalogRecord('product',p);return;}if(b.dataset.action==='toggle'){if(!confirm(`${p.active?'להסתיר את המשקה':'להחזיר את המשקה'} ${p.name}?`))return;if(RemotePos.active)await RemotePos.saveProduct({...p,active:!p.active});else await putRow('products',{...p,active:!p.active});}else{const val=prompt('מחיר חדש עבור '+p.name,String(p.price));if(val===null)return;const price=amount(val);if(price<0)throw new Error('מחיר לא יכול להיות שלילי');if(RemotePos.active)await RemotePos.saveProduct({...p,price},{id:uuid(),productName:p.name,oldPrice:p.price,newPrice:price,changedAt:new Date().toISOString(),note:'שינוי מחיר'});else{await putRow('products',{...p,price});await putRow('priceHistory',{id:uuid(),productName:p.name,oldPrice:p.price,newPrice:price,changedAt:new Date().toISOString(),note:'שינוי מחיר'});}}await refresh();}
 function renderCustomerDetail(){
@@ -804,6 +961,17 @@ function events(){
  document.addEventListener('pointerdown',event=>{if(!el('productCategoryOptions').classList.contains('hidden')&&!event.target.closest('.product-category-select'))closeProductCategoryOptions();});
  on('newProductCategoryName','keydown',event=>{if(event.key==='Enter'){event.preventDefault();confirmProductCategory();}});
 
+ on('productManagerAdd','click',openProductAdd);
+ on('productManagerAddClose','click',closeProductAdd);
+ on('productManagerAddBackdrop','click',closeProductAdd);
+ on('productManagerBack','click',()=>{state.productManagerCategory=null;state.productBulkMode=false;state.catalogSelections.clear();state.catalogSearch='';el('catalogSearch').value='';renderManage();});
+ on('productBulkModeBtn','click',()=>{if(RemotePos.employee?.is_owner!==true)return;state.productBulkMode=!state.productBulkMode;state.catalogSelections.clear();renderManage();});
+ on('productDetailClose','click',closeProductDetail);
+ on('productDetailBackdrop','click',closeProductDetail);
+ for(const [id,action] of [['productDetailSaveDetails','details'],['productDetailSavePrice','price'],['productDetailToggle','toggle'],['productDetailDelete','delete']]){
+  on(id,'click',()=>productDetailAction(action).catch(err=>{el('productDetailMessage').textContent=err.message;status(err.message,'error');}));
+ }
+ on('productDetailHistoryToggle','click',()=>el('productDetailHistory').classList.toggle('hidden'));
  on('manageProducts','click',manageProductClick);on('customerBulkModeBtn','click',()=>{if(RemotePos.employee?.is_owner!==true)return;state.customerBulkMode=!state.customerBulkMode;state.catalogSelections.clear();renderManage();});
  on('customerDetailClose','click',()=>closeCustomerDetail());
  on('customerDetailBackdrop','click',()=>closeCustomerDetail());
@@ -825,7 +993,7 @@ function events(){
  on('catalogSelectAll','change',e=>{for(const r of catalogVisibleRows()){if(e.target.checked)state.catalogSelections.add(r.id);else state.catalogSelections.delete(r.id);}renderManage();});
  for(const id of ['manageProducts','manageCustomers'])on(id,'change',e=>{const box=e.target.closest('input[data-catalog-id]');if(!box)return;if(box.checked)state.catalogSelections.add(box.dataset.catalogId);else state.catalogSelections.delete(box.dataset.catalogId);renderCatalogSelection();});
  on('catalogBulkDelete','click',()=>deleteSelectedCatalog().catch(e=>{el('catalogManagerMessage').textContent='מחיקה לא בוצעה: '+e.message;status('מחיקה לא בוצעה: '+e.message,'error');}));
- document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('customerMovementsModal').classList.contains('hidden')){e.preventDefault();e.stopImmediatePropagation();closeCustomerMovements();return;}if(e.key==='Escape'&&!el('customerQrModal').classList.contains('hidden')){e.preventDefault();e.stopImmediatePropagation();closeCustomerQr();return;}if(e.key==='Escape'&&!el('customerDetailCard').classList.contains('hidden')){e.preventDefault();e.stopImmediatePropagation();closeCustomerDetail();return;}if(e.key==='Escape'&&!el('manageCatalogModal').classList.contains('hidden')&&el('newProductCategoryPanel').classList.contains('hidden')&&el('productCategoryOptions').classList.contains('hidden'))closeCatalogManager();});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('productDetailModal').classList.contains('hidden')){e.preventDefault();e.stopImmediatePropagation();closeProductDetail();return;}if(e.key==='Escape'&&!el('productManagerAddModal').classList.contains('hidden')&&el('newProductCategoryPanel').classList.contains('hidden')){e.preventDefault();e.stopImmediatePropagation();closeProductAdd();return;}if(e.key==='Escape'&&!el('customerMovementsModal').classList.contains('hidden')){e.preventDefault();e.stopImmediatePropagation();closeCustomerMovements();return;}if(e.key==='Escape'&&!el('customerQrModal').classList.contains('hidden')){e.preventDefault();e.stopImmediatePropagation();closeCustomerQr();return;}if(e.key==='Escape'&&!el('customerDetailCard').classList.contains('hidden')){e.preventDefault();e.stopImmediatePropagation();closeCustomerDetail();return;}if(e.key==='Escape'&&!el('manageCatalogModal').classList.contains('hidden')&&el('newProductCategoryPanel').classList.contains('hidden')&&el('productCategoryOptions').classList.contains('hidden'))closeCatalogManager();});
  on('showInactiveProductsBtn','click',()=>{state.showInactiveProducts=!state.showInactiveProducts;state.catalogSelections.clear();renderManage();});
  on('showInactiveCustomersBtn','click',()=>{state.showInactiveCustomers=!state.showInactiveCustomers;state.catalogSelections.clear();renderManage();});
  on('refreshAuditBtn','click',async()=>{if(RemotePos.active)await refresh();});
@@ -1619,6 +1787,7 @@ async function init(){
  stamp();setInterval(stamp,30000);
  setStartupMessage('מכין את מסכי הקופה…');
  events();
+ initProductManagerUI();
  const today=nowIso();
  el('fromDate').value=today.slice(0,8)+'01';el('toDate').value=today;
  el('qrFromDate').value=today.slice(0,8)+'01';el('qrToDate').value=today;
