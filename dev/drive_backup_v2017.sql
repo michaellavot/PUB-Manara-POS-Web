@@ -46,7 +46,7 @@ CREATE TABLE pos_private.drive_backup_jobs (
  kind text NOT NULL CHECK(kind IN ('data','both')),
  due_at timestamptz NOT NULL, created_at timestamptz NOT NULL DEFAULT now(),
  release_id uuid REFERENCES pos_private.drive_release_artifacts(id),
- snapshot_text text,
+ snapshot_id uuid NOT NULL REFERENCES pos_private.pos_backup_snapshots(id),
  status text NOT NULL DEFAULT 'queued' CHECK(status IN ('queued','running','retry','succeeded','failed')),
  attempts integer NOT NULL DEFAULT 0 CHECK(attempts BETWEEN 0 AND 3),
  next_at timestamptz NOT NULL DEFAULT now(), lease uuid, lease_until timestamptz,
@@ -102,7 +102,7 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
 $$;
 CREATE FUNCTION pos_private.drive_enqueue(p_key text,p_reason text,p_kind text,p_due timestamptz)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
-DECLARE c pos_private.drive_backup_connection%rowtype; r uuid; jid uuid;
+DECLARE c pos_private.drive_backup_connection%rowtype; r uuid; jid uuid; snap_id uuid; snap jsonb;
 BEGIN
  SELECT * INTO c FROM pos_private.drive_backup_connection WHERE id=1 FOR UPDATE;
  IF c.encrypted_refresh_token IS NULL THEN RAISE EXCEPTION 'Drive not connected'; END IF;
@@ -113,8 +113,12 @@ BEGIN
  END IF;
  SELECT id INTO jid FROM pos_private.drive_backup_jobs WHERE job_key=p_key;
  IF jid IS NOT NULL THEN RETURN jid; END IF;
- INSERT INTO pos_private.drive_backup_jobs(job_key,generation,reason,kind,due_at,release_id,snapshot_text)
- VALUES(p_key,c.generation,p_reason,p_kind,p_due,r,pos_private.drive_snapshot()) RETURNING id INTO jid;
+ snap:=pos_private.drive_snapshot()::jsonb;
+ INSERT INTO pos_private.pos_backup_snapshots(reason,snapshot,transaction_count,item_count)
+ VALUES('drive-'||p_reason,snap,jsonb_array_length(snap->'transactions'),jsonb_array_length(snap->'transaction_items'))
+ RETURNING id INTO snap_id;
+ INSERT INTO pos_private.drive_backup_jobs(job_key,generation,reason,kind,due_at,release_id,snapshot_id)
+ VALUES(p_key,c.generation,p_reason,p_kind,p_due,r,snap_id) RETURNING id INTO jid;
  RETURN jid;
 END $$;
 -- Called every minute by a server scheduler. Weekly local-time slots have a unique
@@ -153,9 +157,14 @@ BEGIN
   RETURN jsonb_build_object('connected',c.encrypted_refresh_token IS NOT NULL,'enabled',c.enabled,
    'folderId',c.root_folder,'connectedAt',c.connected_at,'systemReady',EXISTS(SELECT 1 FROM pos_private.drive_release_artifacts WHERE active),
    'release',(SELECT jsonb_build_object('version',version,'commit',commit_sha) FROM pos_private.drive_release_artifacts WHERE active),
+   'nextDue',CASE WHEN c.enabled THEN (SELECT min((d.local_date::timestamp+make_interval(mins=>s.minute_of_day::int)) AT TIME ZONE 'Asia/Jerusalem')
+     FROM pos_private.drive_backup_schedules s CROSS JOIN LATERAL
+     (SELECT (now() AT TIME ZONE 'Asia/Jerusalem')::date+g.i AS local_date FROM generate_series(0,7) g(i)) d
+     WHERE s.enabled AND extract(dow FROM d.local_date)::int=s.weekday
+       AND ((d.local_date::timestamp+make_interval(mins=>s.minute_of_day::int)) AT TIME ZONE 'Asia/Jerusalem')>now()) ELSE NULL END,
    'schedules',(SELECT coalesce(jsonb_agg(to_jsonb(x) ORDER BY x.weekday,x.minute_of_day),'[]'::jsonb) FROM pos_private.drive_backup_schedules x),
    'jobs',(SELECT coalesce(jsonb_agg(to_jsonb(x) ORDER BY x.created_at DESC),'[]'::jsonb) FROM
-      (SELECT id,reason,kind,due_at,created_at,status,attempts,next_at,error_code,completed_at,
+      (SELECT id,snapshot_id,reason,kind,due_at,created_at,status,attempts,next_at,error_code,completed_at,
        data_file_id,system_file_id,data_sha256,system_sha256 FROM pos_private.drive_backup_jobs
        WHERE generation=c.generation ORDER BY created_at DESC LIMIT 40) x));
  ELSIF p_action='save_schedule' THEN
@@ -244,7 +253,7 @@ BEGIN
 END $$;
 CREATE FUNCTION public.pos_drive_worker_v2017(p_action text,p_body jsonb DEFAULT '{}'::jsonb)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
-DECLARE j pos_private.drive_backup_jobs%rowtype; c pos_private.drive_backup_connection%rowtype; r pos_private.drive_release_artifacts%rowtype; l uuid;
+DECLARE j pos_private.drive_backup_jobs%rowtype; c pos_private.drive_backup_connection%rowtype; r pos_private.drive_release_artifacts%rowtype; l uuid; snap_text text;
 BEGIN
  SELECT * INTO c FROM pos_private.drive_backup_connection WHERE id=1 FOR UPDATE;
  IF p_action='connection' THEN RETURN to_jsonb(c); END IF;
@@ -252,16 +261,21 @@ BEGIN
  IF p_action='claim' THEN
   UPDATE pos_private.drive_backup_jobs SET status='failed',error_code='attempts_exhausted',completed_at=now(),lease=NULL,lease_until=NULL
    WHERE status='running' AND lease_until<=now() AND attempts>=3;
+  UPDATE pos_private.drive_backup_jobs SET status='retry',error_code='worker_lease_expired',
+   next_at=now()+CASE WHEN attempts=1 THEN interval '15 minutes' ELSE interval '1 hour' END,lease=NULL,lease_until=NULL
+   WHERE status='running' AND lease_until<=now() AND attempts<3;
   IF c.encrypted_refresh_token IS NULL THEN RETURN NULL; END IF;
   SELECT * INTO j FROM pos_private.drive_backup_jobs WHERE generation=c.generation AND attempts<3
-   AND ((status IN ('queued','retry') AND next_at<=now()) OR (status='running' AND lease_until<=now()))
+   AND status IN ('queued','retry') AND next_at<=now()
    ORDER BY next_at,created_at LIMIT 1 FOR UPDATE SKIP LOCKED;
   IF NOT FOUND THEN RETURN NULL; END IF;
   l:=gen_random_uuid();
   UPDATE pos_private.drive_backup_jobs SET status='running',attempts=attempts+1,lease=l,lease_until=now()+interval '10 minutes'
    WHERE id=j.id RETURNING * INTO j;
   IF j.release_id IS NOT NULL THEN SELECT * INTO r FROM pos_private.drive_release_artifacts WHERE id=j.release_id; END IF;
-  RETURN jsonb_build_object('job',to_jsonb(j),'connection',to_jsonb(c),'release',CASE WHEN j.release_id IS NULL THEN NULL ELSE to_jsonb(r) END);
+  SELECT snapshot::text INTO snap_text FROM pos_private.pos_backup_snapshots WHERE id=j.snapshot_id;
+  IF snap_text IS NULL THEN RAISE EXCEPTION 'Backup snapshot missing'; END IF;
+  RETURN jsonb_build_object('job',to_jsonb(j)||jsonb_build_object('snapshot_text',snap_text),'connection',to_jsonb(c),'release',CASE WHEN j.release_id IS NULL THEN NULL ELSE to_jsonb(r) END);
  END IF;
  IF p_action='register_release' THEN
   IF p_body->>'storage_path' IS DISTINCT FROM ((p_body->>'version')||'/'||(p_body->>'commit_sha')||'.zip') THEN RAISE EXCEPTION 'Invalid artifact path'; END IF;
@@ -281,7 +295,7 @@ BEGIN
  IF p_action='job_status' THEN
   SELECT * INTO j FROM pos_private.drive_backup_jobs WHERE id=(p_body->>'id')::uuid AND generation=c.generation;
   IF NOT FOUND THEN RAISE EXCEPTION 'Job not found'; END IF;
-  RETURN to_jsonb(j)-'snapshot_text'-'lease'-'generation';
+  RETURN to_jsonb(j)-'lease'-'generation';
  END IF;
  SELECT * INTO j FROM pos_private.drive_backup_jobs WHERE id=(p_body->>'id')::uuid AND generation=c.generation FOR UPDATE;
  IF NOT FOUND OR j.status<>'running' OR j.lease IS DISTINCT FROM (p_body->>'lease')::uuid OR j.lease_until<=now() THEN
@@ -304,7 +318,7 @@ BEGIN
   RETURN jsonb_build_object('ok',true);
  ELSIF p_action='complete' THEN
   IF j.data_sha256 IS NULL OR (j.kind='both' AND j.system_sha256 IS NULL) THEN RAISE EXCEPTION 'Files not verified'; END IF;
-  UPDATE pos_private.drive_backup_jobs SET status='succeeded',completed_at=now(),error_code=NULL,snapshot_text=NULL,lease=NULL,lease_until=NULL WHERE id=j.id;
+  UPDATE pos_private.drive_backup_jobs SET status='succeeded',completed_at=now(),error_code=NULL,lease=NULL,lease_until=NULL WHERE id=j.id;
   RETURN jsonb_build_object('ok',true);
  ELSIF p_action='fail' THEN
   UPDATE pos_private.drive_backup_jobs SET status=CASE WHEN attempts>=3 THEN 'failed' ELSE 'retry' END,
