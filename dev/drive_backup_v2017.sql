@@ -291,50 +291,7 @@ BEGIN
    RETURN jsonb_build_object('fileId',c.system_folder);
   END IF;
  ELSIF p_action='verified' THEN
-  IF coalesce(p_body->>'sha256','') !~ '^[a-f0-9]{64} RAISE EXCEPTION 'Invalid hash'; END IF;
-  IF p_body->>'kind'='data' AND j.data_file_id=p_body->>'fileId' THEN
-   UPDATE pos_private.drive_backup_jobs SET data_sha256=p_body->>'sha256' WHERE id=j.id;
-  ELSIF p_body->>'kind'='system' AND j.system_file_id=p_body->>'fileId' THEN
-   UPDATE pos_private.drive_backup_jobs SET system_sha256=p_body->>'sha256' WHERE id=j.id;
-  ELSE RAISE EXCEPTION 'Invalid file'; END IF;
-  RETURN jsonb_build_object('ok',true);
- ELSIF p_action='complete' THEN
-  IF j.data_sha256 IS NULL OR (j.kind='both' AND j.system_sha256 IS NULL) THEN RAISE EXCEPTION 'Files not verified'; END IF;
-  UPDATE pos_private.drive_backup_jobs SET status='succeeded',completed_at=now(),error_code=NULL,snapshot_text=NULL,lease=NULL,lease_until=NULL WHERE id=j.id;
-  RETURN jsonb_build_object('ok',true);
- ELSIF p_action='fail' THEN
-  UPDATE pos_private.drive_backup_jobs SET status=CASE WHEN attempts>=3 THEN 'failed' ELSE 'retry' END,
-   next_at=now()+CASE WHEN attempts=1 THEN interval '15 minutes' ELSE interval '1 hour' END,
-   completed_at=CASE WHEN attempts>=3 THEN now() ELSE NULL END,error_code=left(coalesce(p_body->>'errorCode','backup_failed'),80),
-   lease=NULL,lease_until=NULL WHERE id=j.id;
-  RETURN jsonb_build_object('ok',true);
- END IF;
- RAISE EXCEPTION 'Unknown worker operation';
-END $$;
--- Fresh reauthentication requirement for every existing cloud snapshot restore.
--- Retire the old public RPC rather than leave an alternate unguarded entry point.
-ALTER FUNCTION public.pos_backup_restore_v0945(uuid,text,text) SET SCHEMA pos_private;
-REVOKE ALL ON FUNCTION pos_private.pos_backup_restore_v0945(uuid,text,text) FROM PUBLIC,anon,authenticated,service_role;
-CREATE FUNCTION public.pos_backup_restore_v2017(p_id uuid,p_checksum text,p_confirmation text,p_proof uuid)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
-BEGIN
- IF NOT pos_private.is_owner() OR p_confirmation IS DISTINCT FROM 'אני מאשר שחזור מלא' THEN RAISE EXCEPTION 'Owner authentication and confirmation required' USING ERRCODE='42501'; END IF;
- DELETE FROM pos_private.drive_restore_proofs WHERE id=p_proof AND session_id=pos_private.current_session_id()
-  AND user_id=auth.uid() AND snapshot_id=p_id AND checksum=p_checksum AND expires_at>now();
- IF NOT FOUND THEN RAISE EXCEPTION 'Fresh owner authentication required' USING ERRCODE='42501'; END IF;
- RETURN pos_private.pos_backup_restore_v0945(p_id,p_checksum,p_confirmation);
-END $$;
--- Explicit grants, including removal of default execute from PUBLIC.
-REVOKE ALL ON FUNCTION pos_private.drive_assert_owner(uuid,uuid),pos_private.drive_snapshot(),
- pos_private.drive_enqueue(text,text,text,timestamptz),pos_private.drive_backup_tick() FROM PUBLIC,anon,authenticated;
-REVOKE ALL ON FUNCTION public.pos_drive_owner_v2017(text,uuid,uuid,jsonb),
- public.pos_drive_oauth_v2017(text,jsonb),public.pos_drive_worker_v2017(text,jsonb) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.pos_drive_owner_v2017(text,uuid,uuid,jsonb),
- public.pos_drive_oauth_v2017(text,jsonb),public.pos_drive_worker_v2017(text,jsonb) TO service_role;
-REVOKE ALL ON FUNCTION public.pos_backup_restore_v2017(uuid,text,text,uuid) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.pos_backup_restore_v2017(uuid,text,text,uuid) TO authenticated;
-COMMIT;
- THEN RAISE EXCEPTION 'Invalid hash'; END IF;
+  IF coalesce(p_body->>'sha256','') !~ '^[a-f0-9]{64}$' THEN RAISE EXCEPTION 'Invalid hash'; END IF;
   IF p_body->>'kind'='data' AND j.data_file_id=p_body->>'fileId' THEN
    UPDATE pos_private.drive_backup_jobs SET data_sha256=p_body->>'sha256' WHERE id=j.id;
   ELSIF p_body->>'kind'='system' AND j.system_file_id=p_body->>'fileId' THEN
