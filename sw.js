@@ -1,8 +1,8 @@
-/* PUB Manara POS Web V2.0.15 — network-first, safe offline cache fallback.
+/* PUB Manara POS Web V2.0.16 — network-first, safe offline cache fallback.
    Do not clear IndexedDB or localStorage: they contain the original POS archive.
    Waiting workers activate only after explicit approval through the updater UI. */
-const CACHE='manara-pos-web-v2.0.15-20261112-admin-session';
-const PRECACHE=["./","./index.html","./share.html","./qrcode.min.js?v=2.0.15","./styles.css?v=2.0.15","./draft_guard.js?v=2.0.15","./report_widgets.js?v=2.0.15","./app.js?v=2.0.15","./updater.js?v=2.0.15","./db.js","./xlsx.js","./manifest.webmanifest?v=0.9.29","./assets/dark_wood_background.svg","./assets/main_logo.gif","./assets/billing_left_texture.gif","./assets/beer_icon.gif","./assets/app_icon_192.png?v=0.9.29","./assets/app_icon_512.png?v=0.9.29","./assets/app_icon_maskable_192.png?v=0.9.29","./assets/app_icon_maskable_512.png?v=0.9.29","./assets/rubik-variable.ttf","./legacy_db_import.js?v=2.0.15","./remote.js?v=2.0.15","./archive_admin.js?v=2.0.15","./backup_manager.js?v=2.0.15"];
+const CACHE='manara-pos-web-v2.0.16-20261112-admin-grant-fix';
+const PRECACHE=["./","./index.html","./share.html","./qrcode.min.js?v=2.0.16","./styles.css?v=2.0.16","./draft_guard.js?v=2.0.16","./report_widgets.js?v=2.0.16","./app.js?v=2.0.16","./updater.js?v=2.0.16","./db.js","./xlsx.js","./manifest.webmanifest?v=0.9.29","./assets/dark_wood_background.svg","./assets/main_logo.gif","./assets/billing_left_texture.gif","./assets/beer_icon.gif","./assets/app_icon_192.png?v=0.9.29","./assets/app_icon_512.png?v=0.9.29","./assets/app_icon_maskable_192.png?v=0.9.29","./assets/app_icon_maskable_512.png?v=0.9.29","./assets/rubik-variable.ttf","./legacy_db_import.js?v=2.0.16","./remote.js?v=2.0.16","./archive_admin.js?v=2.0.16","./backup_manager.js?v=2.0.16"];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(PRECACHE)));
 });
