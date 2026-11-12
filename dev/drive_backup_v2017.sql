@@ -126,7 +126,7 @@ BEGIN
  IF NOT c.enabled OR c.encrypted_refresh_token IS NULL THEN RETURN 0; END IF;
  israel_date:=(now() AT TIME ZONE 'Asia/Jerusalem')::date;
  FOR s IN SELECT * FROM pos_private.drive_backup_schedules WHERE enabled LOOP
-  FOR d IN SELECT generate_series(israel_date-1,israel_date,1) LOOP
+  FOR d IN SELECT israel_date-g.i FROM generate_series(0,1) AS g(i) LOOP
    IF extract(dow FROM d)::int<>s.weekday THEN CONTINUE; END IF;
    local_due:=d::timestamp+make_interval(mins=>s.minute_of_day::int);
    due:=local_due AT TIME ZONE 'Asia/Jerusalem';
@@ -157,7 +157,9 @@ BEGIN
        data_file_id,system_file_id,data_sha256,system_sha256 FROM pos_private.drive_backup_jobs
        WHERE generation=c.generation ORDER BY created_at DESC LIMIT 40) x));
  ELSIF p_action='save_schedule' THEN
-  IF jsonb_typeof(p_body->'enabled')<>'boolean' THEN RAISE EXCEPTION 'Invalid schedule'; END IF;
+  IF jsonb_typeof(p_body->'enabled') IS DISTINCT FROM 'boolean' THEN RAISE EXCEPTION 'Invalid schedule'; END IF;
+  IF c.enabled AND (p_body->>'enabled')::boolean AND p_body->>'kind'='both'
+   AND NOT EXISTS(SELECT 1 FROM pos_private.drive_release_artifacts WHERE active) THEN RAISE EXCEPTION 'System package missing'; END IF;
   sid:=nullif(p_body->>'id','')::uuid;
   IF sid IS NULL THEN
    INSERT INTO pos_private.drive_backup_schedules(weekday,minute_of_day,kind,enabled)
@@ -173,7 +175,7 @@ BEGIN
   DELETE FROM pos_private.drive_backup_schedules WHERE id=(p_body->>'id')::uuid;
   RETURN jsonb_build_object('ok',true);
  ELSIF p_action='enable' THEN
-  IF jsonb_typeof(p_body->'enabled')<>'boolean' THEN RAISE EXCEPTION 'Invalid setting'; END IF;
+  IF jsonb_typeof(p_body->'enabled') IS DISTINCT FROM 'boolean' THEN RAISE EXCEPTION 'Invalid setting'; END IF;
   IF (p_body->>'enabled')::boolean THEN
    IF c.encrypted_refresh_token IS NULL THEN RAISE EXCEPTION 'Drive not connected'; END IF;
    IF EXISTS(SELECT 1 FROM pos_private.drive_backup_schedules WHERE enabled AND kind='both')
@@ -197,7 +199,7 @@ BEGIN
    WHERE generation=c.generation AND status IN ('queued','retry','running');
   UPDATE pos_private.drive_backup_connection SET generation=gen_random_uuid(),enabled=false,enabled_since=NULL,
    encrypted_refresh_token=NULL,root_folder=NULL,data_folder=NULL,system_folder=NULL,connected_at=NULL WHERE id=1;
-  RETURN jsonb_build_object('ok',true);
+  RETURN jsonb_build_object('ok',true,'encryptedRefreshToken',c.encrypted_refresh_token,'generation',c.generation);
  ELSIF p_action='proof' THEN
   -- Only callable by the Edge service after fresh password verification.
   INSERT INTO pos_private.drive_restore_proofs(session_id,user_id,snapshot_id,checksum,expires_at)
@@ -260,7 +262,7 @@ BEGIN
   RETURN jsonb_build_object('job',to_jsonb(j),'connection',to_jsonb(c),'release',CASE WHEN j.release_id IS NULL THEN NULL ELSE to_jsonb(r) END);
  END IF;
  IF p_action='register_release' THEN
-  IF p_body->>'storage_path' IS DISTINCT FROM (p_body->>'version')||'/'||(p_body->>'commit_sha')||'.zip' THEN RAISE EXCEPTION 'Invalid artifact path'; END IF;
+  IF p_body->>'storage_path' IS DISTINCT FROM ((p_body->>'version')||'/'||(p_body->>'commit_sha')||'.zip') THEN RAISE EXCEPTION 'Invalid artifact path'; END IF;
   UPDATE pos_private.drive_release_artifacts SET active=false WHERE active;
   INSERT INTO pos_private.drive_release_artifacts(version,commit_sha,storage_path,sha256,byte_size,active)
    VALUES(p_body->>'version',p_body->>'commit_sha',p_body->>'storage_path',p_body->>'sha256',(p_body->>'byte_size')::bigint,true)
@@ -289,7 +291,50 @@ BEGIN
    RETURN jsonb_build_object('fileId',c.system_folder);
   END IF;
  ELSIF p_action='verified' THEN
-  IF p_body->>'sha256' !~ '^[a-f0-9]{64}$' THEN RAISE EXCEPTION 'Invalid hash'; END IF;
+  IF coalesce(p_body->>'sha256','') !~ '^[a-f0-9]{64} RAISE EXCEPTION 'Invalid hash'; END IF;
+  IF p_body->>'kind'='data' AND j.data_file_id=p_body->>'fileId' THEN
+   UPDATE pos_private.drive_backup_jobs SET data_sha256=p_body->>'sha256' WHERE id=j.id;
+  ELSIF p_body->>'kind'='system' AND j.system_file_id=p_body->>'fileId' THEN
+   UPDATE pos_private.drive_backup_jobs SET system_sha256=p_body->>'sha256' WHERE id=j.id;
+  ELSE RAISE EXCEPTION 'Invalid file'; END IF;
+  RETURN jsonb_build_object('ok',true);
+ ELSIF p_action='complete' THEN
+  IF j.data_sha256 IS NULL OR (j.kind='both' AND j.system_sha256 IS NULL) THEN RAISE EXCEPTION 'Files not verified'; END IF;
+  UPDATE pos_private.drive_backup_jobs SET status='succeeded',completed_at=now(),error_code=NULL,snapshot_text=NULL,lease=NULL,lease_until=NULL WHERE id=j.id;
+  RETURN jsonb_build_object('ok',true);
+ ELSIF p_action='fail' THEN
+  UPDATE pos_private.drive_backup_jobs SET status=CASE WHEN attempts>=3 THEN 'failed' ELSE 'retry' END,
+   next_at=now()+CASE WHEN attempts=1 THEN interval '15 minutes' ELSE interval '1 hour' END,
+   completed_at=CASE WHEN attempts>=3 THEN now() ELSE NULL END,error_code=left(coalesce(p_body->>'errorCode','backup_failed'),80),
+   lease=NULL,lease_until=NULL WHERE id=j.id;
+  RETURN jsonb_build_object('ok',true);
+ END IF;
+ RAISE EXCEPTION 'Unknown worker operation';
+END $$;
+-- Fresh reauthentication requirement for every existing cloud snapshot restore.
+-- Retire the old public RPC rather than leave an alternate unguarded entry point.
+ALTER FUNCTION public.pos_backup_restore_v0945(uuid,text,text) SET SCHEMA pos_private;
+REVOKE ALL ON FUNCTION pos_private.pos_backup_restore_v0945(uuid,text,text) FROM PUBLIC,anon,authenticated,service_role;
+CREATE FUNCTION public.pos_backup_restore_v2017(p_id uuid,p_checksum text,p_confirmation text,p_proof uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
+BEGIN
+ IF NOT pos_private.is_owner() OR p_confirmation IS DISTINCT FROM 'אני מאשר שחזור מלא' THEN RAISE EXCEPTION 'Owner authentication and confirmation required' USING ERRCODE='42501'; END IF;
+ DELETE FROM pos_private.drive_restore_proofs WHERE id=p_proof AND session_id=pos_private.current_session_id()
+  AND user_id=auth.uid() AND snapshot_id=p_id AND checksum=p_checksum AND expires_at>now();
+ IF NOT FOUND THEN RAISE EXCEPTION 'Fresh owner authentication required' USING ERRCODE='42501'; END IF;
+ RETURN pos_private.pos_backup_restore_v0945(p_id,p_checksum,p_confirmation);
+END $$;
+-- Explicit grants, including removal of default execute from PUBLIC.
+REVOKE ALL ON FUNCTION pos_private.drive_assert_owner(uuid,uuid),pos_private.drive_snapshot(),
+ pos_private.drive_enqueue(text,text,text,timestamptz),pos_private.drive_backup_tick() FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.pos_drive_owner_v2017(text,uuid,uuid,jsonb),
+ public.pos_drive_oauth_v2017(text,jsonb),public.pos_drive_worker_v2017(text,jsonb) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.pos_drive_owner_v2017(text,uuid,uuid,jsonb),
+ public.pos_drive_oauth_v2017(text,jsonb),public.pos_drive_worker_v2017(text,jsonb) TO service_role;
+REVOKE ALL ON FUNCTION public.pos_backup_restore_v2017(uuid,text,text,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.pos_backup_restore_v2017(uuid,text,text,uuid) TO authenticated;
+COMMIT;
+ THEN RAISE EXCEPTION 'Invalid hash'; END IF;
   IF p_body->>'kind'='data' AND j.data_file_id=p_body->>'fileId' THEN
    UPDATE pos_private.drive_backup_jobs SET data_sha256=p_body->>'sha256' WHERE id=j.id;
   ELSIF p_body->>'kind'='system' AND j.system_file_id=p_body->>'fileId' THEN
