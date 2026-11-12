@@ -32,7 +32,7 @@ export async function decryptToken(envelope,generation,keyText){
 export function assertSnapshot(text){
  const value=JSON.parse(text);
  if(value?.format!=='manara-cloud-snapshot-v1'||!Number.isFinite(Date.parse(value.createdAt)))throw Error('invalid_snapshot_format');
- const arrays=['customers','products','transactions','transaction_items','pos_settings','pos_audit_log','pos_employee_audit','employees','staff_login_metadata'];
+ const arrays=['customers','products','transactions','transaction_items','pos_settings','backup_schedule_settings','drive_backup_schedules','pos_audit_log','pos_employee_audit','employees','staff_login_metadata'];
  for(const k of arrays)if(!Array.isArray(value[k]))throw Error('snapshot_missing_'+k);
  const ids=(rows,k='id')=>{
   const seen=new Set();
