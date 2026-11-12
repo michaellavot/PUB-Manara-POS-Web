@@ -235,12 +235,25 @@ const RemotePos={
    this.assertShift();
    await this.authRequest('refresh_token',{refresh_token:this.session.refresh_token});
  },
+ // Closing a browser/PWA is best-effort; the mandatory server reset on restore
+ // is the authoritative fallback when the browser cannot send this request.
+ lockAdminOnPageHide(){
+   if(!this.session?.access_token||(!this.employee?.is_owner&&!this.staffAdminUnlocked))return;
+   try{
+    fetch(POS_STAFF_ENDPOINT,{method:'POST',cache:'no-store',keepalive:true,
+     headers:{apikey:POS_PUBLISHABLE_KEY,'Content-Type':'application/json',Authorization:'Bearer '+this.session.access_token},
+     body:JSON.stringify({action:'reset_admin_on_open'})
+    }).catch(()=>{});
+   }catch{}
+ },
  async restoreSession(){
    try{this.session=JSON.parse(localStorage.getItem(POS_SESSION_KEY)||'null');}catch{this.session=null;}
    if(!this.session)return false;
    try{
     this.assertShift();
     if(this.session.expires_at-Date.now()<75000)await this.refreshSession();
+    // Never restore elevated privileges from a previous document.
+    await this.staffAction('reset_admin_on_open');
     await this.authorize();return true;
    }catch(error){
     this.session=null;this.employee=null;this.authenticated=false;this.active=false;
