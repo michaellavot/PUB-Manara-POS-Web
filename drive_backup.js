@@ -109,7 +109,7 @@ const DriveBackup=(()=>{
    const actions=node('div',undefined,'pos-backup-actions');
    if(job.data_sha256&&job.data_file_id){const a=link('פתח קובץ נתונים',job.data_file_id);if(a)actions.append(a);}
    if(job.system_sha256&&job.system_file_id){const a=link('פתח נקודת שחזור',job.system_file_id);if(a)actions.append(a);}
-   if(job.status==='succeeded'&&job.data_sha256)actions.append(button('הכן לשחזור נתונים',()=>perform(async()=>{
+   if(job.data_sha256)actions.append(button('הכן לשחזור נתונים',()=>perform(async()=>{
     if(!confirm('הקובץ ייבדק ויוכן לבחירה במסך השחזור. בשלב זה לא יוחלפו נתונים. להמשיך?'))return;
     const r=await api('prepare_restore',{id:job.id});
     await BackupManager.selectSnapshot(r.snapshotId);
@@ -138,6 +138,7 @@ const DriveBackup=(()=>{
   renderJobs(data.jobs||[]);
   const latest=(data.jobs||[]).find(j=>j.status==='succeeded');
   $('driveLastSuccess').textContent=latest?'גיבוי אחרון שאומת: '+when(latest.completed_at):'טרם אומת גיבוי לדרייב.';
+  $('driveNextBackup').textContent=data.nextDue?'מועד הגיבוי הבא: '+when(data.nextDue):'אין מועד גיבוי פעיל.';
  }
  async function loadStatus(schedules=true){
   if(!owner()||refreshing)return;refreshing=true;const e=epoch;
