@@ -210,11 +210,12 @@ async function runOne(){
   await assertFolders(token,connection);
   assertSnapshot(job.snapshot_text);
   const dataBytes=utf8(job.snapshot_text);
-  const files=[{kind:'data',parent:connection.data_folder,mime:'application/json',bytes:dataBytes}];
-  // Build and verify the release package before uploading; a "both" job never
-  // reports success until both independent files have been read back and checked.
-  if(job.kind==='both')files.push({kind:'system',parent:connection.system_folder,mime:'application/zip',bytes:await systemPackage(release,dataBytes,job)});
-  for(const item of files){
+  // Save data even if packaging the system archive later fails. "Both" only
+  // succeeds after both independent files are verified; retries reuse their IDs.
+  const kinds=job.kind==='both'?['data','system']:['data'];
+  for(const kind of kinds){
+   const item=kind==='data'?{kind,parent:connection.data_folder,mime:'application/json',bytes:dataBytes}:
+    {kind,parent:connection.system_folder,mime:'application/zip',bytes:await systemPackage(release,dataBytes,job)};
    let id=job[item.kind+'_file_id'];
    if(!id)id=(await worker('reserve',{...ref,kind:item.kind,fileId:await newDriveId(token)})).fileId;
    const digest=await uploadVerified(token,{...item,id,name:fileName(job,item.kind,release?.version),jobId:job.id});
@@ -230,7 +231,7 @@ async function runOne(){
 async function prepareDriveRestore(who,id){
  if(!uuidPattern.test(id))fail('invalid_job');
  const job=await worker('job_status',{id}),c=await worker('connection');
- if(job.status!=='succeeded'||!job.data_sha256||!job.data_file_id)fail('unverified_backup',409);
+ if(!job.data_sha256||!job.data_file_id)fail('unverified_backup',409);
  const token=await accessFor(c);await assertFolders(token,c);
  const meta=await privateFile(token,job.data_file_id,c.data_folder),size=Number(meta.size);
  if(!Number.isSafeInteger(size)||size<1||size>MAX_BYTES)fail('backup_too_large');
@@ -278,8 +279,8 @@ Deno.serve(async req=>{
     return answer(req,await worker('register_release',r));
    }
    if(action==='before_update'){
-    if(!uuidPattern.test(body.requestId))fail('invalid_request');
-    return answer(req,await worker('before_update',{requestId:body.requestId}));
+    if(!uuidPattern.test(body.requestId)||!/^\d+\.\d+\.\d+$/.test(body.expectedVersion)||!/^[a-f0-9]{40}$/.test(body.expectedCommit))fail('invalid_request');
+    return answer(req,await worker('before_update',{requestId:body.requestId,expectedVersion:body.expectedVersion,expectedCommit:body.expectedCommit}));
    }
    if(!uuidPattern.test(body.id))fail('invalid_job');
    return answer(req,await worker('job_status',{id:body.id}));
@@ -302,17 +303,16 @@ Deno.serve(async req=>{
   }
   if(action==='disconnect'){
    // Disable/clear connection first; then attempt OAuth revocation. Never delete Drive files.
-   const current=await worker('connection');
    const result=await ownerRpc(who,action);
    let revoked=false;
-   if(current.encrypted_refresh_token){
-    try{const refresh=await decryptToken(current.encrypted_refresh_token,current.generation,readyConfig().tokenKey);
+   if(result.encryptedRefreshToken){
+    try{const refresh=await decryptToken(result.encryptedRefreshToken,result.generation,readyConfig().tokenKey);
      const res=await fetch('https://oauth2.googleapis.com/revoke',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
       body:new URLSearchParams({token:refresh}),signal:AbortSignal.timeout(15000)});
      revoked=res.ok;
     }catch{}
    }
-   return answer(req,{...result,revoked});
+   return answer(req,{ok:true,revoked});
   }
   if(action==='prepare_restore')return answer(req,await prepareDriveRestore(who,body.id));
   if(action==='restore_proof'){
