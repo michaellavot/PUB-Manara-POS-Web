@@ -95,8 +95,10 @@ const BackupManager=(()=>{
    if(phrase!=='אני מאשר שחזור מלא'){msg('השחזור בוטל. לא שונו נתונים.');return;}
    if(!confirm('אישור סופי: האם כל הקופות הפסיקו לבצע חיובים? להתחיל שחזור כעת?'))return;
    msg('משחזר באופן מבוקר בשרת. אין לרענן את הדף…');
-   const result=await request('pos_backup_restore_v0945',{
-    p_id:id,p_checksum:preview.checksum,p_confirmation:phrase
+   const proof=await DriveBackup.requestRestoreProof(id,preview.checksum);
+   if(!proof||!owner()){msg('השחזור בוטל. לא שונו נתונים.');return;}
+   const result=await request('pos_backup_restore_v2017',{
+    p_id:id,p_checksum:preview.checksum,p_confirmation:phrase,p_proof:proof
    });
    if(!result?.restored)throw new Error('תוצאת שחזור לא תקינה');
    await RemotePos.loadAll();
@@ -117,5 +119,12 @@ const BackupManager=(()=>{
   $('backupArchiveManageBtn').addEventListener('click',()=>{$('archiveManageBtn').click();});
   $('backupRestoreSnapshotBtn').addEventListener('click',restoreSelected);
  }
- return{init,refresh:loadStatus};
+ async function selectSnapshot(id){
+  if(!owner())throw Error('נדרש אימות בעלים');
+  await loadStatus();
+  const list=$('backupSnapshotSelect');
+  if(![...list.options].some(o=>o.value===id))throw Error('לא ניתן לאתר את העותק שהוכן');
+  list.value=id;
+ }
+ return{init,refresh:loadStatus,selectSnapshot};
 })();
