@@ -14,6 +14,8 @@ CREATE TABLE manara_v2017_test_public.employees(user_id uuid PRIMARY KEY,display
 CREATE TABLE manara_v2017_test_public.pos_staff_logins(user_id uuid PRIMARY KEY,username text,owner_terminal boolean,removed_at timestamptz);
 CREATE TABLE manara_v2017_test_public.pos_staff_sessions(session_id uuid PRIMARY KEY,user_id uuid,expires_at timestamptz,revoked_at timestamptz);
 CREATE TABLE manara_v2017_test_public.pos_owner_grants(session_id uuid PRIMARY KEY,expires_at timestamptz);
+CREATE TABLE manara_v2017_test_private.pos_backup_settings(id integer PRIMARY KEY,enabled boolean,frequency text,hour_local int,weekday int);
+INSERT INTO manara_v2017_test_private.pos_backup_settings VALUES(1,true,'weekly',3,6);
 CREATE TABLE manara_v2017_test_private.pos_backup_snapshots(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),reason text,snapshot jsonb,transaction_count int,item_count int);
 CREATE FUNCTION manara_v2017_test_public.uid() RETURNS uuid LANGUAGE sql AS $$SELECT '22222222-2222-4222-8222-222222222222'::uuid$$;
 CREATE FUNCTION manara_v2017_test_private.current_session_id() RETURNS uuid LANGUAGE sql AS $$SELECT '11111111-1111-4111-8111-111111111111'::uuid$$;
@@ -127,6 +129,11 @@ BEGIN
  o:=manara_v2017_test_public.pos_drive_owner_v2017('manual',os,ou,'{"kind":"data","requestId":"55555555-5555-4555-8555-555555555555"}');
  IF s->>'id'<>o->>'id' THEN RAISE EXCEPTION 'manual duplicate'; END IF;
  INSERT INTO manara_v2017_checks VALUES('manual request idempotent');
+ blocked:=false; BEGIN PERFORM manara_v2017_test_public.pos_drive_worker_v2017('before_update',jsonb_build_object('requestId','66666666-6666-4666-8666-666666666666','expectedVersion','2.0.15','expectedCommit',repeat('a',40))); EXCEPTION WHEN OTHERS THEN blocked:=true; END;
+ IF NOT blocked THEN RAISE EXCEPTION 'pre-update wrong release'; END IF;
+ s:=manara_v2017_test_public.pos_drive_worker_v2017('before_update',jsonb_build_object('requestId','66666666-6666-4666-8666-666666666666','expectedVersion','2.0.16','expectedCommit',repeat('a',40)));
+ IF NOT EXISTS(SELECT 1 FROM manara_v2017_test_private.drive_backup_jobs WHERE id=(s->>'id')::uuid AND kind='both' AND reason='before-update') THEN RAISE EXCEPTION 'pre-update missing'; END IF;
+ INSERT INTO manara_v2017_checks VALUES('pre-update binds exact active release');
  sid:=(manara_v2017_test_public.pos_drive_owner_v2017('import_verified',os,ou,jsonb_build_object('snapshot',manara_v2017_test_private.drive_snapshot()::jsonb))->>'snapshotId')::uuid;
  PERFORM set_config('manara_test.owner','yes',true);
  blocked:=false; BEGIN PERFORM manara_v2017_test_public.pos_backup_restore_v2017(sid,repeat('e',32),'אני מאשר שחזור מלא',gen_random_uuid()); EXCEPTION WHEN insufficient_privilege THEN blocked:=true; END;
