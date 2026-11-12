@@ -1,9 +1,10 @@
 'use strict';
-/* V2.0.17 DEV: Owner-only Google Drive backup controls. No secrets in client storage. */
+/* V2.0.18: Owner-only Google Drive backup controls. No secrets in client storage. */
 const DriveBackup=(()=>{
  const $=id=>document.getElementById(id);
  const days=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
  const errors={
+  oauth_state_expired:'קישור האימות פג או כבר נוצל. צור קישור חדש.',google_api_disabled:'Google Drive API אינו מופעל.',google_file_not_found:'Google לא מצאה תיקייה או קובץ מורשים.',google_storage_full:'אין מספיק מקום בדרייב.',google_list_failed:'נכשלה בדיקת תיקיות בדרייב.',google_create_failed:'נכשלה יצירת תיקייה בדרייב.',google_metadata_failed:'נכשלה קריאת פרטי הקובץ.',google_permissions_failed:'נכשלה בדיקת הרשאות התיקייה.',google_upload_failed:'נכשלה העלאת הקובץ לדרייב.',
   owner_required:'יש לאמת מחדש את בעל המערכת.',google_configuration_missing:'חיבור Google טרם הוגדר בשרת.',
   drive_not_connected:'יש לחבר את Google Drive תחילה.',google_reconnect_required:'הרשאת Google פגה או בוטלה. נדרש חיבור מחדש.',
   drive_folder_not_private:'תיקיית הגיבוי אינה פרטית. בטל את השיתוף לפני גיבוי.',
@@ -163,12 +164,19 @@ const DriveBackup=(()=>{
  }
  function connect(){
   perform(async()=>{
+   $('driveConnectLink').replaceChildren();
+   $('driveConnectBtn').disabled=true;
+   try{
    const result=await api('connect');
    const u=new URL(result.authorizationUrl);
    if(u.origin!=='https://accounts.google.com'||u.pathname!=='/o/oauth2/v2/auth')throw Error('backup_failed');
    const a=node('a','אשר חיבור בחשבון Google שלך','button primary');a.href=u.href;a.target='_blank';a.rel='noopener noreferrer';
+   a.addEventListener('click',()=>{setTimeout(()=>{
+    if(a.isConnected)a.replaceWith(node('p','קישור האימות נפתח. לאחר סיום האישור לחץ רענן מצב; אם נכשל, לחץ שוב על חבר Google Drive.','small-note'));
+   },0);},{once:true});
    $('driveConnectLink').replaceChildren(a);
    message('פתח את קישור Google בחלון נוסף. לאחר האישור, חזור לכאן ולחץ רענן מצב.');
+   }finally{if(owner()&&!last?.connected)$('driveConnectBtn').disabled=false;}
   });
  }
  function requestRestoreProof(snapshotId,checksum){
