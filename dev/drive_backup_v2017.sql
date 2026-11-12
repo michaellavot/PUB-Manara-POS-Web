@@ -90,6 +90,8 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
  'transactions',(SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY t.id),'[]'::jsonb) FROM public.transactions t),
  'transaction_items',(SELECT coalesce(jsonb_agg(to_jsonb(i) ORDER BY i.id),'[]'::jsonb) FROM public.transaction_items i),
  'pos_settings',(SELECT coalesce(jsonb_agg(to_jsonb(s) ORDER BY s.id),'[]'::jsonb) FROM public.pos_settings s),
+ 'backup_schedule_settings',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',s.id,'enabled',s.enabled,'frequency',s.frequency,'hour_local',s.hour_local,'weekday',s.weekday) ORDER BY s.id),'[]'::jsonb) FROM pos_private.pos_backup_settings s),
+ 'drive_backup_schedules',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',s.id,'weekday',s.weekday,'minute_of_day',s.minute_of_day,'kind',s.kind,'enabled',s.enabled) ORDER BY s.weekday,s.minute_of_day),'[]'::jsonb) FROM pos_private.drive_backup_schedules s),
  'pos_audit_log',(SELECT coalesce(jsonb_agg(to_jsonb(a) ORDER BY a.id),'[]'::jsonb) FROM public.pos_audit_log a),
  'pos_employee_audit',(SELECT coalesce(jsonb_agg(to_jsonb(a) ORDER BY a.id),'[]'::jsonb) FROM public.pos_employee_audit a),
  'employees',(SELECT coalesce(jsonb_agg(jsonb_build_object('user_id',e.user_id,'display_name',e.display_name,
@@ -272,6 +274,8 @@ BEGIN
   RETURN jsonb_build_object('ok',true);
  END IF;
  IF p_action='before_update' THEN
+  IF NOT EXISTS(SELECT 1 FROM pos_private.drive_release_artifacts WHERE active AND version=p_body->>'expectedVersion' AND commit_sha=p_body->>'expectedCommit') THEN
+   RAISE EXCEPTION 'Active release does not match expected version and commit'; END IF;
   RETURN jsonb_build_object('id',pos_private.drive_enqueue('release:'||(p_body->>'requestId')::uuid::text,'before-update','both',now()));
  END IF;
  IF p_action='job_status' THEN
