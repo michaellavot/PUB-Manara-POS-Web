@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.0.16';
+const APP_VERSION='2.0.17';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -937,7 +937,7 @@ function events(){
  window.addEventListener('beforeunload',event=>DraftGuard.beforeUnload(event));
  window.addEventListener('pagehide',()=>RemotePos.lockAdminOnPageHide());
  window.addEventListener('pageshow',event=>{if(event.persisted)location.reload();});
- on('deviceLayoutBtn','click',openLayoutDialog);on('deviceLayoutClose','click',closeLayoutDialog);on('deviceLayoutBackdrop','click',closeLayoutDialog);for(const btn of document.querySelectorAll('[data-layout-choice]'))btn.addEventListener('click',()=>saveLayoutMode(btn.dataset.layoutChoice));for(const b of document.querySelectorAll('.tab'))b.onclick=()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));if(b.dataset.page==='reportsPage'&&RemotePos.active){renderReport();renderEmployeeChargeReport();}if(b.dataset.page==='systemPage'&&RemotePos.active&&RemotePos.employee?.owner_terminal===true)BackupManager.refresh();el('globalControlStrip').classList.toggle('not-pos-page',b.dataset.page!=='posPage');};on('navigationGearBtn','click',openNavigationMenu);on('navigationMenuClose','click',()=>closeNavigationMenu());on('navigationMenuBackdrop','click',()=>closeNavigationMenu());for(const b of document.querySelectorAll('[data-nav-page]'))b.addEventListener('click',()=>navigateFromMenu(b.dataset.navPage));on('customerInput','click',toggleCustomerDropdown);
+ on('deviceLayoutBtn','click',openLayoutDialog);on('deviceLayoutClose','click',closeLayoutDialog);on('deviceLayoutBackdrop','click',closeLayoutDialog);for(const btn of document.querySelectorAll('[data-layout-choice]'))btn.addEventListener('click',()=>saveLayoutMode(btn.dataset.layoutChoice));for(const b of document.querySelectorAll('.tab'))b.onclick=()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));if(b.dataset.page==='reportsPage'&&RemotePos.active){renderReport();renderEmployeeChargeReport();}if(b.dataset.page==='systemPage'&&RemotePos.active&&RemotePos.employee?.owner_terminal===true){BackupManager.refresh();DriveBackup.refresh(true);}el('globalControlStrip').classList.toggle('not-pos-page',b.dataset.page!=='posPage');};on('navigationGearBtn','click',openNavigationMenu);on('navigationMenuClose','click',()=>closeNavigationMenu());on('navigationMenuBackdrop','click',()=>closeNavigationMenu());for(const b of document.querySelectorAll('[data-nav-page]'))b.addEventListener('click',()=>navigateFromMenu(b.dataset.navPage));on('customerInput','click',toggleCustomerDropdown);
  on('desktopCustomerSearch','focus',renderDesktopCustomerOptions);
  on('desktopCustomerSearch','click',renderDesktopCustomerOptions);
  on('desktopCustomerSearch','input',renderDesktopCustomerOptions);
@@ -1124,6 +1124,7 @@ async function employeeSignOut(){
  }finally{button.disabled=false;}
 }
 function resetLockedWorkspace(message){
+ DriveBackup.syncVisibility();
  DraftGuard.ready=false;DraftGuard.blocked=false;
  el('draftReviewBtn').classList.add('hidden');
  RemotePos.onChange=null;
@@ -1239,7 +1240,9 @@ function renderPermissions(){
  el('staffAdminReportsBtn').classList.toggle('hidden',!canViewFullReports());
  el('archiveManageBtn').classList.toggle('hidden',!(ownerTerminal||limitedAdmin));
  el('newSystemDashboard').classList.toggle('hidden',!(ownerTerminal||limitedAdmin));
- for(const id of ['backupOwnerControls','backupAutoSection','backupHistorySection'])el(id).classList.toggle('hidden',!ownerTerminal);
+ for(const id of ['backupOwnerControls','backupAutoSection'])el(id).classList.toggle('hidden',!ownerTerminal);
+ el('backupHistorySection').classList.toggle('hidden',!owner);
+ DriveBackup.syncVisibility();
  el('sqliteImportPanel').classList.toggle('hidden',!(ownerTerminal&&!RemotePos.isImported));
  const fullReports=canViewFullReports();
  el('reportControls').classList.toggle('hidden',!fullReports);
@@ -1697,6 +1700,7 @@ function remoteEvents(){
  ArchiveAdmin.init();
  LegacyDbImport.init();
  BackupManager.init();
+ DriveBackup.init();
  on('employeeChargeToggle','click',openEmployeeChargeName);
  on('employeeChargeNameCancel','click',closeEmployeeChargeName);
  on('employeeChargeNameClose','click',closeEmployeeChargeName);
