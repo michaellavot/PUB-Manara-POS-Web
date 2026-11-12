@@ -70,7 +70,7 @@
     <header class="hero" aria-label="PUB Manara POS"><img src="assets/main_logo.gif" alt="PUB Manara POS" /><div id="desktopHeroGear" class="desktop-hero-gear"></div><div id="desktopHeroIdentity" class="desktop-hero-identity"></div></header>
     
     <div id="modeBanner" class="mode-banner hidden" role="status"></div>
-    <nav class="tabs hidden" aria-label="ניווט פנימי"><button class="tab active" data-page="posPage">קופה</button><button class="tab" data-page="managePage">ניהול</button><button class="tab" data-page="reportsPage">דוחות</button><button class="tab" data-page="systemPage">מערכת ועדכון</button></nav>
+    <nav class="tabs hidden" aria-label="ניווט פנימי"><button class="tab hidden" id="jbTab" data-page="jukeboxPage">ג׳וקבוקס</button><button class="tab active" data-page="posPage">קופה</button><button class="tab" data-page="managePage">ניהול</button><button class="tab" data-page="reportsPage">דוחות</button><button class="tab" data-page="systemPage">מערכת ועדכון</button></nav>
     <section id="globalControlStrip" class="customer-strip panel customer-choice-bar global-control-strip">
       <div class="customer-select-wrap" id="customerSelectWrap"><button id="customerInput" type="button" class="button customer-main-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="customerDropdown"><span id="customerSelectedText">לקוח</span><span aria-hidden="true">⌄</span></button><div id="desktopCustomerSelect" class="desktop-customer-select"><input id="desktopCustomerSearch" class="field desktop-customer-search" type="search" placeholder="חפש לקוח..." aria-label="חיפוש לקוח" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="desktopCustomerOptions" aria-expanded="false"><div id="desktopCustomerOptions" class="desktop-customer-options hidden" role="listbox" aria-label="בחר לקוח"></div></div></div>
       <button id="employeeChargeToggle" type="button" class="button employee-charge-button" aria-haspopup="dialog" aria-controls="employeeChargeNameModal">חיוב על עובד</button>
@@ -85,7 +85,7 @@
           <section class="panel bill-panel"><div id="desktopBillingControls" class="desktop-billing-controls" aria-label="בחירת לקוח וסוג חיוב"></div><span class="bill-tag hidden" id="billTag" aria-hidden="true"></span><div class="bill-table-wrap"><table class="bill-table"><thead><tr><th>פריט</th><th>כמות</th><th>מחיר</th></tr></thead><tbody id="billBody"><tr><td colspan="3" class="empty">אין פריטים בחיוב</td></tr></tbody></table></div><div class="total-block" id="totalBlock"><span>סה״כ לתשלום</span><strong id="total">0 ₪</strong></div><button id="chargeBtn" class="button charge" type="button"><span class="charge-button-label">✓ חייב</span><img class="charge-button-beer-gif" src="assets/beer_icon.gif" alt="" aria-hidden="true"></button><div class="bill-actions"><button class="button secondary" id="removeSelectedBtn">מחק שורה</button><button class="button secondary" id="undoBtn">בטל אחרון</button><button class="button warning" id="clearBtn">נקה חיוב</button><button class="button secondary" id="refundBtn">זיכוי עסקה</button></div><div class="status" id="status" role="status"></div></section>
         </div>
       </section>
-      <section id="managePage" class="page">
+      <section id="jukeboxPage" class="page"><section class="panel"><div class="panel-head"><h2>ג׳וקבוקס — Preview</h2><button class="button" id="jbSettings">⚙</button></div><p class="small-note">בחר לקוח או חיוב על עובד באמצעות שורת הקופה. הפקת קודים זמינה במצב תחזוקה בלבד; אין כתיבת חיובים לענן.</p><button class="button charge" id="jbIssue">חיוב — הפקת קוד</button><p id="jbStatus" role="status"></p><div class="bill-table-wrap" style="height:280px;flex:none"><table class="bill-table"><thead><tr><th>שם הלקוח</th><th>שם השיר</th><th>סטטוס השיר</th></tr></thead><tbody id="jbRows"></tbody></table></div><button class="button" id="jbHistory">היסטוריית הזמנות</button><button class="button" id="jbGuest">פתח מסך אורחים</button></section></section><section id="managePage" class="page">
         <div class="catalog-launchers">
           <button type="button" class="catalog-launch-button panel" id="openProductManager"><span class="catalog-launch-icon" aria-hidden="true">🍺</span><strong>ניהול מוצרים</strong><span>הוספה, עריכה, חיפוש ומחיקה מרובה</span></button>
           <button type="button" class="catalog-launch-button panel" id="openCustomerManager"><span class="catalog-launch-icon" aria-hidden="true">👥</span><strong>ניהול לקוחות</strong><span>הוספה, עריכה, חיפוש ומחיקה מרובה</span></button>
@@ -456,7 +456,7 @@
     <div class="employee-picker-panel navigation-menu-panel">
       <div class="customer-dialog-heading"><h2 id="navigationMenuTitle">תפריט ניווט</h2><button type="button" id="navigationMenuClose" class="customer-dialog-close" aria-label="סגור תפריט">×</button></div>
       <div class="navigation-menu-grid">
-        <button type="button" class="navigation-menu-item" data-nav-page="posPage"><span aria-hidden="true">🛒</span>קופה</button>
+        <button type="button" id="jbNav" class="navigation-menu-item hidden" data-nav-page="jukeboxPage">♫ ג׳וקבוקס</button><button type="button" class="navigation-menu-item" data-nav-page="posPage"><span aria-hidden="true">🛒</span>קופה</button>
         <button type="button" class="navigation-menu-item" data-nav-page="managePage"><span aria-hidden="true">⚙</span>ניהול</button>
         <button type="button" class="navigation-menu-item" data-nav-page="reportsPage"><span aria-hidden="true">▤</span>דוחות</button>
         <button type="button" class="navigation-menu-item" data-nav-page="systemPage"><span aria-hidden="true">↻</span>מערכת ועדכון</button>
@@ -590,4 +590,4 @@
 <script src="draft_guard.js?v=2.0.14"></script>
 <script src="report_widgets.js?v=2.0.14"></script>
 <script src="app.js?v=2.0.14"></script>
-</body></html>
+<script src="jukebox-pos.js"></script></body></html>
