@@ -9,9 +9,11 @@ const keyFor=(modern,legacy)=>{try{return JSON.parse(env(modern)).default||env(l
 const SUPABASE_URL=env('SUPABASE_URL');
 const PUBLIC_KEY=keyFor('SUPABASE_PUBLISHABLE_KEYS','SUPABASE_ANON_KEY');
 const SERVICE_KEY=keyFor('SUPABASE_SECRET_KEYS','SUPABASE_SERVICE_ROLE_KEY');
+let runtimeKeys=null,runtimeLoadedAt=0;
 const config=()=>({clientId:env('POS_DRIVE_CLIENT_ID'),clientSecret:env('POS_DRIVE_CLIENT_SECRET'),
- redirectUri:env('POS_DRIVE_REDIRECT_URI'),tokenKey:env('POS_DRIVE_TOKEN_KEY'),
- workerSecret:env('POS_DRIVE_WORKER_SECRET'),releaseSecret:env('POS_DRIVE_RELEASE_SECRET'),
+ redirectUri:env('POS_DRIVE_REDIRECT_URI')||SUPABASE_URL+'/functions/v1/pos-drive-backup',
+ tokenKey:runtimeKeys?.tokenKey||env('POS_DRIVE_TOKEN_KEY'),
+ workerSecret:runtimeKeys?.workerSecret||env('POS_DRIVE_WORKER_SECRET'),releaseSecret:runtimeKeys?.releaseSecret||env('POS_DRIVE_RELEASE_SECRET'),
  appOrigin:env('POS_DRIVE_APP_ORIGIN')||'https://michaellavot.github.io'});
 const opts={auth:{autoRefreshToken:false,persistSession:false,detectSessionInUrl:false}};
 const service=createClient(SUPABASE_URL,SERVICE_KEY,opts);
@@ -23,6 +25,12 @@ const db=async(name,args)=>{const {data,error}=await service.rpc(name,args);if(e
  if(error.message==='Backup in progress')throw Object.assign(Error('backup_in_progress'),{status:409});
  throw Error('database_operation_failed');
  }return data;};
+async function loadRuntime(){
+ if(runtimeKeys&&Date.now()-runtimeLoadedAt<60000)return;
+ const v=await db('pos_drive_runtime_v2017',{});
+ if(!v?.tokenKey||!v?.workerSecret||!v?.releaseSecret)throw Error('server_configuration_missing');
+ runtimeKeys=v;runtimeLoadedAt=Date.now();
+}
 const worker=(p_action,p_body={})=>db('pos_drive_worker_v2017',{p_action,p_body});
 const oauth=(p_action,p_body={})=>db('pos_drive_oauth_v2017',{p_action,p_body});
 const ownerRpc=(who,p_action,p_body={})=>db('pos_drive_owner_v2017',{p_action,p_session:who.session,p_user:who.user,p_body});
@@ -184,6 +192,47 @@ async function callback(req){
   encryptedToken:await encryptToken(t.refresh_token,o.generation,c.tokenKey),rootFolder,dataFolder,systemFolder});
  return new Response('Google Drive connected and synthetic file verified. Return to PUB Manara POS and refresh the backup panel.',{headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
 }
+async function buildRelease(version,commit){
+ if(!/^\d+\.\d+\.\d+$/.test(version)||!/^[a-f0-9]{40}$/.test(commit))fail('invalid_release');
+ const cp=await db('pos_drive_release_checkpoint_v2017',{p_version:version,p_commit:commit});
+ if(!cp||cp.version!==version||cp.commit!==commit||cp.schema?.format!=='manara-schema-catalog-v1'||!Array.isArray(cp.edge)||!cp.edge.length)fail('release_checkpoint_missing',409);
+ const response=await fetch('https://codeload.github.com/michaellavot/PUB-Manara-POS-Web/zip/'+commit,{signal:AbortSignal.timeout(35000)});
+ if(!response.ok)fail('source_archive_unavailable',502);
+ const reader=response.body?.getReader();if(!reader)fail('source_archive_unavailable',502);
+ let total=0;const chunks=[];
+ try{for(;;){const {done,value}=await reader.read();if(done)break;total+=value.length;if(total>24*1024*1024)fail('source_archive_too_large',413);chunks.push(value);}}
+ finally{await reader.cancel().catch(()=>{});}
+ const source=new Uint8Array(total);let at=0;for(const chunk of chunks){source.set(chunk,at);at+=chunk.length;}
+ const root='PUB-Manara-POS-Web-'+commit+'/';
+ const sv=unzipSync(source,{filter:f=>[root+'version.json',root+'index.html',root+'app.js'].includes(f.name)});
+ if(!sv[root+'version.json']||!sv[root+'index.html']||!sv[root+'app.js']||JSON.parse(decodeUtf8(sv[root+'version.json'])).version!==version)fail('source_version_mismatch',502);
+ const files={'source.zip':source,'database/schema.json':utf8(JSON.stringify(cp.schema,null,2))};
+ for(const edge of cp.edge){
+  if(!/^[a-z0-9-]+$/.test(edge.slug)||!Array.isArray(edge.files)||!edge.files.length)fail('release_checkpoint_invalid',502);
+  for(const f of edge.files){
+   const name=String(f.name||'');
+   if(!/^[a-zA-Z0-9_./-]+$/.test(name)||name.startsWith('/')||name.split('/').includes('..')||typeof f.content!=='string')fail('release_checkpoint_invalid',502);
+   files['edge-functions/'+edge.slug+'/'+name]=utf8(f.content);
+  }
+  files['edge-functions/'+edge.slug+'/deployment.json']=utf8(JSON.stringify({slug:edge.slug,version:edge.version,verify_jwt:edge.verify_jwt,sha256:edge.sha256},null,2));
+ }
+ files['RESTORE_README.txt']=utf8(['PUB Manara POS V'+version+' / '+commit,'source.zip: exact Git source and assets.','database/schema.json: schema catalog with definitions, constraints, policies, grants and functions.','edge-functions: deployed source and deployment metadata.','Software recovery package, not a physical DB dump or one-click database restore. Recreate authentication identities and secrets separately.','Keep new transactions unless owner explicitly approves a data restore.'].join('\n'));
+ const list=[];for(const [path,bytes] of Object.entries(files))list.push({path,sha256:await sha256(bytes),size:bytes.byteLength});
+ files['manifest.json']=utf8(JSON.stringify({format:'manara-release-v1',version,commit,createdAt:cp.createdAt,files:list},null,2));
+ const artifact=zipSync(files,{level:0,mtime:new Date('2000-01-01T00:00:00Z')});
+ if(artifact.length>MAX_BYTES)fail('backup_too_large',413);
+ const digest=await sha256(artifact),storage_path=version+'/'+commit+'.zip',bucket=service.storage.from('pos-system-release-artifacts');
+ const uploaded=await bucket.upload(storage_path,artifact,{contentType:'application/zip',upsert:false});
+ if(uploaded.error){
+  const existing=await bucket.download(storage_path);if(existing.error||!existing.data)fail('system_package_upload_failed',502);
+  const bytes=new Uint8Array(await existing.data.arrayBuffer());if(bytes.length!==artifact.length||await sha256(bytes)!==digest)fail('immutable_release_artifact_mismatch',409);
+ }
+ const saved=await bucket.download(storage_path);if(saved.error||!saved.data)fail('system_package_unavailable',502);
+ const bytes=new Uint8Array(await saved.data.arrayBuffer());if(bytes.length!==artifact.length||await sha256(bytes)!==digest)fail('system_package_checksum_mismatch',502);
+ const verified=unzipSync(bytes);for(const f of list){if(!verified[f.path]||await sha256(verified[f.path])!==f.sha256)fail('system_package_checksum_mismatch',502);}
+ const registered=await worker('register_release',{version,commit_sha:commit,storage_path,sha256:digest,byte_size:artifact.length});
+ return {...registered,version,commit,sha256:digest,byteSize:artifact.length};
+}
 async function systemPackage(release,dataBytes,job){
  if(!release||!hashPattern.test(release.sha256)||Number(release.byte_size)>MAX_BYTES)fail('system_package_missing',409);
  const {data,error}=await service.storage.from('pos-system-release-artifacts').download(release.storage_path);
@@ -191,10 +240,10 @@ async function systemPackage(release,dataBytes,job){
  const artifact=new Uint8Array(await data.arrayBuffer());
  if(artifact.byteLength!==Number(release.byte_size)||await sha256(artifact)!==release.sha256)fail('system_package_checksum_mismatch',502);
  // Validate presence of the manifest and schema in the trusted, hash-pinned release archive.
- const files=unzipSync(artifact,{filter:f=>f.name==='manifest.json'||f.name==='database/schema.sql'});
- if(!files['manifest.json']||!files['database/schema.sql'])fail('system_package_incomplete',502);
+ const files=unzipSync(artifact,{filter:f=>['manifest.json','database/schema.sql','database/schema.json'].includes(f.name)});
+ if(!files['manifest.json']||(!files['database/schema.sql']&&!files['database/schema.json']))fail('system_package_incomplete',502);
  const m=JSON.parse(decodeUtf8(files['manifest.json']));
- if(m.version!==release.version||m.commit!==release.commit_sha||!Array.isArray(m.files)||!m.files.some(f=>f.path==='database/schema.sql')||!m.files.some(f=>f.path.startsWith('edge-functions/')))fail('system_package_manifest_invalid',502);
+ if(m.version!==release.version||m.commit!==release.commit_sha||!Array.isArray(m.files)||!m.files.some(f=>f.path==='database/schema.sql'||f.path==='database/schema.json')||!m.files.some(f=>f.path.startsWith('edge-functions/')))fail('system_package_manifest_invalid',502);
  const manifest=utf8(JSON.stringify({format:'manara-system-restore-v1',version:release.version,commit:release.commit_sha,
   backupId:job.id,createdAt:job.created_at,releaseSha256:release.sha256,dataSha256:await sha256(dataBytes),
   exclusions:['passwords','PINs','OAuth tokens','Vault and project secrets','auth.users credentials'],
@@ -251,18 +300,19 @@ const answer=(req,data,status=200)=>new Response(JSON.stringify(data),{status,he
 Deno.serve(async req=>{
  try{
   if(req.method==='OPTIONS')return new Response(null,{status:204,headers:headers(req)});
-  if(req.method==='GET')return await callback(req);
+  if(req.method==='GET'){await loadRuntime();return await callback(req);}
   if(req.method!=='POST')return answer(req,{error:'method_not_allowed'},405);
   const raw=await req.text();if(raw.length>16384)fail('request_too_large',413);
-  const body=JSON.parse(raw||'{}'),action=body.action,c=config();
+  const body=JSON.parse(raw||'{}'),action=body.action;await loadRuntime();const c=config();
   // Scheduler and release runner have distinct secrets; neither is in the browser.
   if(action==='tick'||action==='run'){
    if(!c.workerSecret||!fixedTimeEqual(req.headers.get('x-pos-backup-worker')||'',c.workerSecret))fail('worker_required',403);
    if(action==='tick')await worker('tick');
    return answer(req,await runOne());
   }
-  if(['release_register','before_update','release_job_status'].includes(action)){
+  if(['release_build','release_register','before_update','release_job_status'].includes(action)){
    if(!c.releaseSecret||!fixedTimeEqual(req.headers.get('x-pos-backup-release')||'',c.releaseSecret))fail('release_required',403);
+   if(action==='release_build')return answer(req,await buildRelease(body.version,body.commit));
    if(action==='release_register'){
     const r=body.release||{};
     if(!/^[0-9]+\.[0-9]+\.[0-9]+$/.test(r.version)||!/^[a-f0-9]{40}$/.test(r.commit_sha)||!hashPattern.test(r.sha256)||
@@ -274,7 +324,7 @@ Deno.serve(async req=>{
     if(bytes.length!==r.byte_size||await sha256(bytes)!==r.sha256)fail('system_package_checksum_mismatch',502);
     const z=unzipSync(bytes);
     const m=JSON.parse(decodeUtf8(z['manifest.json']));
-    if(m.version!==r.version||m.commit!==r.commit_sha||!Array.isArray(m.files)||!z['database/schema.sql']||!m.files.some(f=>f.path.startsWith('edge-functions/')))fail('system_package_incomplete',502);
+    if(m.version!==r.version||m.commit!==r.commit_sha||!Array.isArray(m.files)||(!z['database/schema.sql']&&!z['database/schema.json'])||!m.files.some(f=>f.path.startsWith('edge-functions/')))fail('system_package_incomplete',502);
     for(const f of m.files){if(!z[f.path]||await sha256(z[f.path])!==f.sha256)fail('system_package_checksum_mismatch',502);}
     return answer(req,await worker('register_release',r));
    }
