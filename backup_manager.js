@@ -26,7 +26,7 @@ const BackupManager=(()=>{
    for(const row of snapshots){
     const opt=document.createElement('option');opt.value=row.id;
     opt.textContent=new Date(row.createdAt).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem'})+
-      ' · '+(row.reason==='scheduled'?'אוטומטי':row.reason==='manual'?'ידני':'גיבוי לפני פעולה')+
+      ' · '+(({scheduled:'אוטומטי',manual:'ידני','drive-scheduled':'Drive אוטומטי','drive-manual':'Drive ידני','drive-before-update':'Drive לפני עדכון','drive-import':'ייבוא מ־Drive'})[row.reason]||'גיבוי לפני פעולה')+
       ' · '+row.items+' שורות';
     list.append(opt);
    }
