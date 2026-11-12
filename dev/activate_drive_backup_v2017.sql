@@ -22,8 +22,8 @@ BEGIN
  PERFORM pos_private.drive_backup_tick();
  IF NOT EXISTS(SELECT 1 FROM pos_private.drive_backup_jobs j
  JOIN pos_private.drive_backup_connection c ON c.id=1 AND c.generation=j.generation
- WHERE c.encrypted_refresh_token IS NOT NULL AND j.attempts<3
- AND ((j.status IN ('queued','retry') AND j.next_at<=now()) OR (j.status='running' AND j.lease_until<=now())))
+ WHERE c.encrypted_refresh_token IS NOT NULL
+ AND ((j.attempts<3 AND j.status IN ('queued','retry') AND j.next_at<=now()) OR (j.status='running' AND j.lease_until<=now())))
  THEN RETURN; END IF;
  SELECT decrypted_secret INTO url FROM vault.decrypted_secrets WHERE name='pos_drive_project_url';
  SELECT decrypted_secret INTO public_key FROM vault.decrypted_secrets WHERE name='pos_drive_public_key';
