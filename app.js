@@ -907,7 +907,7 @@ function closeNavigationMenu(restoreFocus=true){
  if(restoreFocus&&!el('cloudUserBar').classList.contains('hidden'))el('navigationGearBtn').focus();
 }
 function navigateFromMenu(page){
- const allowed=['posPage','managePage','reportsPage','systemPage'];
+ const allowed=['posPage','managePage','reportsPage','systemPage'];if(RemotePos.authenticated&&RemotePos.employee?.is_owner===true)allowed.push('jukeboxPage');
  if(!allowed.includes(page))return;
  const tab=document.querySelector('.tab[data-page="'+page+'"]');
  if(!tab)return;
