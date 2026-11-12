@@ -18,6 +18,7 @@ const config=()=>({clientId:env('POS_DRIVE_CLIENT_ID'),clientSecret:env('POS_DRI
 const opts={auth:{autoRefreshToken:false,persistSession:false,detectSessionInUrl:false}};
 const service=createClient(SUPABASE_URL,SERVICE_KEY,opts);
 const db=async(name,args)=>{const {data,error}=await service.rpc(name,args);if(error){
+ if(error.message==='Invalid or expired OAuth state')throw Object.assign(Error('oauth_state_expired'),{status:409});
  if(error.code==='42501')throw Object.assign(Error('owner_required'),{status:403});
  if(error.code==='23505')throw Object.assign(Error('duplicate_schedule'),{status:409});
  if(error.message==='Verified release artifact required'||error.message==='System package missing')throw Object.assign(Error('system_package_missing'),{status:409});
@@ -88,7 +89,13 @@ async function accessFor(c){
 async function google(token,url,options={},allow=[]){
  const u=new URL(url);if(u.protocol!=='https:'||!['www.googleapis.com','oauth2.googleapis.com'].includes(u.hostname))fail('invalid_google_url',502);
  const res=await fetch(u,{...options,headers:{Authorization:'Bearer '+token,...options.headers},signal:AbortSignal.timeout(options.method==='PUT'?65000:25000),redirect:'error'});
- if(!res.ok&&!allow.includes(res.status))fail(res.status===401?'google_reconnect_required':res.status===403?'google_permission_denied':res.status===429?'google_rate_limited':'google_api_failed',502);
+ if(!res.ok&&!allow.includes(res.status)){
+  const err=await res.json().catch(()=>({}));
+  const reason=String(err.error?.errors?.[0]?.reason||'');
+  const stage=u.pathname.startsWith('/upload/')?'upload':u.pathname.endsWith('/permissions')?'permissions':u.pathname.endsWith('/generateIds')?'generate_ids':u.pathname==='/drive/v3/files'?(options.method==='POST'?'create':'list'):'metadata';
+  console.error('pos-drive-backup google',stage,res.status,/^[a-zA-Z0-9_]{1,80}$/.test(reason)?reason:'unknown');
+  fail(res.status===401?'google_reconnect_required':res.status===429?'google_rate_limited':reason==='accessNotConfigured'||reason==='serviceDisabled'?'google_api_disabled':reason==='storageQuotaExceeded'?'google_storage_full':res.status===403?'google_permission_denied':res.status===404?'google_file_not_found':'google_'+stage+'_failed',502);
+ }
  return res;
 }
 const gj=async(token,path,options={},allow=[])=>{
@@ -107,25 +114,36 @@ async function privateFile(token,id,parent,folder=false){
   fail('drive_folder_not_private',403);
  return m;
 }
-async function rootId(token){
- const {data:r}=await gj(token,'/files/root?fields=id');
- if(!driveIdPattern.test(r.id))fail('drive_root_missing',502);return r.id;
-}
-async function findFolder(token,parent,marker,name){
+// drive.file does not require reading the user's My Drive root metadata.
+// Use the documented root alias only in queries, and omit parents on root creation.
+async function markedFolders(token,parent,marker){
  const q="'"+parent+"' in parents and trashed = false and mimeType = '"+FOLDER_MIME+"' and appProperties has { key='manaraBackupFolder' and value='"+marker+"' }";
  const {data:r}=await gj(token,'/files?'+new URLSearchParams({q,fields:'nextPageToken,files(id)',pageSize:'100',spaces:'drive'}));
  if(r.nextPageToken||!Array.isArray(r.files)||r.files.length>1)fail('drive_duplicate_folder',409);
- let id=r.files[0]?.id;
+ return r.files;
+}
+async function verifyRoot(token,id){
+ const rows=await markedFolders(token,'root','root');
+ if(rows.length!==1||rows[0].id!==id)fail('drive_folder_not_private',403);
+ const m=await metadata(token,id);
+ if(!Array.isArray(m.parents)||m.parents.length!==1||!driveIdPattern.test(m.parents[0]))fail('drive_folder_not_private',403);
+ await privateFile(token,id,m.parents[0],true);
+}
+async function findFolder(token,parent,marker,name){
+ const rows=await markedFolders(token,parent,marker);
+ let id=rows[0]?.id;
  if(!id){
-  const {data:f}=await gj(token,'/files?fields=id',{method:'POST',headers:jsonHeaders,
-   body:JSON.stringify({name,mimeType:FOLDER_MIME,parents:[parent],appProperties:{manaraBackupFolder:marker}})});
+  const body={name,mimeType:FOLDER_MIME,appProperties:{manaraBackupFolder:marker}};
+  if(parent!=='root')body.parents=[parent];
+  const {data:f}=await gj(token,'/files?fields=id',{method:'POST',headers:jsonHeaders,body:JSON.stringify(body)});
   id=f.id;
  }
- await privateFile(token,id,parent,true);return id;
+ if(parent==='root')await verifyRoot(token,id);
+ else await privateFile(token,id,parent,true);
+ return id;
 }
 async function assertFolders(token,c){
- const root=await rootId(token);
- await privateFile(token,c.root_folder,root,true);
+ await verifyRoot(token,c.root_folder);
  await privateFile(token,c.data_folder,c.root_folder,true);
  await privateFile(token,c.system_folder,c.root_folder,true);
 }
@@ -181,7 +199,7 @@ async function callback(req){
  const c=readyConfig();
  const t=await tokenRequest({grant_type:'authorization_code',code,code_verifier:o.verifier,redirect_uri:c.redirectUri});
  if(!t.refresh_token||!String(t.scope||'').split(' ').includes(SCOPE))fail('google_refresh_permission_missing',403);
- const root=await rootId(t.access_token),rootFolder=await findFolder(t.access_token,root,'root','PUB Manara POS');
+ const rootFolder=await findFolder(t.access_token,'root','root','PUB Manara POS');
  const dataFolder=await findFolder(t.access_token,rootFolder,'data','Backups');
  const systemFolder=await findFolder(t.access_token,rootFolder,'system','System Restore Points');
  // Only synthetic content is uploaded during connection validation.
@@ -190,7 +208,7 @@ async function callback(req){
  await uploadVerified(t.access_token,{id:testId,parent:dataFolder,name:'Connection_Test_'+testJob.slice(0,8)+'.json',mime:'application/json',bytes:testBytes,jobId:testJob,kind:'test'});
  await oauth('finish',{session_id:o.session_id,user_id:o.user_id,generation:o.generation,
   encryptedToken:await encryptToken(t.refresh_token,o.generation,c.tokenKey),rootFolder,dataFolder,systemFolder});
- return new Response('Google Drive connected and synthetic file verified. Return to PUB Manara POS and refresh the backup panel.',{headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
+ return new Response('החיבור ל-Google Drive הצליח וקובץ הבדיקה אומת. חזור לקופה ולחץ על רענן מצב.',{headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
 }
 async function buildRelease(version,commit){
  if(!/^\d+\.\d+\.\d+$/.test(version)||!/^[a-f0-9]{40}$/.test(commit))fail('invalid_release');
@@ -375,7 +393,10 @@ Deno.serve(async req=>{
   const status=Number(e?.status)||500,error=safeError(e);
   // Never log credentials, tokens, response bodies, backup contents or URLs with OAuth codes.
   if(status>=500)console.error('pos-drive-backup',error);
-  if(req.method==='GET')return new Response('Google Drive connection failed. Return to POS and retry after checking configuration. ('+error+')',{status,headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
+  if(req.method==='GET'){
+   const messages={oauth_state_expired:'קישור האימות כבר נוצל או פג תוקף. חזור לקופה ולחץ שוב על חבר Google Drive כדי ליצור קישור חדש.',google_authorization_cancelled:'החיבור לא הושלם. התחל חיבור חדש מתוך הקופה.',owner_required:'הרשאת הבעלים אינה פעילה. חזור לקופה והתחבר מחדש לניהול מערכת.',google_api_disabled:'Google Drive API אינו מופעל בפרויקט Google Cloud.',google_permission_denied:'Google סירבה להרשאת הגישה לקובץ או לתיקייה.',google_file_not_found:'Google לא מצאה קובץ או תיקייה שהקופה רשאית לגשת אליהם.',google_storage_full:'אין מספיק נפח אחסון בדרייב.',drive_folder_not_private:'תיקיית הגיבוי אינה פרטית או אינה במיקום הנדרש.',drive_duplicate_folder:'נמצאו כמה תיקיות גיבוי זהות. נדרשת בדיקה.',google_reconnect_required:'הרשאת Google פגה. התחבר מחדש.',google_list_failed:'נכשלה בדיקת תיקיות הגיבוי בדרייב.',google_create_failed:'נכשלה יצירת תיקיית גיבוי בדרייב.',google_metadata_failed:'נכשלה קריאת פרטי הקובץ בדרייב.',google_permissions_failed:'נכשלה בדיקת הרשאות התיקייה.',google_upload_failed:'נכשלה העלאת קובץ הבדיקה.'};
+   return new Response((messages[error]||'החיבור לדרייב נכשל. חזור לקופה והתחל חיבור חדש.')+' ('+error+')',{status,headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
+  }
   return answer(req,{error},status);
  }
 });
