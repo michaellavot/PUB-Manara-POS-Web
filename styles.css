@@ -1338,3 +1338,19 @@ body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
  #productDetailContent .product-detail-actions{grid-template-columns:minmax(0,1fr)}
  #productDetailContent #productDetailDelete{grid-column:auto}
 }
+
+/* V2.0.17 Drive backup controls — same copper / charcoal palette as the POS. */
+#driveBackupSection .panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#driveBackupSection h4{margin:16px 0 6px}
+.drive-schedule-list,.drive-history-list{display:grid;gap:10px;margin:10px 0;min-width:0}
+.drive-schedule-row,.drive-job{border:1px solid rgba(190,134,80,.26);border-radius:12px;background:rgba(0,0,0,.20);padding:12px;display:grid;gap:9px;min-width:0}
+.drive-schedule-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:end}
+.drive-schedule-fields label{display:flex;flex-direction:column;gap:5px;min-width:0}
+.drive-schedule-fields .field{width:100%;min-width:0;box-sizing:border-box}
+.drive-schedule-fields .pos-backup-toggle{flex-direction:row;align-items:center;grid-column:1/-1}
+#driveBackupSection .pos-backup-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#driveBackupSection .pos-backup-actions .button{flex:1 1 135px;text-align:center;min-width:0}
+#driveBackupSection a.button{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+#driveBackupSection .drive-job p{margin:0;overflow-wrap:anywhere}
+#driveRestoreProofModal{z-index:2700}
+@media(max-width:640px){.drive-schedule-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.drive-schedule-fields label:nth-child(3){grid-column:1/-1}#driveBackupSection .pos-backup-actions .button{flex-basis:100%}}
