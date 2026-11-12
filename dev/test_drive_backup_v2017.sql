@@ -112,7 +112,7 @@ BEGIN
  PERFORM manara_v2017_test_public.pos_drive_worker_v2017('reserve',b||'{"kind":"system","fileId":"demo-system-file"}');
  PERFORM manara_v2017_test_public.pos_drive_worker_v2017('verified',b||jsonb_build_object('kind','system','fileId','demo-system-file','sha256',repeat('d',64)));
  PERFORM manara_v2017_test_public.pos_drive_worker_v2017('complete',b);
- IF NOT EXISTS(SELECT 1 FROM manara_v2017_test_private.drive_backup_jobs WHERE id=(j->>'id')::uuid AND status='succeeded' AND snapshot_text IS NULL) THEN RAISE EXCEPTION 'success'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM manara_v2017_test_private.drive_backup_jobs q JOIN manara_v2017_test_private.pos_backup_snapshots b ON b.id=q.snapshot_id WHERE q.id=(j->>'id')::uuid AND q.status='succeeded' AND b.reason='drive-scheduled' AND b.transaction_count=1) THEN RAISE EXCEPTION 'success'; END IF;
  INSERT INTO manara_v2017_checks VALUES('both files must verify before success');
  FOR n IN 1..3 LOOP
   j:=(manara_v2017_test_public.pos_drive_worker_v2017('claim','{}')->'job');
