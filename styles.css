@@ -1398,3 +1398,33 @@ body.desktop-hero-controls #desktopHeroGear .jukebox-gear{width:43px;min-width:4
 .jukebox-sale-dialog .button.primary{width:100%;margin-top:12px}
 .jukebox-sale-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid #5a4330}
 .jukebox-search-form{display:grid;gap:10px}.jukebox-search-form .field{width:100%}.jukebox-search-form .inline-form{display:flex;gap:8px}.jukebox-search-form .inline-form .field{flex:1;min-width:0}
+
+/* V2.0.21: jukebox operator console. Existing shared POS wood and copper theme. */
+.jukebox-console{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:12px;align-items:start;padding-bottom:18px}
+.jukebox-console .jukebox-panel{min-width:0;display:flex;flex-direction:column;gap:10px}
+.jukebox-console .panel-head{margin:0;gap:8px;flex-wrap:wrap}
+.jukebox-console .panel-head h2{font-size:clamp(17px,1.6vw,23px);margin:0;color:#f2d5a7}
+.jukebox-sale-panel{position:relative}
+.jukebox-selected-customer{font-weight:700;color:#f2d5a7;min-height:24px;margin:0}
+.jukebox-customer-results{max-height:180px;overflow:auto;display:grid;gap:4px;border:1px solid #8c6945;padding:6px;border-radius:10px;background:#191d1d}
+.jukebox-customer-results .button{text-align:right;justify-content:flex-start;min-height:38px}
+.jukebox-now{font-size:clamp(18px,2vw,26px);color:#f2d5a7;overflow-wrap:anywhere}
+.jukebox-transport,.jukebox-background-modes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.jukebox-transport .button,.jukebox-background-modes .button{white-space:normal;min-height:44px;padding:7px 4px;line-height:1.25}
+.jukebox-background-modes .button[aria-pressed=true]{border-color:#e2bc86;background:#62462e;color:#fff4df}
+.jukebox-queue-panel{grid-column:1/-1}
+.jukebox-background-panel{grid-column:1/-1}
+.jukebox-table-wrap{overflow:auto;max-height:380px;border-radius:9px}
+.jukebox-table{width:100%;border-collapse:collapse;min-width:470px}
+.jukebox-table th{position:sticky;top:0;background:#2b211a;z-index:1}
+.jukebox-table td,.jukebox-table th{text-align:right;padding:10px 8px}
+.jukebox-table .jukebox-actions{gap:5px}
+.jukebox-table .button{min-height:32px;padding:5px 9px;font-size:13px}
+.jukebox-status-pill{display:inline-block;border:1px solid #8d7050;border-radius:20px;padding:4px 8px;white-space:nowrap;color:#ebd1ae}
+.jukebox-status-pill[data-state=playing]{border-color:#5e9b77;background:#263a2a;color:#c4efd4}
+.jukebox-status-pill[data-state=failed],.jukebox-status-pill[data-state=held]{border-color:#b2844b;background:#43301e}
+.jukebox-history summary{cursor:pointer;color:#d9b58d;padding:8px 0}
+.jukebox-advanced{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.jukebox-advanced .field{max-width:100%}
+.jukebox-issued{font-size:30px;text-align:center;letter-spacing:5px;color:#f2d5a7}
+@media(max-width:800px){.jukebox-console,.jukebox-advanced{grid-template-columns:1fr}.jukebox-background-modes{grid-template-columns:repeat(2,minmax(0,1fr))}.jukebox-transport{grid-template-columns:repeat(4,minmax(0,1fr))}.jukebox-console .panel-head{align-items:center}}

@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=0.9.29">
   <link rel="icon" href="assets/app_icon_192.png?v=0.9.29">
   <link rel="apple-touch-icon" href="assets/app_icon_192.png?v=0.9.29">
-  <link rel="stylesheet" href="styles.css?v=2.0.20">
+  <link rel="stylesheet" href="styles.css?v=2.0.21">
 <style id="startupScreenCriticalStyle">
 /* Startup must be usable before styles.css and scripts have loaded. */
 #startupScreen{
@@ -296,64 +296,96 @@
  <div id="archiveImportPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא הארכיון ממחשב הפאב המקורי</h2></div>
         <p class="small-note" id="archiveImportNotice">העבר את הנתונים רק לאחר פתיחת הקופה במחשב הפאב המקורי. לפני ההעברה ירד קובץ גיבוי.</p>
         <button type="button" class="button primary" id="cloudImportFromSystemBtn">גבה וייבא ארכיון מהמחשב הזה</button>
-      </div><div id="ownerBackupPanel" class="panel hidden"><div class="panel-head"><h2>גיבוי ושחזור</h2></div><p id="remoteSystemNotice">העותק המקומי נשאר במכשיר. אחרי מעבר לענן, כל הקופות משתמשות במסד המשותף.</p><div class="stack-buttons"><button id="downloadBackup" class="button primary">הורד גיבוי JSON</button><label class="file-input">שחזור גיבוי מלא (מחליף נתונים) <input id="restoreFile" type="file" accept=".json,application/json"></label></div><p class="small-note">הורד גיבוי בתחילת ובסיום משמרת. אין למחוק את נתוני הדפדפן לפני סיום העברת הארכיון.</p><p id="cloudSync" class="sync-msg"></p></div><div id="ownerLegacyPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא מהקופה הישנה</h2></div><p>ייבוא CSV מהארכיון הישן או JSON שנוצר מקובץ SQLite באמצעות הכלי המצורף. חשבונות כרדיט ישנים מסוג C0001 או C-0001 אינם מיובאים.</p><label class="file-input">בחר ארכיון CSV או JSON <input id="legacyInput" type="file" accept=".csv,.json,text/csv,application/json"></label><div class="import-preview hidden" id="importPreview"></div><div id="legacyNotice" class="small-note"></div></div><div class="panel"><div class="system-meta-controls"><small id="versionLabel">V2.0.20</small><button id="updateBadge" class="update-badge hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button><span class="chip" id="storageLabel">מתחבר לשרת…</span><button id="trialToggleBtn" type="button" class="button mode-switch hidden" aria-pressed="false">תחזוקה: כבוי</button><button id="installBtn" type="button" class="button install hidden">התקן אפליקציה</button></div><button type="button" id="cloudSignOut" class="button secondary system-switch-employee">החלף עובד</button><button id="employeeSignOutBtn" type="button" class="button secondary system-switch-employee" title="יציאת עובד ונעילת הקופה" aria-label="יציאת עובד">יציאת עובד</button><button id="installBtnSystem" class="button primary" type="button">התקן כאפליקציה</button><button id="deviceLayoutBtn" class="button secondary" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="deviceLayoutDialog">מצב תצוגה</button><button id="archiveManageBtn" class="button primary hidden" type="button">ניהול ארכיון</button><div class="updater-system"><strong>שיתוף האפליקציה</strong><p class="small-note">קוד QR לסריקה ולהתקנת הקופה ממכשיר נוסף.</p><button id="shareAppQrBtn" class="button secondary" type="button">▦ שיתוף האפליקציה</button></div><div class="updater-system"><strong>עדכוני תוכנה</strong><p class="small-note">גרסה מותקנת: <span id="installedVersion">V2.0.20</span> · <span id="updateStatus">אין עדכון ידוע</span></p><button id="checkUpdatesBtn" class="button secondary" type="button">בדוק עדכונים</button></div></div></div></section>
+      </div><div id="ownerBackupPanel" class="panel hidden"><div class="panel-head"><h2>גיבוי ושחזור</h2></div><p id="remoteSystemNotice">העותק המקומי נשאר במכשיר. אחרי מעבר לענן, כל הקופות משתמשות במסד המשותף.</p><div class="stack-buttons"><button id="downloadBackup" class="button primary">הורד גיבוי JSON</button><label class="file-input">שחזור גיבוי מלא (מחליף נתונים) <input id="restoreFile" type="file" accept=".json,application/json"></label></div><p class="small-note">הורד גיבוי בתחילת ובסיום משמרת. אין למחוק את נתוני הדפדפן לפני סיום העברת הארכיון.</p><p id="cloudSync" class="sync-msg"></p></div><div id="ownerLegacyPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא מהקופה הישנה</h2></div><p>ייבוא CSV מהארכיון הישן או JSON שנוצר מקובץ SQLite באמצעות הכלי המצורף. חשבונות כרדיט ישנים מסוג C0001 או C-0001 אינם מיובאים.</p><label class="file-input">בחר ארכיון CSV או JSON <input id="legacyInput" type="file" accept=".csv,.json,text/csv,application/json"></label><div class="import-preview hidden" id="importPreview"></div><div id="legacyNotice" class="small-note"></div></div><div class="panel"><div class="system-meta-controls"><small id="versionLabel">V2.0.21</small><button id="updateBadge" class="update-badge hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button><span class="chip" id="storageLabel">מתחבר לשרת…</span><button id="trialToggleBtn" type="button" class="button mode-switch hidden" aria-pressed="false">תחזוקה: כבוי</button><button id="installBtn" type="button" class="button install hidden">התקן אפליקציה</button></div><button type="button" id="cloudSignOut" class="button secondary system-switch-employee">החלף עובד</button><button id="employeeSignOutBtn" type="button" class="button secondary system-switch-employee" title="יציאת עובד ונעילת הקופה" aria-label="יציאת עובד">יציאת עובד</button><button id="installBtnSystem" class="button primary" type="button">התקן כאפליקציה</button><button id="deviceLayoutBtn" class="button secondary" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="deviceLayoutDialog">מצב תצוגה</button><button id="archiveManageBtn" class="button primary hidden" type="button">ניהול ארכיון</button><div class="updater-system"><strong>שיתוף האפליקציה</strong><p class="small-note">קוד QR לסריקה ולהתקנת הקופה ממכשיר נוסף.</p><button id="shareAppQrBtn" class="button secondary" type="button">▦ שיתוף האפליקציה</button></div><div class="updater-system"><strong>עדכוני תוכנה</strong><p class="small-note">גרסה מותקנת: <span id="installedVersion">V2.0.21</span> · <span id="updateStatus">אין עדכון ידוע</span></p><button id="checkUpdatesBtn" class="button secondary" type="button">בדוק עדכונים</button></div></div></div></section>
 
-      <dialog id="jukeboxSaleDialog" class="panel jukebox-sale-dialog" aria-labelledby="jukeboxSaleTitle">
-        <div class="panel-head"><h2 id="jukeboxSaleTitle">♫ חיוב שיר בג׳וקבוקס</h2><button id="jukeboxSaleClose" type="button" class="button secondary" aria-label="סגור">✕</button></div>
-        <div class="jukebox-sale-row"><span>לקוח נבחר</span><strong id="jukeboxSaleCustomer">—</strong></div>
-        <div class="jukebox-sale-row"><span>מחיר שיר</span><strong id="jukeboxSalePrice">—</strong></div>
-        <button id="jukeboxSaleConfirm" class="button primary" type="button" disabled>חייב לקוח וצור קוד</button>
-        <p id="jukeboxSaleNotice" class="small-note" role="status">תצוגת ממשק בלבד — חיוב ויצירת קוד טרם הופעלו.</p>
-      </dialog>
       <section id="jukeboxPage" class="page hidden" aria-labelledby="jukeboxTitle">
         <div class="panel jukebox-heading">
-          <div class="panel-head"><h2 id="jukeboxTitle">ניהול ג׳וקבוקס</h2><div class="jukebox-actions"><button id="jukeboxBackSystem" class="button secondary" type="button">חזרה לניהול מערכת</button><button id="jukeboxBackPos" class="button primary" type="button">חזרה לקופה</button></div></div>
-          <div class="jukebox-status-bar"><span id="jukeboxConnection" class="chip">ממתין לחיבור</span><span class="small-note">ממשק ניהול בלבד — חיובים וקודי שירים דרך הקופה עדיין אינם פעילים.</span><button id="jukeboxRefreshBtn" class="button secondary" type="button">רענן מצב</button></div>
+          <div class="panel-head"><h2 id="jukeboxTitle">♫ PUB MANARA · ג׳וקבוקס</h2><div class="jukebox-actions"><button id="jukeboxAdvancedBtn" class="button secondary" type="button" aria-expanded="false" aria-controls="jukeboxAdvanced">⚙ ניהול מתקדם</button><button id="jukeboxBackPos" class="button primary" type="button">חזרה לקופה</button></div></div>
+          <div class="jukebox-status-bar"><span id="jukeboxConnection" class="chip">ממתין לחיבור</span><span id="jukeboxMode" class="chip"></span><span id="jukeboxDeviceStatus" class="small-note"></span><button id="jukeboxRefreshBtn" class="button secondary" type="button">רענן מצב</button></div>
           <p id="jukeboxMessage" class="status" role="status" aria-live="polite"></p>
         </div>
-        <div id="jukeboxContent" class="jukebox-grid hidden">
-          <section class="panel jukebox-panel">
-            <div class="panel-head"><h2>הגדרות הנגן</h2></div>
-            <form id="jukeboxSettingsForm" class="jukebox-settings">
-              <label class="jukebox-toggle"><input type="checkbox" id="jukeboxEnabled"> ג׳וקבוקס פעיל</label>
-              <label class="jukebox-toggle"><input type="checkbox" id="jukeboxIsOpen"> פתוח לבחירת שירים</label>
-              <label class="jukebox-toggle"><input type="checkbox" id="jukeboxPaused"> נגן בהשהיה</label>
-              <label class="jukebox-price-label">מחיר עתידי לשיר (₪)<input class="field" id="jukeboxPrice" type="number" min="0" max="10000" step="0.01" inputmode="decimal" required></label>
-              <button class="button primary" data-jb-action type="submit">שמור הגדרות</button>
-            </form>
-            <p class="small-note">הגדרות אלו שייכות לג׳וקבוקס. שינוי מחיר כאן אינו מחייב לקוחות בקופה.</p>
+        <div id="jukeboxContent" class="jukebox-console hidden">
+          <section class="panel jukebox-panel jukebox-sale-panel">
+            <div class="panel-head"><h2>לקוח וחיוב</h2><span id="jukeboxSalePrice" class="chip">—</span></div>
+            <label for="jukeboxCustomerSearch">חפש ובחר לקוח</label>
+            <input id="jukeboxCustomerSearch" class="field" type="search" placeholder="חיפוש לפי שם..." autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="jukeboxCustomerResults" aria-expanded="false">
+            <div id="jukeboxCustomerResults" class="jukebox-customer-results hidden" role="listbox"></div>
+            <p id="jukeboxSaleCustomer" class="jukebox-selected-customer">לא נבחר לקוח</p>
+            <button id="jukeboxSaleConfirm" class="button primary" type="button" disabled>צור קוד לשיר · חיוב לאחר ניגון</button>
+            <p id="jukeboxSaleNotice" class="small-note" role="status">הנפקת קודים והחיוב ממתינים לחיבור המאומת לשרת.</p>
+            <div id="jukeboxIssuedCode" class="jukebox-issued hidden" role="status"></div>
           </section>
-          <section class="panel jukebox-panel">
-            <div class="panel-head"><h2>צימוד טאבלט</h2></div>
-            <div class="jukebox-actions"><button id="jukeboxPairBtn" class="button primary" data-jb-action type="button">הפק קוד צימוד לטאבלט</button><button id="jukeboxUnlockBtn" class="button secondary" data-jb-action type="button">בטל נעילת נגן</button><button id="jukeboxRevokeBtn" class="button warning" data-jb-action type="button">בטל צימוד</button></div>
-            <div id="jukeboxPairBox" class="jukebox-pair-box hidden"><p class="small-note">אסימון צימוד זמני, תקף לחמש דקות. הוא אינו קוד לבחירת שיר.</p><input class="field" id="jukeboxPairToken" readonly dir="ltr" aria-label="אסימון צימוד"><button class="button secondary" id="jukeboxCopyPair" type="button">העתק</button></div>
-            <div id="jukeboxDevices" class="jukebox-list"></div>
+          <section class="panel jukebox-panel jukebox-player-panel">
+            <div class="panel-head"><h2>מתנגן עכשיו</h2><span id="jukeboxPlayerMode" class="chip">—</span></div>
+            <strong id="jukeboxNow" class="jukebox-now">ממתין לנתוני הנגן</strong>
+            <p id="jukeboxNowDetail" class="small-note"></p>
+            <div class="jukebox-transport">
+              <button id="jukeboxPrevBtn" class="button secondary" type="button" disabled>⏮ הקודם</button>
+              <button id="jukeboxPauseBtn" class="button primary" type="button" data-jb-action>⏸ השהה</button>
+              <button id="jukeboxNextBtn" class="button secondary" type="button" disabled>⏭ הבא</button>
+              <button id="jukeboxStopBtn" class="button secondary" type="button" disabled>⏹ עצור</button>
+            </div>
+            <p id="jukeboxTransportNote" class="small-note">הבא, הקודם ועצור דורשים עדכון נגן. השהיה והמשך זמינים.</p>
           </section>
-          <section class="panel jukebox-panel jukebox-wide">
-            <div class="panel-head"><h2>חיפוש שירים ביוטיוב</h2></div>
-            <form id="jukeboxSearchForm" class="jukebox-search-form">
-              <label class="small-note" id="jukeboxSearchKeyLabel">מפתח YouTube מוגבל לאתר (רק אם לא הוגדר כבר)<input id="jukeboxSearchKey" class="field" type="password" autocomplete="off" placeholder="מפתח API של YouTube"></label>
-              <div class="inline-form"><input id="jukeboxSearchQuery" class="field" type="search" maxlength="120" placeholder="חפש שיר או אמן..." required><button class="button primary" type="submit" data-jb-action>חפש</button></div>
-              <label>הוסף לרשימת רקע <select id="jukeboxSearchPlaylist" class="field"></select></label>
-            </form>
-            <p id="jukeboxSearchStatus" class="small-note" role="status"></p><div id="jukeboxSearchResults" class="jukebox-list"></div>
+          <section class="panel jukebox-panel jukebox-background-panel">
+            <div class="panel-head"><h2>מוזיקת רקע</h2></div>
+            <div class="jukebox-background-modes" role="group" aria-label="סוג מוזיקת רקע">
+              <button id="jukeboxModeSong" class="button secondary" type="button" aria-pressed="true">♪ שיר</button>
+              <button id="jukeboxModeMix" class="button secondary" type="button" aria-pressed="false">⤨ מיקס</button>
+              <button id="jukeboxModePub" class="button secondary" type="button" aria-pressed="false">☷ פלייליסטים של הפאב</button>
+              <button id="jukeboxModePersonal" class="button secondary" type="button" aria-pressed="false">♙ הפלייליסטים שלי</button>
+            </div>
+            <div id="jukeboxSearchPanel">
+              <form id="jukeboxSearchForm" class="jukebox-search-form">
+                <div class="inline-form"><input id="jukeboxSearchQuery" class="field" type="search" maxlength="120" placeholder="חפש שיר או אמן ביוטיוב..." required><button class="button primary" type="submit" data-jb-action>חפש</button></div>
+                <label>הוסף לרשימת רקע <select id="jukeboxSearchPlaylist" class="field"></select></label>
+              </form>
+              <p id="jukeboxSearchStatus" class="small-note" role="status"></p><div id="jukeboxSearchResults" class="jukebox-list"></div>
+            </div>
+            <div id="jukeboxLibraryPanel" class="hidden">
+              <div class="panel-head"><h3 id="jukeboxLibraryTitle">פלייליסטים של הפאב</h3><span id="jukeboxPlaylistCount" class="chip">0 רשימות</span></div>
+              <form id="jukeboxCreatePlaylist" class="inline-form jukebox-create"><input class="field" id="jukeboxNewName" placeholder="שם רשימה חדשה" aria-label="שם רשימה חדשה" maxlength="50" required><button class="button primary" data-jb-action type="submit">צור רשימה</button></form>
+              <p id="jukeboxLibraryNote" class="small-note"></p>
+              <div id="jukeboxPlaylists" class="jukebox-list"></div>
+              <form id="jukeboxEditPlaylist" class="jukebox-editor hidden">
+                <h3 id="jukeboxEditTitle">עריכת רשימת רקע</h3>
+                <label>שם הרשימה<input class="field" id="jukeboxEditName" maxlength="50" required></label>
+                <p class="small-note">כל שורה: מזהה סרטון YouTube (11 תווים) | שם השיר | regular או mix</p>
+                <textarea class="field" id="jukeboxEditItems" rows="8" dir="ltr" spellcheck="false" aria-label="שירי רשימת הרקע"></textarea>
+                <div class="jukebox-actions"><button class="button primary" data-jb-action type="submit">שמור רשימה</button><button class="button secondary" id="jukeboxCloseEdit" type="button">בטל עריכה</button></div>
+              </form>
+            </div>
           </section>
-          <section class="panel jukebox-panel jukebox-wide">
-            <div class="panel-head"><h2>רשימות מוזיקת רקע</h2><span id="jukeboxPlaylistCount" class="chip">0 רשימות</span></div>
-            <form id="jukeboxCreatePlaylist" class="inline-form jukebox-create"><input class="field" id="jukeboxNewName" placeholder="שם רשימה חדשה" aria-label="שם רשימה חדשה" maxlength="100" required><button class="button primary" data-jb-action type="submit">צור רשימה</button></form>
-            <div id="jukeboxPlaylists" class="jukebox-list"></div>
-            <form id="jukeboxEditPlaylist" class="jukebox-editor hidden">
-              <h3 id="jukeboxEditTitle">עריכת רשימת רקע</h3>
-              <label>שם הרשימה<input class="field" id="jukeboxEditName" maxlength="100" required></label>
-              <p class="small-note">כל שורה: מזהה סרטון YouTube (11 תווים) | שם השיר | regular או mix</p>
-              <textarea class="field" id="jukeboxEditItems" rows="8" dir="ltr" spellcheck="false" aria-label="שירי רשימת הרקע" placeholder="dQw4w9WgXcQ | Song title | regular"></textarea>
-              <div class="jukebox-actions"><button class="button primary" data-jb-action type="submit">שמור רשימה</button><button class="button secondary" id="jukeboxCloseEdit" type="button">בטל עריכה</button></div>
-            </form>
-          </section>
-          <section class="panel jukebox-panel jukebox-wide">
-            <div class="panel-head"><h2>תור השירים</h2><span id="jukeboxQueueCount" class="chip">0 בתור</span></div>
-            <div id="jukeboxQueue" class="jukebox-list"></div>
+          <section class="panel jukebox-panel jukebox-queue-panel">
+            <div class="panel-head"><h2>תור שירי לקוחות</h2><span id="jukeboxQueueCount" class="chip">0 בתור</span></div>
+            <div class="jukebox-table-wrap"><table class="data-table jukebox-table"><thead><tr><th>שיר</th><th>סטטוס</th><th>פעולות</th></tr></thead><tbody id="jukeboxQueue"></tbody></table></div>
             <p id="jukeboxCodeSummary" class="small-note"></p>
+            <details class="jukebox-history"><summary>היסטוריית תור</summary><div class="jukebox-table-wrap"><table class="data-table jukebox-table"><thead><tr><th>שיר</th><th>סטטוס</th><th>פעולות</th></tr></thead><tbody id="jukeboxHistory"></tbody></table></div></details>
+          </section>
+          <section id="jukeboxAdvanced" class="jukebox-advanced hidden" aria-label="ניהול מתקדם">
+            <div class="panel jukebox-panel">
+              <div class="panel-head"><h2>⚙ הגדרות נגן ומחיר</h2></div>
+              <form id="jukeboxSettingsForm" class="jukebox-settings">
+                <label class="jukebox-toggle"><input type="checkbox" id="jukeboxEnabled"> ג׳וקבוקס פעיל</label>
+                <label class="jukebox-toggle"><input type="checkbox" id="jukeboxIsOpen"> פתוח לבחירת שירים</label>
+                <label class="jukebox-toggle"><input type="checkbox" id="jukeboxPaused"> נגן בהשהיה</label>
+                <label class="jukebox-price-label">מחיר לשיר (₪)<input class="field" id="jukeboxPrice" type="number" min="0" max="10000" step="0.01" inputmode="decimal" required></label>
+                <button class="button primary" data-jb-action type="submit">שמור הגדרות</button>
+              </form>
+            </div>
+            <div class="panel jukebox-panel">
+              <div class="panel-head"><h2>YouTube API</h2></div>
+              <label>מפתח מוגבל לאתר<input id="jukeboxSearchKey" class="field" type="password" autocomplete="off" placeholder="מפתח API של YouTube"></label>
+              <div class="jukebox-actions"><button id="jukeboxSaveKey" class="button primary" type="button">שמור במחשב זה</button><button id="jukeboxForgetKey" class="button secondary" type="button">הסר מהמחשב</button></div>
+              <p id="jukeboxKeyStatus" class="small-note" role="status">המפתח נשמר במכשיר זה בלבד. סנכרון מאובטח לשרת ולטאבלט אינו פעיל.</p>
+            </div>
+            <div class="panel jukebox-panel">
+              <div class="panel-head"><h2>צימוד טאבלט</h2></div>
+              <div class="jukebox-actions"><button id="jukeboxPairBtn" class="button primary" data-jb-action type="button">הפק קוד צימוד לטאבלט</button><button id="jukeboxUnlockBtn" class="button secondary" data-jb-action type="button">בטל נעילת נגן</button><button id="jukeboxRevokeBtn" class="button warning" data-jb-action type="button">בטל צימוד</button></div>
+              <div id="jukeboxPairBox" class="jukebox-pair-box hidden"><p class="small-note">אסימון צימוד זמני, תקף לחמש דקות. אינו קוד לבחירת שיר.</p><input class="field" id="jukeboxPairToken" readonly dir="ltr" aria-label="אסימון צימוד"><button class="button secondary" id="jukeboxCopyPair" type="button">העתק</button></div>
+              <div id="jukeboxDevices" class="jukebox-list"></div>
+            </div>
+            <div class="panel jukebox-panel"><h2>ברירת מחדל והרשאות</h2><p class="small-note">רשימת הרקע הפעילה נבחרת במסך הראשי. כרגע כל הג׳וקבוקס מוגבל לבעלים בלבד. הרשאות עובדים, מיקס גיבוי אוטומטי וחיובים אמיתיים טרם הופעלו.</p><button id="jukeboxBackSystem" class="button secondary" type="button">ניהול מערכת הקופה</button></div>
           </section>
         </div>
       </section>
@@ -674,12 +706,12 @@
       <p id="driveRestoreProofMessage" class="small-note" role="status"></p>
     </div>
   </div>
-  <script src="db.js"></script><script src="remote.js?v=2.0.20"></script><script src="xlsx.js"></script><script src="updater.js?v=2.0.20"></script><script src="archive_admin.js?v=2.0.20"></script><script src="legacy_db_import.js?v=2.0.20"></script>
-<script src="backup_manager.js?v=2.0.20"></script>
-<script src="drive_backup.js?v=2.0.20"></script>
-<script src="qrcode.min.js?v=2.0.20"></script>
-<script src="draft_guard.js?v=2.0.20"></script>
-<script src="report_widgets.js?v=2.0.20"></script>
-<script src="jukebox_admin.js?v=2.0.20"></script>
-<script src="app.js?v=2.0.20"></script>
+  <script src="db.js"></script><script src="remote.js?v=2.0.21"></script><script src="xlsx.js"></script><script src="updater.js?v=2.0.21"></script><script src="archive_admin.js?v=2.0.21"></script><script src="legacy_db_import.js?v=2.0.21"></script>
+<script src="backup_manager.js?v=2.0.21"></script>
+<script src="drive_backup.js?v=2.0.21"></script>
+<script src="qrcode.min.js?v=2.0.21"></script>
+<script src="draft_guard.js?v=2.0.21"></script>
+<script src="report_widgets.js?v=2.0.21"></script>
+<script src="jukebox_admin.js?v=2.0.21"></script>
+<script src="app.js?v=2.0.21"></script>
 </body></html>
