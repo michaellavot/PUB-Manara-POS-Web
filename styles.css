@@ -1430,3 +1430,32 @@ body.desktop-hero-controls #desktopHeroGear .jukebox-gear{width:43px;min-width:4
 @media(max-width:800px){.jukebox-console,.jukebox-advanced{grid-template-columns:1fr}.jukebox-background-modes{grid-template-columns:repeat(2,minmax(0,1fr))}.jukebox-transport{grid-template-columns:repeat(4,minmax(0,1fr))}.jukebox-console .panel-head{align-items:center}}
 
 .jukebox-progress{width:100%;height:9px;accent-color:#c89860;border-radius:8px}
+
+/* V2.0.24 — simplified Jukebox console; primary POS is unchanged. */
+.global-control-strip.not-pos-page #employeeChargeToggle{display:none!important}
+#jukeboxPage .jukebox-compact-head{display:flex;align-items:center;justify-content:space-between;min-height:44px;padding:7px 12px;gap:8px}
+#jukeboxPage .jukebox-pair-indicator{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:1px solid #566361;border-radius:50%;font-size:19px;font-weight:750;color:#d7c9b6}
+#jukeboxPage .jukebox-pair-indicator[data-state=paired]{color:#8ee1a7;border-color:#51946a;background:#1b372b}
+#jukeboxPage .jukebox-pair-indicator[data-state=unpaired]{color:#ff7979;border-color:#b65a59;background:#421f22}
+#jukeboxPage .jukebox-compact-gear{width:36px;height:36px;min-width:36px;min-height:36px;padding:0;font-size:23px;line-height:1}
+#jukeboxPage .jukebox-message:empty{display:none}
+#jukeboxPage .jukebox-message{margin:0;padding:5px 10px}
+#jukeboxPage .jukebox-customer-line{display:flex;align-items:center;gap:8px}
+#jukeboxPage .jukebox-customer-wrap{position:relative;flex:1;min-width:0}
+#jukeboxPage .jukebox-customer-wrap .desktop-customer-search{min-height:48px;height:48px;font-size:clamp(15px,1.6vw,19px)}
+#jukeboxPage .jukebox-customer-line .employee-charge-button{flex:0 1 auto;max-width:48%;white-space:normal}
+#jukeboxPage .jukebox-queue-open{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%}
+#jukeboxPage dialog{color:var(--text);background:linear-gradient(145deg,#1d2a30,#111a1f);border:1px solid #9e7950;border-radius:16px;padding:15px;box-sizing:border-box;max-height:88dvh;overflow:auto;margin:auto}
+#jukeboxPage dialog:not([open]){display:none}
+#jukeboxPage dialog::backdrop{background:#000b}
+#jukeboxPage .jukebox-queue-dialog{width:min(950px,calc(100vw - 22px));max-width:calc(100vw - 22px)}
+#jukeboxPage .jukebox-employee-dialog{width:min(430px,calc(100vw - 26px));max-width:calc(100vw - 26px)}
+#jukeboxPage .jukebox-queue-dialog .panel-head{margin-bottom:10px}
+#jukeboxPage .jukebox-queue-total{display:flex;align-items:center;justify-content:flex-end;gap:10px;font-size:14px;color:#d7be9b;padding:4px 0 10px}
+#jukeboxPage .jukebox-queue-total strong,#jukeboxPage .jukebox-time{font-variant-numeric:tabular-nums;white-space:nowrap;direction:ltr}
+#jukeboxPage .jukebox-table{min-width:590px}
+#jukeboxPage .jukebox-table-wrap{max-height:58dvh}
+#jukeboxPage .jukebox-icon-btn{min-width:34px;width:34px;min-height:34px;height:34px;padding:0;font-size:17px;display:inline-flex;align-items:center;justify-content:center}
+#jukeboxPage .jukebox-recovered{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;padding:12px;border:1px solid #9e7950;border-radius:10px;color:#f3d3a2}
+#jukeboxPage .jukebox-recovered strong{font-size:32px;letter-spacing:7px}
+@media(max-width:480px){#jukeboxPage .jukebox-customer-line .employee-charge-button{min-height:48px;font-size:13px}#jukeboxPage .jukebox-table{min-width:540px}#jukeboxPage .jukebox-compact-head{min-height:40px}}
