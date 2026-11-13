@@ -1224,6 +1224,18 @@ async function createCustomerReportQr(){
  }catch(error){message.textContent='שיתוף הדוח נכשל: '+error.message;}
  finally{btn.disabled=false;}
 }
+// Staging-only maintenance simulator. Never issues a playable code or touches POS transactions.
+function issueLocalJukeboxTestCode(){
+ const output=el('jukeboxTestCode');
+ if(!RemotePos.active||RemotePos.employee?.owner_terminal!==true||RemotePos.testMode!==true){if(output)output.textContent='נדרשת כניסת בעלים ומצב תחזוקה';return;}
+ try{RemotePos.maintenanceToken();}catch(error){if(output)output.textContent=error.message;return;}
+ const digits=new Uint32Array(1);crypto.getRandomValues(digits);
+ const code=String(digits[0]%10000).padStart(4,'0');
+ const record={code,createdAt:new Date().toISOString(),expiresAt:new Date(Date.now()+600000).toISOString(),kind:'local-staging-only'};
+ sessionStorage.setItem('manara_jukebox_staging_test_codes',JSON.stringify([record]));
+ if(output)output.textContent='קוד הדגמה מקומי: '+code+' — אינו תקף בנגן ואינו חיוב';
+}
+
 function renderPermissions(){
  fillEmployeeCreateCustomers();
  fillEmployeeChargeReportOptions();
@@ -1234,6 +1246,9 @@ function renderPermissions(){
  el('ownerAdminBox').classList.toggle('hidden',!ownerTerminal);
  const jbMaintenance=el('jukeboxMaintenanceStatus');
  if(jbMaintenance)jbMaintenance.textContent=RemotePos.testMode?'מצב תחזוקה פעיל בקופה — הנפקת קודי בדיקה תתאפשר רק לאחר חיבור מאובטח.':'מצב רגיל — הנפקת קודים מושבתת עד השלמת החיבור המאובטח.';
+ const jbTestControls=el('jukeboxTestControls');
+ if(jbTestControls)jbTestControls.classList.toggle('hidden',!(ownerTerminal&&RemotePos.testMode===true));
+ if(!RemotePos.testMode){sessionStorage.removeItem('manara_jukebox_staging_test_codes');const out=el('jukeboxTestCode');if(out)out.textContent='';}
  el('staffAdminBox').classList.toggle('hidden',!limitedAdmin);
  el('staffAdminContent').classList.toggle('hidden',!(limitedAdmin&&RemotePos.staffAdminUnlocked===true));
  el('staffAdminEntryBtn').classList.toggle('hidden',limitedAdmin&&RemotePos.staffAdminUnlocked===true);
@@ -1843,3 +1858,6 @@ async function init(){
 }
 
 init().catch(failStartup);
+
+// Jukebox staging owner-only test control.
+el('jukeboxTestIssueBtn')?.addEventListener('click',issueLocalJukeboxTestCode);
