@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.0.18';
+const APP_VERSION='2.0.19';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -937,7 +937,7 @@ function events(){
  window.addEventListener('beforeunload',event=>DraftGuard.beforeUnload(event));
  window.addEventListener('pagehide',()=>RemotePos.lockAdminOnPageHide());
  window.addEventListener('pageshow',event=>{if(event.persisted)location.reload();});
- on('deviceLayoutBtn','click',openLayoutDialog);on('deviceLayoutClose','click',closeLayoutDialog);on('deviceLayoutBackdrop','click',closeLayoutDialog);for(const btn of document.querySelectorAll('[data-layout-choice]'))btn.addEventListener('click',()=>saveLayoutMode(btn.dataset.layoutChoice));for(const b of document.querySelectorAll('.tab'))b.onclick=()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));if(b.dataset.page==='reportsPage'&&RemotePos.active){renderReport();renderEmployeeChargeReport();}if(b.dataset.page==='systemPage'&&RemotePos.active&&RemotePos.employee?.owner_terminal===true){BackupManager.refresh();DriveBackup.refresh(true);}el('globalControlStrip').classList.toggle('not-pos-page',b.dataset.page!=='posPage');};on('navigationGearBtn','click',openNavigationMenu);on('navigationMenuClose','click',()=>closeNavigationMenu());on('navigationMenuBackdrop','click',()=>closeNavigationMenu());for(const b of document.querySelectorAll('[data-nav-page]'))b.addEventListener('click',()=>navigateFromMenu(b.dataset.navPage));on('customerInput','click',toggleCustomerDropdown);
+ on('deviceLayoutBtn','click',openLayoutDialog);on('deviceLayoutClose','click',closeLayoutDialog);on('deviceLayoutBackdrop','click',closeLayoutDialog);for(const btn of document.querySelectorAll('[data-layout-choice]'))btn.addEventListener('click',()=>saveLayoutMode(btn.dataset.layoutChoice));for(const b of document.querySelectorAll('.tab'))b.onclick=()=>{if(b.dataset.page==='jukeboxPage'&&!JukeboxAdmin.allowed())return;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));if(b.dataset.page==='reportsPage'&&RemotePos.active){renderReport();renderEmployeeChargeReport();}if(b.dataset.page==='systemPage'&&RemotePos.active&&RemotePos.employee?.owner_terminal===true){BackupManager.refresh();DriveBackup.refresh(true);}el('globalControlStrip').classList.toggle('not-pos-page',b.dataset.page!=='posPage');JukeboxAdmin.onNavigation(b.dataset.page);};on('navigationGearBtn','click',openNavigationMenu);on('navigationMenuClose','click',()=>closeNavigationMenu());on('navigationMenuBackdrop','click',()=>closeNavigationMenu());for(const b of document.querySelectorAll('[data-nav-page]'))b.addEventListener('click',()=>navigateFromMenu(b.dataset.navPage));on('customerInput','click',toggleCustomerDropdown);
  on('desktopCustomerSearch','focus',renderDesktopCustomerOptions);
  on('desktopCustomerSearch','click',renderDesktopCustomerOptions);
  on('desktopCustomerSearch','input',renderDesktopCustomerOptions);
@@ -1124,6 +1124,7 @@ async function employeeSignOut(){
  }finally{button.disabled=false;}
 }
 function resetLockedWorkspace(message){
+ JukeboxAdmin.syncVisibility();
  DriveBackup.syncVisibility();
  DraftGuard.ready=false;DraftGuard.blocked=false;
  el('draftReviewBtn').classList.add('hidden');
@@ -1267,6 +1268,7 @@ function renderPermissions(){
  el('adminEntryBtn').classList.toggle('hidden',!(RemotePos.active&&auth.owner_terminal));
  el('adminEntryBtn').textContent=owner?'ניהול מערכת פתוח · אמת מחדש':'פתח ניהול מערכת';
  el('adminPanel').classList.toggle('hidden',!owner);
+ JukeboxAdmin.syncVisibility();
  el('archiveImportPanel').classList.toggle('hidden',!owner||RemotePos.isImported);
  el('ownerBackupPanel').classList.toggle('hidden',!owner);
  el('ownerLegacyPanel').classList.toggle('hidden',!owner);
@@ -1652,6 +1654,7 @@ async function createEmployee(event){
 }
 async function lockAdmin(){
  if(RemotePos.employee?.is_owner!==true)return;
+ JukeboxAdmin.closeForLock();
  if(RemotePos.testMode)RemotePos.setTestMode(false);
  await RemotePos.lockAdmin();
  await refresh();renderPermissions();
@@ -1701,6 +1704,7 @@ function remoteEvents(){
  LegacyDbImport.init();
  BackupManager.init();
  DriveBackup.init();
+ JukeboxAdmin.init();
  on('employeeChargeToggle','click',openEmployeeChargeName);
  on('employeeChargeNameCancel','click',closeEmployeeChargeName);
  on('employeeChargeNameClose','click',closeEmployeeChargeName);

@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=0.9.29">
   <link rel="icon" href="assets/app_icon_192.png?v=0.9.29">
   <link rel="apple-touch-icon" href="assets/app_icon_192.png?v=0.9.29">
-  <link rel="stylesheet" href="styles.css?v=2.0.18">
+  <link rel="stylesheet" href="styles.css?v=2.0.19">
 <style id="startupScreenCriticalStyle">
 /* Startup must be usable before styles.css and scripts have loaded. */
 #startupScreen{
@@ -70,7 +70,7 @@
     <header class="hero" aria-label="PUB Manara POS"><img src="assets/main_logo.gif" alt="PUB Manara POS" /><div id="desktopHeroGear" class="desktop-hero-gear"></div><div id="desktopHeroIdentity" class="desktop-hero-identity"></div></header>
     
     <div id="modeBanner" class="mode-banner hidden" role="status"></div>
-    <nav class="tabs hidden" aria-label="ניווט פנימי"><button class="tab active" data-page="posPage">קופה</button><button class="tab" data-page="managePage">ניהול</button><button class="tab" data-page="reportsPage">דוחות</button><button class="tab" data-page="systemPage">מערכת ועדכון</button></nav>
+    <nav class="tabs hidden" aria-label="ניווט פנימי"><button class="tab active" data-page="posPage">קופה</button><button class="tab" data-page="managePage">ניהול</button><button class="tab" data-page="reportsPage">דוחות</button><button class="tab" data-page="systemPage">מערכת ועדכון</button><button class="tab hidden" id="jukeboxInternalTab" type="button" data-page="jukeboxPage" tabindex="-1" aria-hidden="true">ג׳וקבוקס</button></nav>
     <section id="globalControlStrip" class="customer-strip panel customer-choice-bar global-control-strip">
       <div class="customer-select-wrap" id="customerSelectWrap"><button id="customerInput" type="button" class="button customer-main-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="customerDropdown"><span id="customerSelectedText">לקוח</span><span aria-hidden="true">⌄</span></button><div id="desktopCustomerSelect" class="desktop-customer-select"><input id="desktopCustomerSearch" class="field desktop-customer-search" type="search" placeholder="חפש לקוח..." aria-label="חיפוש לקוח" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="desktopCustomerOptions" aria-expanded="false"><div id="desktopCustomerOptions" class="desktop-customer-options hidden" role="listbox" aria-label="בחר לקוח"></div></div></div>
       <button id="employeeChargeToggle" type="button" class="button employee-charge-button" aria-haspopup="dialog" aria-controls="employeeChargeNameModal">חיוב על עובד</button>
@@ -186,10 +186,10 @@
          <p class="small-note">הרשאות בעלים, מצב תחזוקה, ניהול עובדים ושינויים רגישים נפתחים רק לאחר אימות המייל והסיסמה האישיים שלך.</p>
          <div id="adminPanel" class="hidden">
            <div class="admin-panel-header"><strong>ניהול מתקדם פעיל</strong><button type="button" class="button secondary" id="adminLockBtn">נעל ניהול מערכת</button></div>
-           <section id="jukeboxOwnerEntry" class="panel" style="margin:12px 0;padding:12px;border:1px solid #8c633b">
-             <h3>ג׳וקבוקס · ניהול בעלים</h3>
-             <p class="small-note">פתיחת ממשק ניהול הג׳וקבוקס. חיובים וקודי שירים דרך הקופה עדיין אינם פעילים.</p>
-             <a class="button secondary" href="https://pub-manara-jukebox-b1-dev.pages.dev/owner.html" target="_blank" rel="noopener noreferrer">פתח ניהול ג׳וקבוקס</a>
+           <section id="jukeboxOwnerEntry" class="pos-simple-system-section hidden">
+             <h3>ג׳וקבוקס · ניהול</h3>
+             <p class="small-note">ניהול הנגן, התור ורשימות הרקע מתוך הקופה.</p>
+             <button id="jukeboxOpenBtn" type="button" class="button primary">פתח ניהול ג׳וקבוקס</button>
            </section>
            <h3>הוספת עובד</h3>
            <form id="employeeCreateForm" class="inline-form">
@@ -301,7 +301,51 @@
  <div id="archiveImportPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא הארכיון ממחשב הפאב המקורי</h2></div>
         <p class="small-note" id="archiveImportNotice">העבר את הנתונים רק לאחר פתיחת הקופה במחשב הפאב המקורי. לפני ההעברה ירד קובץ גיבוי.</p>
         <button type="button" class="button primary" id="cloudImportFromSystemBtn">גבה וייבא ארכיון מהמחשב הזה</button>
-      </div><div id="ownerBackupPanel" class="panel hidden"><div class="panel-head"><h2>גיבוי ושחזור</h2></div><p id="remoteSystemNotice">העותק המקומי נשאר במכשיר. אחרי מעבר לענן, כל הקופות משתמשות במסד המשותף.</p><div class="stack-buttons"><button id="downloadBackup" class="button primary">הורד גיבוי JSON</button><label class="file-input">שחזור גיבוי מלא (מחליף נתונים) <input id="restoreFile" type="file" accept=".json,application/json"></label></div><p class="small-note">הורד גיבוי בתחילת ובסיום משמרת. אין למחוק את נתוני הדפדפן לפני סיום העברת הארכיון.</p><p id="cloudSync" class="sync-msg"></p></div><div id="ownerLegacyPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא מהקופה הישנה</h2></div><p>ייבוא CSV מהארכיון הישן או JSON שנוצר מקובץ SQLite באמצעות הכלי המצורף. חשבונות כרדיט ישנים מסוג C0001 או C-0001 אינם מיובאים.</p><label class="file-input">בחר ארכיון CSV או JSON <input id="legacyInput" type="file" accept=".csv,.json,text/csv,application/json"></label><div class="import-preview hidden" id="importPreview"></div><div id="legacyNotice" class="small-note"></div></div><div class="panel"><div class="system-meta-controls"><small id="versionLabel">V2.0.18</small><button id="updateBadge" class="update-badge hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button><span class="chip" id="storageLabel">מתחבר לשרת…</span><button id="trialToggleBtn" type="button" class="button mode-switch hidden" aria-pressed="false">תחזוקה: כבוי</button><button id="installBtn" type="button" class="button install hidden">התקן אפליקציה</button></div><button type="button" id="cloudSignOut" class="button secondary system-switch-employee">החלף עובד</button><button id="employeeSignOutBtn" type="button" class="button secondary system-switch-employee" title="יציאת עובד ונעילת הקופה" aria-label="יציאת עובד">יציאת עובד</button><button id="installBtnSystem" class="button primary" type="button">התקן כאפליקציה</button><button id="deviceLayoutBtn" class="button secondary" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="deviceLayoutDialog">מצב תצוגה</button><button id="archiveManageBtn" class="button primary hidden" type="button">ניהול ארכיון</button><div class="updater-system"><strong>שיתוף האפליקציה</strong><p class="small-note">קוד QR לסריקה ולהתקנת הקופה ממכשיר נוסף.</p><button id="shareAppQrBtn" class="button secondary" type="button">▦ שיתוף האפליקציה</button></div><div class="updater-system"><strong>עדכוני תוכנה</strong><p class="small-note">גרסה מותקנת: <span id="installedVersion">V2.0.18</span> · <span id="updateStatus">אין עדכון ידוע</span></p><button id="checkUpdatesBtn" class="button secondary" type="button">בדוק עדכונים</button></div></div></div></section>
+      </div><div id="ownerBackupPanel" class="panel hidden"><div class="panel-head"><h2>גיבוי ושחזור</h2></div><p id="remoteSystemNotice">העותק המקומי נשאר במכשיר. אחרי מעבר לענן, כל הקופות משתמשות במסד המשותף.</p><div class="stack-buttons"><button id="downloadBackup" class="button primary">הורד גיבוי JSON</button><label class="file-input">שחזור גיבוי מלא (מחליף נתונים) <input id="restoreFile" type="file" accept=".json,application/json"></label></div><p class="small-note">הורד גיבוי בתחילת ובסיום משמרת. אין למחוק את נתוני הדפדפן לפני סיום העברת הארכיון.</p><p id="cloudSync" class="sync-msg"></p></div><div id="ownerLegacyPanel" class="panel hidden"><div class="panel-head"><h2>ייבוא מהקופה הישנה</h2></div><p>ייבוא CSV מהארכיון הישן או JSON שנוצר מקובץ SQLite באמצעות הכלי המצורף. חשבונות כרדיט ישנים מסוג C0001 או C-0001 אינם מיובאים.</p><label class="file-input">בחר ארכיון CSV או JSON <input id="legacyInput" type="file" accept=".csv,.json,text/csv,application/json"></label><div class="import-preview hidden" id="importPreview"></div><div id="legacyNotice" class="small-note"></div></div><div class="panel"><div class="system-meta-controls"><small id="versionLabel">V2.0.19</small><button id="updateBadge" class="update-badge hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button><span class="chip" id="storageLabel">מתחבר לשרת…</span><button id="trialToggleBtn" type="button" class="button mode-switch hidden" aria-pressed="false">תחזוקה: כבוי</button><button id="installBtn" type="button" class="button install hidden">התקן אפליקציה</button></div><button type="button" id="cloudSignOut" class="button secondary system-switch-employee">החלף עובד</button><button id="employeeSignOutBtn" type="button" class="button secondary system-switch-employee" title="יציאת עובד ונעילת הקופה" aria-label="יציאת עובד">יציאת עובד</button><button id="installBtnSystem" class="button primary" type="button">התקן כאפליקציה</button><button id="deviceLayoutBtn" class="button secondary" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="deviceLayoutDialog">מצב תצוגה</button><button id="archiveManageBtn" class="button primary hidden" type="button">ניהול ארכיון</button><div class="updater-system"><strong>שיתוף האפליקציה</strong><p class="small-note">קוד QR לסריקה ולהתקנת הקופה ממכשיר נוסף.</p><button id="shareAppQrBtn" class="button secondary" type="button">▦ שיתוף האפליקציה</button></div><div class="updater-system"><strong>עדכוני תוכנה</strong><p class="small-note">גרסה מותקנת: <span id="installedVersion">V2.0.19</span> · <span id="updateStatus">אין עדכון ידוע</span></p><button id="checkUpdatesBtn" class="button secondary" type="button">בדוק עדכונים</button></div></div></div></section>
+
+      <section id="jukeboxPage" class="page hidden" aria-labelledby="jukeboxTitle">
+        <div class="panel jukebox-heading">
+          <div class="panel-head"><h2 id="jukeboxTitle">ניהול ג׳וקבוקס</h2><div class="jukebox-actions"><button id="jukeboxBackSystem" class="button secondary" type="button">חזרה לניהול מערכת</button><button id="jukeboxBackPos" class="button primary" type="button">חזרה לקופה</button></div></div>
+          <div class="jukebox-status-bar"><span id="jukeboxConnection" class="chip">ממתין לחיבור</span><span class="small-note">ממשק ניהול בלבד — חיובים וקודי שירים דרך הקופה עדיין אינם פעילים.</span><button id="jukeboxRefreshBtn" class="button secondary" type="button">רענן מצב</button></div>
+          <p id="jukeboxMessage" class="status" role="status" aria-live="polite"></p>
+        </div>
+        <div id="jukeboxContent" class="jukebox-grid hidden">
+          <section class="panel jukebox-panel">
+            <div class="panel-head"><h2>הגדרות הנגן</h2></div>
+            <form id="jukeboxSettingsForm" class="jukebox-settings">
+              <label class="jukebox-toggle"><input type="checkbox" id="jukeboxEnabled"> ג׳וקבוקס פעיל</label>
+              <label class="jukebox-toggle"><input type="checkbox" id="jukeboxIsOpen"> פתוח לבחירת שירים</label>
+              <label class="jukebox-toggle"><input type="checkbox" id="jukeboxPaused"> נגן בהשהיה</label>
+              <label class="jukebox-price-label">מחיר עתידי לשיר (₪)<input class="field" id="jukeboxPrice" type="number" min="0" max="10000" step="0.01" inputmode="decimal" required></label>
+              <button class="button primary" data-jb-action type="submit">שמור הגדרות</button>
+            </form>
+            <p class="small-note">הגדרות אלו שייכות לג׳וקבוקס. שינוי מחיר כאן אינו מחייב לקוחות בקופה.</p>
+          </section>
+          <section class="panel jukebox-panel">
+            <div class="panel-head"><h2>צימוד טאבלט</h2></div>
+            <div class="jukebox-actions"><button id="jukeboxPairBtn" class="button primary" data-jb-action type="button">הפק קוד צימוד לטאבלט</button><button id="jukeboxUnlockBtn" class="button secondary" data-jb-action type="button">בטל נעילת נגן</button><button id="jukeboxRevokeBtn" class="button warning" data-jb-action type="button">בטל צימוד</button></div>
+            <div id="jukeboxPairBox" class="jukebox-pair-box hidden"><p class="small-note">אסימון צימוד זמני, תקף לחמש דקות. הוא אינו קוד לבחירת שיר.</p><input class="field" id="jukeboxPairToken" readonly dir="ltr" aria-label="אסימון צימוד"><button class="button secondary" id="jukeboxCopyPair" type="button">העתק</button></div>
+            <div id="jukeboxDevices" class="jukebox-list"></div>
+          </section>
+          <section class="panel jukebox-panel jukebox-wide">
+            <div class="panel-head"><h2>רשימות מוזיקת רקע</h2><span id="jukeboxPlaylistCount" class="chip">0 רשימות</span></div>
+            <form id="jukeboxCreatePlaylist" class="inline-form jukebox-create"><input class="field" id="jukeboxNewName" placeholder="שם רשימה חדשה" aria-label="שם רשימה חדשה" maxlength="100" required><button class="button primary" data-jb-action type="submit">צור רשימה</button></form>
+            <div id="jukeboxPlaylists" class="jukebox-list"></div>
+            <form id="jukeboxEditPlaylist" class="jukebox-editor hidden">
+              <h3 id="jukeboxEditTitle">עריכת רשימת רקע</h3>
+              <label>שם הרשימה<input class="field" id="jukeboxEditName" maxlength="100" required></label>
+              <p class="small-note">כל שורה: מזהה סרטון YouTube (11 תווים) | שם השיר | regular או mix</p>
+              <textarea class="field" id="jukeboxEditItems" rows="8" dir="ltr" spellcheck="false" aria-label="שירי רשימת הרקע" placeholder="dQw4w9WgXcQ | Song title | regular"></textarea>
+              <div class="jukebox-actions"><button class="button primary" data-jb-action type="submit">שמור רשימה</button><button class="button secondary" id="jukeboxCloseEdit" type="button">בטל עריכה</button></div>
+            </form>
+          </section>
+          <section class="panel jukebox-panel jukebox-wide">
+            <div class="panel-head"><h2>תור השירים</h2><span id="jukeboxQueueCount" class="chip">0 בתור</span></div>
+            <div id="jukeboxQueue" class="jukebox-list"></div>
+            <p id="jukeboxCodeSummary" class="small-note"></p>
+          </section>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -619,11 +663,12 @@
       <p id="driveRestoreProofMessage" class="small-note" role="status"></p>
     </div>
   </div>
-  <script src="db.js"></script><script src="remote.js?v=2.0.18"></script><script src="xlsx.js"></script><script src="updater.js?v=2.0.18"></script><script src="archive_admin.js?v=2.0.18"></script><script src="legacy_db_import.js?v=2.0.18"></script>
-<script src="backup_manager.js?v=2.0.18"></script>
-<script src="drive_backup.js?v=2.0.18"></script>
-<script src="qrcode.min.js?v=2.0.18"></script>
-<script src="draft_guard.js?v=2.0.18"></script>
-<script src="report_widgets.js?v=2.0.18"></script>
-<script src="app.js?v=2.0.18"></script>
+  <script src="db.js"></script><script src="remote.js?v=2.0.19"></script><script src="xlsx.js"></script><script src="updater.js?v=2.0.19"></script><script src="archive_admin.js?v=2.0.19"></script><script src="legacy_db_import.js?v=2.0.19"></script>
+<script src="backup_manager.js?v=2.0.19"></script>
+<script src="drive_backup.js?v=2.0.19"></script>
+<script src="qrcode.min.js?v=2.0.19"></script>
+<script src="draft_guard.js?v=2.0.19"></script>
+<script src="report_widgets.js?v=2.0.19"></script>
+<script src="jukebox_admin.js?v=2.0.19"></script>
+<script src="app.js?v=2.0.19"></script>
 </body></html>
