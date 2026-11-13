@@ -1354,6 +1354,7 @@ async function toggleTrialMode(){
  const button=el('trialToggleBtn');button.disabled=true;
  try{
   await RemotePos.setMaintenanceMode(newValue,getDeviceId());
+  if(!newValue){sessionStorage.removeItem('manara_jukebox_staging_test_codes');const jb=el('jukeboxTestCode');if(jb)jb.textContent='';}
   state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;state.employeeCharge=false;state.employeeChargePerson='';state.pendingOperation=null;
   DraftGuard.erase();renderCustomer();renderBill();renderReport();renderModeControls();
   status(newValue?'מצב תחזוקה הופעל במכשיר זה ל־24 שעות. אפשר להחליף עובדים ולבדוק עסקאות D.':'מצב תחזוקה כובה על ידי הבעלים.','success');
