@@ -1428,3 +1428,5 @@ body.desktop-hero-controls #desktopHeroGear .jukebox-gear{width:43px;min-width:4
 .jukebox-advanced .field{max-width:100%}
 .jukebox-issued{font-size:30px;text-align:center;letter-spacing:5px;color:#f2d5a7}
 @media(max-width:800px){.jukebox-console,.jukebox-advanced{grid-template-columns:1fr}.jukebox-background-modes{grid-template-columns:repeat(2,minmax(0,1fr))}.jukebox-transport{grid-template-columns:repeat(4,minmax(0,1fr))}.jukebox-console .panel-head{align-items:center}}
+
+.jukebox-progress{width:100%;height:9px;accent-color:#c89860;border-radius:8px}
