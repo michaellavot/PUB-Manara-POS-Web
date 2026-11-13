@@ -11,13 +11,14 @@ const JukeboxAdmin=(()=>{
  const canSell=()=>allowed();
  let selectedCustomer=null,backgroundMode='song',libraryMode='pub',apiKey='',advancedOpen=false;
  const personalPrefix=()=>{const id=RemotePos.session?.user?.id||'';return id?'[personal:'+id+'] ':'';};
- const isPersonal=p=>String(p?.name||'').startsWith('[personal:');
- const ownPersonal=p=>Boolean(personalPrefix())&&String(p?.name||'').startsWith(personalPrefix());
- const publicName=p=>ownPersonal(p)?p.name.slice(personalPrefix().length):p.name;
- function clearSearch(){searchGeneration++;$('jukeboxSearchResults').replaceChildren();$('jukeboxSearchQuery').value='';$('jukeboxSearchStatus').textContent='';$('jukeboxSearchKey').value='';}
+ const isPersonal=p=>p?.is_personal===true||String(p?.name||'').startsWith('[personal:');
+ const ownPersonal=p=>p?.is_personal===true||(Boolean(personalPrefix())&&String(p?.name||'').startsWith(personalPrefix()));
+ const publicName=p=>String(p?.name||'').startsWith(personalPrefix())&&personalPrefix()?p.name.slice(personalPrefix().length):p.name;
+ let searchTracks=[];
+ function clearSearch(){searchGeneration++;searchTracks=[];$('jukeboxSearchResults').replaceChildren();$('jukeboxSearchQuery').value='';$('jukeboxSearchStatus').textContent='';$('jukeboxSearchKey').value='';}
  function openSale(){if(canSell())go('jukeboxPage');}
  function setAdvanced(open){advancedOpen=!!open;$('jukeboxAdvanced').classList.toggle('hidden',!advancedOpen);$('jukeboxAdvancedBtn').setAttribute('aria-expanded',String(advancedOpen));if(advancedOpen){$('jukeboxKeyStatus').textContent=apiKey?'מפתח שמור במחשב זה. עדיין אינו מסונכרן לטאבלט.':'לא הוגדר מפתח במחשב זה.';}}
- function showMode(mode){backgroundMode=mode;const library=mode==='pub'||mode==='personal';if(library)libraryMode=mode;for(const [id,m] of [['jukeboxModeSong','song'],['jukeboxModeMix','mix'],['jukeboxModePub','pub'],['jukeboxModePersonal','personal']])$(id).setAttribute('aria-pressed',String(mode===m));$('jukeboxSearchPanel').classList.toggle('hidden',library);$('jukeboxLibraryPanel').classList.toggle('hidden',!library);$('jukeboxSearchQuery').placeholder=mode==='mix'?'חפש מיקס ארוך ביוטיוב...':'חפש שיר או אמן ביוטיוב...';if(library){closeEdit();renderLibrary();}else{clearSearch();renderSearchOptions();}}
+ function showMode(mode){backgroundMode=mode;const library=mode==='pub'||mode==='personal';if(library)libraryMode=mode;for(const [id,m] of [['jukeboxModeSong','song'],['jukeboxModeMix','mix'],['jukeboxModePub','pub'],['jukeboxModePersonal','personal']])$(id).setAttribute('aria-pressed',String(mode===m));$('jukeboxSearchPanel').classList.toggle('hidden',library);$('jukeboxLibraryPanel').classList.toggle('hidden',!library);$('jukeboxSearchQuery').placeholder=mode==='mix'?'חפש מיקס ארוך ביוטיוב...':'חפש שיר או אמן ביוטיוב...';$('jukeboxAutoMixLabel').classList.toggle('hidden',mode!=='song');if(library){closeEdit();renderLibrary();}else{clearSearch();renderSearchOptions();}}
  function selectSaleCustomer(c){selectedCustomer=c||null;$('jukeboxCustomerSearch').value=c?.name||'';$('jukeboxSaleCustomer').textContent=c?'לקוח: '+c.name:'לא נבחר לקוח';$('jukeboxCustomerResults').classList.add('hidden');$('jukeboxCustomerSearch').setAttribute('aria-expanded','false');}
  function renderCustomerChoices(){const host=$('jukeboxCustomerResults'),q=norm($('jukeboxCustomerSearch').value);host.replaceChildren();const customers=(state.customers||[]).filter(c=>c.active&&customerNameMatches(c.name,q)).slice(0,40);for(const c of customers){const b=node('button',c.name,'button secondary');b.type='button';b.setAttribute('role','option');b.setAttribute('aria-selected',String(selectedCustomer?.id===c.id));b.addEventListener('click',()=>selectSaleCustomer(c));host.append(b);}if(!customers.length)host.append(node('p','לא נמצאו לקוחות','small-note'));host.classList.remove('hidden');$('jukeboxCustomerSearch').setAttribute('aria-expanded','true');}
  function allowed(){const u=RemotePos.employee||{};return RemotePos.active===true&&RemotePos.authenticated===true&&u.active===true&&u.is_owner===true&&u.owner_terminal===true&&u.pin_login===true&&Number(RemotePos.session?.pos_valid_until)>Date.now();}
@@ -51,12 +52,12 @@ const JukeboxAdmin=(()=>{
   }finally{clearTimeout(timer);if(controller===abort)controller=null;}
  }
  function row(host,title,detail,actions=[]){const div=node('div',undefined,'jukebox-row'),label=node('div',title,'jukebox-row-label');if(detail)label.append(node('small',detail));div.append(label);if(actions.length){const controls=node('div',undefined,'jukebox-actions');for(const [t,fn,kind] of actions)controls.append(button(t,fn,kind));div.append(controls);}host.append(div);}
- function visiblePlaylists(){return (snapshot?.playlists||[]).filter(p=>!isPersonal(p)||ownPersonal(p));}
+ function visiblePlaylists(){return (snapshot?.playlists||[]).filter(p=>!p.is_temporary&&(!isPersonal(p)||ownPersonal(p)));}
  function renderSearchOptions(){const select=$('jukeboxSearchPlaylist'),prev=select.value;select.replaceChildren(new Option('בחר רשימת רקע',''));for(const p of visiblePlaylists().filter(p=>!p.deleted_at))select.add(new Option((ownPersonal(p)?'אישי · ':'')+publicName(p),p.id));if([...select.options].some(o=>o.value===prev))select.value=prev;else if(snapshot?.settings?.active_playlist)select.value=snapshot.settings.active_playlist;}
  function renderLibrary(){
   const host=$('jukeboxPlaylists');host.replaceChildren();const personal=libraryMode==='personal',lists=visiblePlaylists().filter(p=>personal?ownPersonal(p):!isPersonal(p));
   $('jukeboxLibraryTitle').textContent=personal?'הפלייליסטים שלי':'פלייליסטים של הפאב';
-  $('jukeboxLibraryNote').textContent=personal?'רשימות אישיות נשמרות בענן תחת מזהה הבעלים. הרשאות עובדים טרם נפתחו.':'בחר רשימה קיימת או צור רשימה חדשה.';
+  $('jukeboxLibraryNote').textContent=personal?'רשימות אישיות נשמרות בענן תחת החשבון שלך. הרשאות עובדים טרם נפתחו.':'בחר רשימה קיימת או צור רשימה חדשה.';
   $('jukeboxPlaylistCount').textContent=lists.filter(p=>!p.deleted_at).length+' רשימות';
   for(const p of lists){const count=(snapshot?.items||[]).filter(i=>i.playlist_id===p.id&&!i.archived_at).length,active=snapshot?.settings?.active_playlist===p.id;
    const actions=p.deleted_at?[['שחזר',()=>run(()=>api('playlist_restore',{id:p.id}))]]:[['ערוך',()=>openEdit(p.id)],['בחר לרקע',()=>run(()=>api('playlist_select',{id:p.id})),'primary'],['העבר לארכיון',()=>{if(confirm('להעביר את הרשימה לארכיון?'))run(()=>api('playlist_archive',{id:p.id}));},'warning']];
@@ -116,13 +117,20 @@ const JukeboxAdmin=(()=>{
    if(!response.ok)throw Error('YouTube '+response.status);
    const result=await response.json();
    if(!onPage()||g!==searchGeneration)return;
-   const tracks=(result.items||[]).filter(x=>/^[A-Za-z0-9_-]{11}$/.test(x.id?.videoId||''));
+   const tracks=(result.items||[]).filter(x=>/^[A-Za-z0-9_-]{11}$/.test(x.id?.videoId||''));searchTracks=tracks.map(t=>({video_id:t.id.videoId,title:String(t.snippet?.title||'').slice(0,300),kind:mode==='mix'?'mix':'regular'})).filter(t=>t.title);
    notice.textContent=tracks.length?'נמצאו '+tracks.length+' תוצאות. בחר רשימת רקע להוספה.':'לא נמצאו תוצאות מתאימות.';
    for(const t of tracks){
     const video_id=t.id.videoId,title=String(t.snippet?.title||'').slice(0,300);
-    row(host,title,String(t.snippet?.channelTitle||''),[['הוסף לרקע',()=>addSearchTrack(video_id,title,mode==='mix'?'mix':'regular'),'primary']]);
+    row(host,title,String(t.snippet?.channelTitle||''),[['נגן כרקע',()=>playBackground(video_id,title,mode==='mix'?'mix':'regular'),'primary'],['הוסף לפלייליסט',()=>addSearchTrack(video_id,title,mode==='mix'?'mix':'regular')]]);
    }
   }catch(e){if(onPage()&&g===searchGeneration)notice.textContent='החיפוש נכשל. בדוק את מפתח YouTube, הרשאות האתר והמכסה.';}
+ }
+ async function playBackground(video_id,title,kind='regular'){
+  if(!onPage()||busy)return;
+  if(!snapshot?.settings?.enabled){$('jukeboxSearchStatus').textContent='הפעל את הג׳וקבוקס בניהול מתקדם לפני בחירת רקע.';return;}
+  const items=[{video_id,title,kind}];
+  if(kind==='regular'&&$('jukeboxAutoMix').checked){const seen=new Set([video_id]);for(const t of searchTracks){if(!seen.has(t.video_id)&&items.length<12){seen.add(t.video_id);items.push({...t,kind:'regular'});}}}
+  await run(async()=>{const temp=await api('playlist_create',{name:'רקע מיידי',temporary:true});if(!temp?.id)throw Error('jukebox_operation_failed');await api('playlist_save',{id:temp.id,name:'רקע מיידי',items});await api('playlist_select',{id:temp.id});$('jukeboxSearchStatus').textContent='הרקע נבחר. '+(items.length>1?'אחריו יתנגנו עוד '+(items.length-1)+' שירים מתוצאות החיפוש.':'');});
  }
  async function addSearchTrack(video_id,title,kind='regular'){
   const id=$('jukeboxSearchPlaylist').value;
@@ -161,8 +169,8 @@ const JukeboxAdmin=(()=>{
   $('jukeboxCopyPair').addEventListener('click',async()=>{if(!onPage()||!$('jukeboxPairToken').value)return;try{await navigator.clipboard.writeText($('jukeboxPairToken').value);message('אסימון הצימוד הועתק');}catch{$('jukeboxPairToken').focus();$('jukeboxPairToken').select();}});
   $('jukeboxUnlockBtn').addEventListener('click',()=>run(()=>api('unlock')));
   $('jukeboxRevokeBtn').addEventListener('click',()=>{if(confirm('לבטל את צימוד הטאבלט?'))run(()=>api('revoke_device'));});
-  $('jukeboxCreatePlaylist').addEventListener('submit',e=>{e.preventDefault();run(async()=>{const name=$('jukeboxNewName').value.trim();if(!name)throw Error('invalid_payload');if(name.startsWith('[personal:'))throw Error('invalid_payload');const stored=libraryMode==='personal'?personalPrefix()+name:name;if(stored.length>100)throw Error('invalid_payload');await api('playlist_create',{name:stored});$('jukeboxNewName').value='';});});
-  $('jukeboxEditPlaylist').addEventListener('submit',e=>{e.preventDefault();run(async()=>{const id=editing,name=$('jukeboxEditName').value.trim();if(!id||!name)throw Error('invalid_payload');const p=snapshot?.playlists?.find(x=>x.id===id);if(!p||(isPersonal(p)&&!ownPersonal(p))||name.startsWith('[personal:'))throw Error('invalid_payload');const stored=ownPersonal(p)?personalPrefix()+name:name;if(stored.length>100)throw Error('invalid_payload');await api('playlist_save',{id,name:stored,items:parseItems()});closeEdit();});});
+  $('jukeboxCreatePlaylist').addEventListener('submit',e=>{e.preventDefault();run(async()=>{const name=$('jukeboxNewName').value.trim();if(!name)throw Error('invalid_payload');if(name.startsWith('[personal:'))throw Error('invalid_payload');await api('playlist_create',{name,personal:libraryMode==='personal'});$('jukeboxNewName').value='';});});
+  $('jukeboxEditPlaylist').addEventListener('submit',e=>{e.preventDefault();run(async()=>{const id=editing,name=$('jukeboxEditName').value.trim();if(!id||!name)throw Error('invalid_payload');const p=snapshot?.playlists?.find(x=>x.id===id);if(!p||(isPersonal(p)&&!ownPersonal(p))||name.startsWith('[personal:'))throw Error('invalid_payload');const stored=String(p.name).startsWith('[personal:')?personalPrefix()+name:name;if(stored.length>100)throw Error('invalid_payload');await api('playlist_save',{id,name:stored,items:parseItems()});closeEdit();});});
   $('jukeboxCloseEdit').addEventListener('click',closeEdit);
   window.addEventListener('pagehide',()=>{if(opened)clear();});
   setInterval(()=>{if(opened&&!allowed())syncVisibility();else if(onPage()&&!busy)refresh(false);},5000);
