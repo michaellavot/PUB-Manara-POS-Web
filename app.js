@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.0.19';
+const APP_VERSION='2.0.20';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -864,6 +864,8 @@ function arrangeDesktopHeaderControls(){
   if(userBar.parentElement!==strip)strip.append(userBar);
   if(gear.parentElement!==userBar)userBar.append(gear);
  }
+ const jbEntry=el('jukeboxOwnerEntry');
+ if(jbEntry&&gear.nextElementSibling!==jbEntry)gear.after(jbEntry);
  document.body.classList.toggle('desktop-hero-controls',desktop);
 }
 function applyLayoutMode(mode){

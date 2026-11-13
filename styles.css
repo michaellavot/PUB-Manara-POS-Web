@@ -1386,3 +1386,15 @@ body.desktop-hero-controls #desktopBillingControls #employeeChargeToggle{
 #jukeboxConnection.jukebox-disconnected{color:#f2ad96;border-color:#935d46}
 #jukeboxMessage:empty{display:none}
 @media(max-width:730px){.jukebox-grid{grid-template-columns:1fr}.jukebox-settings{grid-template-columns:1fr}.jukebox-heading .panel-head{align-items:flex-start}.jukebox-actions .button{white-space:normal}.jukebox-heading .jukebox-actions{width:100%}.jukebox-heading .jukebox-actions .button{flex:1}.jukebox-row .jukebox-actions{width:100%}}
+
+/* V2.0.20: owner entry and future song-sale UI, using existing POS colors. */
+.jukebox-gear-entry:not(.hidden){display:inline-flex;align-items:center;margin-inline-start:6px}
+.jukebox-gear{width:36px;min-width:36px;height:36px;min-height:36px;padding:0!important;display:inline-flex;align-items:center;justify-content:center;font-size:23px;line-height:1;color:#f2d5a7!important;border:1px solid #b18a55!important;background:#1c2930!important;border-radius:11px}
+body.desktop-hero-controls #desktopHeroGear .jukebox-gear{width:43px;min-width:43px;height:43px;min-height:43px;font-size:25px}
+.jukebox-sell:not(.hidden){width:100%;min-height:38px;margin:5px 0;color:#f2d5a7;border-color:#a77a49;background:#382a21}
+.jukebox-sale-dialog{width:min(420px,calc(100vw - 32px));max-width:calc(100vw - 32px);box-sizing:border-box;border:1px solid #aa8050;background:#211915;color:#f2d5a7;border-radius:15px;padding:18px}
+.jukebox-sale-dialog:not([open]){display:none}
+.jukebox-sale-dialog::backdrop{background:rgba(0,0,0,.72)}
+.jukebox-sale-dialog .button.primary{width:100%;margin-top:12px}
+.jukebox-sale-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid #5a4330}
+.jukebox-search-form{display:grid;gap:10px}.jukebox-search-form .field{width:100%}.jukebox-search-form .inline-form{display:flex;gap:8px}.jukebox-search-form .inline-form .field{flex:1;min-width:0}
