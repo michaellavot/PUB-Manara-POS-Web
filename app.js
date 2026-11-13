@@ -1232,6 +1232,8 @@ function renderPermissions(){
  const ownerTerminal=RemotePos.active&&auth.owner_terminal===true;
  const limitedAdmin=RemotePos.active&&!ownerTerminal&&auth.permissions?.manage_system===true;
  el('ownerAdminBox').classList.toggle('hidden',!ownerTerminal);
+ const jbMaintenance=el('jukeboxMaintenanceStatus');
+ if(jbMaintenance)jbMaintenance.textContent=RemotePos.testMode?'מצב תחזוקה פעיל בקופה — הנפקת קודי בדיקה תתאפשר רק לאחר חיבור מאובטח.':'מצב רגיל — הנפקת קודים מושבתת עד השלמת החיבור המאובטח.';
  el('staffAdminBox').classList.toggle('hidden',!limitedAdmin);
  el('staffAdminContent').classList.toggle('hidden',!(limitedAdmin&&RemotePos.staffAdminUnlocked===true));
  el('staffAdminEntryBtn').classList.toggle('hidden',limitedAdmin&&RemotePos.staffAdminUnlocked===true);
