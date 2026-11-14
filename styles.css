@@ -1479,3 +1479,5 @@ body.desktop-hero-controls #desktopHeroGear .jukebox-gear{width:43px;min-width:4
 #jukeboxPage .jukebox-confirm-dialog .panel-head{justify-content:center;margin-bottom:12px}#jukeboxPage .jukebox-confirm-dialog p{line-height:1.65;margin:14px 0}
 #jukeboxPage .jukebox-confirm-track{display:flex;flex-direction:column;align-items:center;gap:6px}#jukeboxPage .jukebox-confirm-track img{width:100%;max-height:170px;object-fit:cover;border-radius:9px}#jukeboxPage .jukebox-confirm-track small{color:#cbb99f}
 #jukeboxPage .jukebox-confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}#jukeboxPage .jukebox-confirm-actions button{min-height:44px}
+
+#jukeboxPage .jukebox-power-line{display:flex;align-items:center;gap:10px;padding:8px 0 12px;border-bottom:1px solid #705439;margin-bottom:10px}#jukeboxPage .jukebox-power-line button{min-height:42px;flex:none}#jukeboxPage .jukebox-power-line p{margin:0;flex:1}
