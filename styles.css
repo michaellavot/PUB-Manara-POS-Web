@@ -1465,3 +1465,17 @@ body.desktop-hero-controls #desktopHeroGear .jukebox-gear{width:43px;min-width:4
 #jukeboxPage .jukebox-settings-dialog .jukebox-advanced{margin-top:12px}
 #jukeboxPage .jukebox-settings-dialog>.panel-head{position:sticky;top:-15px;background:#162228;z-index:2;padding:8px 0}
 #jukeboxPage #jukeboxIssuedCode{margin:5px 0}
+
+/* V2.0.27 compact live results and POS confirmation dialog. */
+#jukeboxPage #jukeboxSearchResults{gap:5px;max-height:min(420px,55dvh);overflow-y:auto;overscroll-behavior:contain}
+#jukeboxPage .jukebox-track{display:flex;flex-direction:row;align-items:center;gap:9px;min-height:59px;width:100%;min-width:0;padding:6px 9px;border:1px solid #594632;border-radius:9px;background:linear-gradient(145deg,#17252d,#10191e);color:#f1e1c9;text-align:right;cursor:pointer}
+#jukeboxPage .jukebox-track:hover,#jukeboxPage .jukebox-track:focus-visible{border-color:#d7ad73;background:#25343b;outline:0}
+#jukeboxPage .jukebox-track img,#jukeboxPage .jukebox-track-placeholder{width:58px;height:43px;flex:none;object-fit:cover;border-radius:6px;background:#2c211b;display:grid;place-items:center;color:#d7ad73}
+#jukeboxPage .jukebox-track-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;overflow:hidden}
+#jukeboxPage .jukebox-track-text strong,#jukeboxPage .jukebox-track-text small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;unicode-bidi:plaintext}
+#jukeboxPage .jukebox-track-text strong{font-size:14px;font-weight:650}#jukeboxPage .jukebox-track-text small{font-size:11px;color:#c8b495}
+#jukeboxPage .jukebox-track-plus{display:grid;place-items:center;flex:none;width:32px;height:32px;border:1px solid #b08755;border-radius:8px;background:#3b2a1d;color:#f3d4a2;font-size:25px;line-height:1}
+#jukeboxPage .jukebox-confirm-dialog{width:min(430px,calc(100vw - 24px));max-width:calc(100vw - 24px);text-align:center;padding:18px}
+#jukeboxPage .jukebox-confirm-dialog .panel-head{justify-content:center;margin-bottom:12px}#jukeboxPage .jukebox-confirm-dialog p{line-height:1.65;margin:14px 0}
+#jukeboxPage .jukebox-confirm-track{display:flex;flex-direction:column;align-items:center;gap:6px}#jukeboxPage .jukebox-confirm-track img{width:100%;max-height:170px;object-fit:cover;border-radius:9px}#jukeboxPage .jukebox-confirm-track small{color:#cbb99f}
+#jukeboxPage .jukebox-confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}#jukeboxPage .jukebox-confirm-actions button{min-height:44px}
