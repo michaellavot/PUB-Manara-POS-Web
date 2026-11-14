@@ -1459,3 +1459,9 @@ body.desktop-hero-controls #desktopHeroGear .jukebox-gear{width:43px;min-width:4
 #jukeboxPage .jukebox-recovered{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;padding:12px;border:1px solid #9e7950;border-radius:10px;color:#f3d3a2}
 #jukeboxPage .jukebox-recovered strong{font-size:32px;letter-spacing:7px}
 @media(max-width:480px){#jukeboxPage .jukebox-customer-line .employee-charge-button{min-height:48px;font-size:13px}#jukeboxPage .jukebox-table{min-width:540px}#jukeboxPage .jukebox-compact-head{min-height:40px}}
+
+/* V2.0.25 settings are a separate modal, not a bottom-of-page section. */
+#jukeboxPage .jukebox-settings-dialog{width:min(900px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:88dvh;overflow:auto}
+#jukeboxPage .jukebox-settings-dialog .jukebox-advanced{margin-top:12px}
+#jukeboxPage .jukebox-settings-dialog>.panel-head{position:sticky;top:-15px;background:#162228;z-index:2;padding:8px 0}
+#jukeboxPage #jukeboxIssuedCode{margin:5px 0}
