@@ -39,7 +39,29 @@ Deno.serve(async req=>{
   if(!body||!actions.has(body.action))return json({error:"action_disabled"},403);
   const data=body.data??{};
   if(!data||Array.isArray(data)||typeof data!=="object")return json({error:"invalid_payload"},400);
-  const result=await service.rpc("jukebox_pos_owner_v2019",{p_action:body.action,p_data:data,p_pos_user:owner});
+
+  // Verify maintenance against POS server before forwarding to Jukebox.
+  // The owner browser never supplies its own trusted expiry or an is_test flag.
+  let forwarded=data;
+  if(body.action==="configure"&&Object.prototype.hasOwnProperty.call(data,"maintenance_sync")){
+   if(Object.keys(data).length!==1||!data.maintenance_sync||typeof data.maintenance_sync!=="object"||Array.isArray(data.maintenance_sync))return json({error:"invalid_maintenance_payload"},400);
+   const m=data.maintenance_sync;
+   if(Object.keys(m).some(k=>!["device_id","enabled","token"].includes(k))||
+     typeof m.device_id!=="string"||!/^[A-Za-z0-9-]{8,80}$/.test(m.device_id)||
+     typeof m.enabled!=="boolean"||
+     (m.enabled&& (typeof m.token!=="string"||!uuid.test(m.token)))||
+     (!m.enabled&&m.token!==undefined&&m.token!==null))return json({error:"invalid_maintenance_payload"},400);
+   const headers={apikey:POS_KEY,Authorization:"Bearer "+match[1],"Content-Type":"application/json"};
+   const verified=await fetch(POS_URL+"/rest/v1/rpc/pos_jukebox_maintenance_status_v2029",{
+    method:"POST",headers,body:JSON.stringify({p_device_id:m.device_id,p_token:m.enabled?m.token:null}),
+    signal:AbortSignal.timeout(10000),redirect:"error"
+   });
+   if(!verified.ok)return json({error:"maintenance_verification_unavailable"},503);
+   const mode=await verified.json();
+   if(mode?.enabled!==m.enabled||(m.enabled&&mode.grant_valid!==true))return json({error:"maintenance_state_mismatch"},409);
+   forwarded={maintenance_sync:{device_id:m.device_id,enabled:m.enabled,expires_at:m.enabled?mode.expires_at:null}};
+  }
+  const result=await service.rpc("jukebox_pos_owner_v2019",{p_action:body.action,p_data:forwarded,p_pos_user:owner});
   if(result.error){
    const code=result.error.code==="42501"?"owner_or_action_denied":result.error.code==="22P02"?"invalid_payload":"jukebox_operation_failed";
    return json({error:code},code==="owner_or_action_denied"?403:400);

@@ -1481,3 +1481,7 @@ body.desktop-hero-controls #desktopHeroGear .jukebox-gear{width:43px;min-width:4
 #jukeboxPage .jukebox-confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}#jukeboxPage .jukebox-confirm-actions button{min-height:44px}
 
 #jukeboxPage .jukebox-power-line{display:flex;align-items:center;gap:10px;padding:8px 0 12px;border-bottom:1px solid #705439;margin-bottom:10px}#jukeboxPage .jukebox-power-line button{min-height:42px;flex:none}#jukeboxPage .jukebox-power-line p{margin:0;flex:1}
+
+/* V2.0.29 — Jukebox synchronized maintenance mode. */
+#jukeboxPage .jukebox-maintenance-banner{display:block;border:1px solid #b5874a;border-radius:10px;background:#40301e;color:#ffdeaa;text-align:center;padding:10px 12px;margin:8px 0;font-weight:700;letter-spacing:.1px}
+#jukeboxPage .jukebox-maintenance-banner.hidden{display:none}

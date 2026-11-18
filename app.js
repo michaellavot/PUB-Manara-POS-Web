@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.0.28';
+const APP_VERSION='2.0.29';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -1340,10 +1340,20 @@ async function toggleTrialMode(){
  if(!newValue&&!confirm('לכבות מצב תחזוקה במכשיר זה? אחרי הכיבוי ניתן יהיה לבצע חיובי אמת.'))return;
  const button=el('trialToggleBtn');button.disabled=true;
  try{
-  await RemotePos.setMaintenanceMode(newValue,getDeviceId());
+  const deviceId=getDeviceId();
+  await RemotePos.setMaintenanceMode(newValue,deviceId);
+  try{
+   await JukeboxAdmin.syncMaintenance(newValue,deviceId);
+  }catch(syncError){
+   let rollbackError=null;
+   try{await RemotePos.setMaintenanceMode(!newValue,deviceId);}catch(error){rollbackError=error;}
+   renderModeControls();
+   if(rollbackError)throw new Error('הסנכרון לג׳וקבוקס נכשל, וגם שחזור מצב התחזוקה בקופה נכשל. אל תבצע חיובים עד בדיקת מצב התחזוקה. '+String(syncError?.message||''));
+   throw new Error('מצב התחזוקה בקופה שוחזר כי הסנכרון לג׳וקבוקס נכשל. נסה שוב. '+String(syncError?.message||''));
+  }
   state.cart=[];state.cartHistory=[];state.selectedRow=-1;state.selectedCustomer=null;state.employeeCharge=false;state.employeeChargePerson='';state.pendingOperation=null;
   DraftGuard.erase();renderCustomer();renderBill();renderReport();renderModeControls();
-  status(newValue?'מצב תחזוקה הופעל במכשיר זה ל־24 שעות. אפשר להחליף עובדים ולבדוק עסקאות D.':'מצב תחזוקה כובה על ידי הבעלים.','success');
+  status(newValue?'מצב תחזוקה D הופעל בקופה ובג׳וקבוקס ל־24 שעות. לא יבוצעו חיובי אמת מהג׳וקבוקס.':'מצב תחזוקה D כובה בקופה ובג׳וקבוקס; קודי בדיקה והזמנות בדיקה פעילות בוטלו.','success');
  }finally{button.disabled=false;}
 }
 async function cloudAfterAuthentication(){await activateCloud({resetForLogin:true});navigateFromMenu('posPage');leaveCloudLogin();await DraftGuard.restoreAfterLogin();}
