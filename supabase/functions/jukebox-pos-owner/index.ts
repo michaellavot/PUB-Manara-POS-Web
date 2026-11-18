@@ -59,6 +59,7 @@ Deno.serve(async req=>{
    if(!verified.ok)return json({error:"maintenance_verification_unavailable"},503);
    const mode=await verified.json();
    if(mode?.enabled!==m.enabled||(m.enabled&&mode.grant_valid!==true))return json({error:"maintenance_state_mismatch"},409);
+   if(m.enabled&&mode.pending_live_sale===true)return json({error:"pending_live_jukebox_sale"},409);
    forwarded={maintenance_sync:{device_id:m.device_id,enabled:m.enabled,expires_at:m.enabled?mode.expires_at:null}};
   }
   const result=await service.rpc("jukebox_pos_owner_v2019",{p_action:body.action,p_data:forwarded,p_pos_user:owner});

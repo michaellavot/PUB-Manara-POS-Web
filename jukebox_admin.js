@@ -49,7 +49,12 @@ const JukeboxAdmin=(()=>{
   if(RemotePos.session.expires_at-Date.now()<75000)await RemotePos.refreshSession();
   const response=await fetch(URL,{method:'POST',cache:'no-store',headers:{apikey:KEY,'Content-Type':'application/json',Authorization:'Bearer '+RemotePos.session.access_token},body:JSON.stringify({action:'configure',data:{maintenance_sync:{device_id:deviceId,enabled, ...(enabled?{token}:{})}}}),signal:AbortSignal.timeout(20000)});
   const reply=await response.json().catch(()=>({}));
-  if(!response.ok||reply.ok!==true||reply.result?.maintenance!==enabled)throw Error(reply.error||'jukebox_maintenance_sync_failed');
+  if(!response.ok||reply.ok!==true||reply.result?.maintenance!==enabled){
+   const hint={pending_live_jukebox_sale:'יש הזמנת שיר אמת שטרם הושלמה או פגה. יש לבטל אותה לפני הפעלת תחזוקה.',
+    maintenance_state_mismatch:'הרשאת תחזוקה בקופה עדיין אינה תואמת לבקשה.',
+    maintenance_verification_unavailable:'לא ניתן לאמת כרגע מצב תחזוקה מול שרת הקופה.'};
+   throw Error(hint[reply.error]||reply.error||'jukebox_maintenance_sync_failed');
+  }
   if(onPage()&&!busy){try{render(await api('snapshot'),true);}catch{}}
   return reply.result;
  }
