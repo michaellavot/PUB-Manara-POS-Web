@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.0.31';
+const APP_VERSION='2.0.32';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -879,7 +879,14 @@ function applyLayoutMode(mode){
  });
  const labels={auto:'אוטומטי — לפי רוחב המסך',mobile:'נייד — פריסה אנכית',tablet:'טאבלט — פריסה בינונית',desktop:'מחשב — פריסה רחבה'};
  el('deviceLayoutCurrent').textContent='מצב נבחר: '+labels[mode];
+ refreshSystemLayoutChoice(mode);
  if(typeof closeDesktopCustomerOptions==='function')closeDesktopCustomerOptions();
+}
+function refreshSystemLayoutChoice(mode=getSavedLayoutMode()){
+ const resolved=mode==='auto'?(window.innerWidth>=1101?'desktop':window.innerWidth>=731?'tablet':'mobile'):mode;
+ const name={desktop:'מחשב',tablet:'טאבלט',mobile:'טלפון'}[resolved]||'מחשב';
+ const button=el('deviceLayoutBtn');
+ if(button){button.textContent=name;button.setAttribute('aria-label','מצב תצוגה נוכחי: '+name+'. לחץ לבחירת מצב אחר');button.title='מצב תצוגה נוכחי: '+name;}
 }
 function saveLayoutMode(mode){
  if(!LAYOUT_OPTIONS.includes(mode))return;
@@ -935,10 +942,20 @@ function events(){
    }
   }
  },true);
- window.addEventListener('resize',arrangeDesktopHeaderControls);
+ window.addEventListener('resize',()=>{arrangeDesktopHeaderControls();refreshSystemLayoutChoice();});
  window.addEventListener('beforeunload',event=>DraftGuard.beforeUnload(event));
  window.addEventListener('pagehide',()=>RemotePos.lockAdminOnPageHide());
  window.addEventListener('pageshow',event=>{if(event.persisted)location.reload();});
+ on('systemEmployeesOpen','click',()=>{if(RemotePos.active&&RemotePos.authenticated)el('systemEmployeeDialog').showModal();});
+ on('systemEmployeesClose','click',()=>el('systemEmployeeDialog').close());
+ on('systemAdvancedOpen','click',()=>{
+  const dialog=el('newSystemDashboard');
+  if(dialog.classList.contains('hidden')||!RemotePos.active||!RemotePos.authenticated)return;
+  dialog.showModal();
+  if(RemotePos.employee?.owner_terminal===true){BackupManager.refresh();DriveBackup.refresh(true);}
+ });
+ on('systemAdvancedClose','click',()=>el('newSystemDashboard').close());
+ on('jukeboxSystemSettingsOpen','click',()=>JukeboxAdmin.openSystemSettings());
  on('deviceLayoutBtn','click',openLayoutDialog);on('deviceLayoutClose','click',closeLayoutDialog);on('deviceLayoutBackdrop','click',closeLayoutDialog);for(const btn of document.querySelectorAll('[data-layout-choice]'))btn.addEventListener('click',()=>saveLayoutMode(btn.dataset.layoutChoice));for(const b of document.querySelectorAll('.tab'))b.onclick=()=>{if(b.dataset.page==='jukeboxPage'&&!JukeboxAdmin.allowed())return;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));if(b.dataset.page==='reportsPage'&&RemotePos.active){renderReport();renderEmployeeChargeReport();}if(b.dataset.page==='systemPage'&&RemotePos.active&&RemotePos.employee?.owner_terminal===true){BackupManager.refresh();DriveBackup.refresh(true);}el('globalControlStrip').classList.toggle('not-pos-page',b.dataset.page!=='posPage');JukeboxAdmin.onNavigation(b.dataset.page);};on('navigationGearBtn','click',openNavigationMenu);on('navigationMenuClose','click',()=>closeNavigationMenu());on('navigationMenuBackdrop','click',()=>closeNavigationMenu());for(const b of document.querySelectorAll('[data-nav-page]'))b.addEventListener('click',()=>navigateFromMenu(b.dataset.navPage));on('customerInput','click',toggleCustomerDropdown);
  on('desktopCustomerSearch','focus',renderDesktopCustomerOptions);
  on('desktopCustomerSearch','click',renderDesktopCustomerOptions);
@@ -1243,6 +1260,8 @@ function renderPermissions(){
  el('staffAdminReportsBtn').classList.toggle('hidden',!canViewFullReports());
  el('archiveManageBtn').classList.toggle('hidden',!(ownerTerminal||limitedAdmin));
  el('newSystemDashboard').classList.toggle('hidden',!(ownerTerminal||limitedAdmin));
+ el('systemAdvancedOpen').classList.toggle('hidden',!(ownerTerminal||limitedAdmin));
+ if(!(ownerTerminal||limitedAdmin)&&el('newSystemDashboard').open)el('newSystemDashboard').close();
  for(const id of ['backupOwnerControls','backupAutoSection'])el(id).classList.toggle('hidden',!ownerTerminal);
  el('backupHistorySection').classList.toggle('hidden',!owner);
  DriveBackup.syncVisibility();
@@ -1790,8 +1809,8 @@ function remoteEvents(){
  on('cloudImportFromSystemBtn','click',migrateCloud);
  on('cloudMigrateBtn','click',migrateCloud);
  on('cloudRetryBtn','click',async()=>{try{await cloudAfterAuthentication();}catch(e){showCloudDataError(e);}});
- on('cloudSignOut','click',beginEmployeeSwitch);
- on('employeeSignOutBtn','click',employeeSignOut);
+ on('cloudSignOut','click',()=>{if(el('systemEmployeeDialog').open)el('systemEmployeeDialog').close();return beginEmployeeSwitch();});
+ on('employeeSignOutBtn','click',()=>{if(el('systemEmployeeDialog').open)el('systemEmployeeDialog').close();return employeeSignOut();});
  on('draftReviewBtn','click',()=>DraftGuard.restoreAfterLogin());
  on('cancelEmployeeSwitch','click',cancelEmployeeSwitch);
 }

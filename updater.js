@@ -7,7 +7,20 @@ function isNewerVersion(remote,local=APP_VERSION){
  for(let i=0;i<Math.max(a.length,b.length);i++){const diff=(a[i]||0)-(b[i]||0);if(diff)return diff>0;}
  return false;
 }
-function updateStatus(message){el('updateStatus').textContent=message;}
+function updateStatus(message){
+ el('updateStatus').textContent=message;
+ const btn=el('checkUpdatesBtn');
+ if(!btn)return;
+ const required=Boolean(softwareUpdate.info)||message.includes('עדכון חובה');
+ const checking=message.includes('בודק')||message.includes('ממתין לאימות');
+ const current=softwareUpdate.verified&&!required&&!checking;
+ const status=required?'required':checking?'checking':current?'current':'unknown';
+ btn.dataset.updateState=status;
+ btn.textContent='⟳';
+ const label=status==='required'?'נדרש עדכון תוכנה':status==='current'?'הגרסה עדכנית':status==='checking'?'בודק עדכונים':'לא ניתן לאמת את הגרסה';
+ btn.title=label+' · לחץ לבדיקה מחדש';
+ btn.setAttribute('aria-label',label+'. בדוק עדכונים');
+}
 function transactionStillOpen(){return Boolean(state.busy||state.cart.length);}
 function blockForUpdate(message){
  softwareUpdate.verified=false;
