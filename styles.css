@@ -1710,3 +1710,6 @@ body.desktop-hero-controls #desktopHeroGear #navigationGearBtn{width:43px;min-wi
 }
 /* Rotation is optional for reduced-motion preference; connection state stays visible. */
 @media(prefers-reduced-motion:reduce){#cloudConnectionStatus .jukebox-record-indicator[data-state="online"] .jb-note-on{animation:none}}
+
+/* Keep the POS shortcut as a register icon; legacy gear-menu pseudo-content is gear-only. */
+body:not(.desktop-hero-controls) .global-control-strip #cloudUserBar #posHomeShortcut::after{content:none!important}
