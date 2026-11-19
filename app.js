@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.0.33';
+const APP_VERSION='2.0.34';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -864,8 +864,9 @@ function arrangeDesktopHeaderControls(){
   if(userBar.parentElement!==strip)strip.append(userBar);
   if(gear.parentElement!==userBar)userBar.append(gear);
  }
- const jbEntry=el('jukeboxOwnerEntry');
+ const jbEntry=el('jukeboxOwnerEntry'),home=el('posHomeShortcut');
  if(jbEntry&&gear.nextElementSibling!==jbEntry)gear.after(jbEntry);
+ if(home&&jbEntry&&jbEntry.nextElementSibling!==home)jbEntry.after(home);
  document.body.classList.toggle('desktop-hero-controls',desktop);
 }
 function applyLayoutMode(mode){
@@ -956,7 +957,13 @@ function events(){
  });
  on('systemAdvancedClose','click',()=>el('newSystemDashboard').close());
  on('jukeboxSystemSettingsOpen','click',()=>JukeboxAdmin.openSystemSettings());
- on('deviceLayoutBtn','click',openLayoutDialog);on('deviceLayoutClose','click',closeLayoutDialog);on('deviceLayoutBackdrop','click',closeLayoutDialog);for(const btn of document.querySelectorAll('[data-layout-choice]'))btn.addEventListener('click',()=>saveLayoutMode(btn.dataset.layoutChoice));for(const b of document.querySelectorAll('.tab'))b.onclick=()=>{if(b.dataset.page==='jukeboxPage'&&!JukeboxAdmin.allowed())return;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));if(b.dataset.page==='reportsPage'&&RemotePos.active){renderReport();renderEmployeeChargeReport();}if(b.dataset.page==='systemPage'&&RemotePos.active&&RemotePos.employee?.owner_terminal===true){BackupManager.refresh();DriveBackup.refresh(true);}el('globalControlStrip').classList.toggle('not-pos-page',b.dataset.page!=='posPage');JukeboxAdmin.onNavigation(b.dataset.page);};on('navigationGearBtn','click',openNavigationMenu);on('navigationMenuClose','click',()=>closeNavigationMenu());on('navigationMenuBackdrop','click',()=>closeNavigationMenu());for(const b of document.querySelectorAll('[data-nav-page]'))b.addEventListener('click',()=>navigateFromMenu(b.dataset.navPage));on('customerInput','click',toggleCustomerDropdown);
+ on('deviceLayoutBtn','click',openLayoutDialog);on('deviceLayoutClose','click',closeLayoutDialog);on('deviceLayoutBackdrop','click',closeLayoutDialog);for(const btn of document.querySelectorAll('[data-layout-choice]'))btn.addEventListener('click',()=>saveLayoutMode(btn.dataset.layoutChoice));for(const b of document.querySelectorAll('.tab'))b.onclick=()=>{if(b.dataset.page==='jukeboxPage'&&!JukeboxAdmin.allowed())return;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));if(b.dataset.page==='reportsPage'&&RemotePos.active){renderReport();renderEmployeeChargeReport();}if(b.dataset.page==='systemPage'&&RemotePos.active&&RemotePos.employee?.owner_terminal===true){BackupManager.refresh();DriveBackup.refresh(true);}el('globalControlStrip').classList.toggle('not-pos-page',b.dataset.page!=='posPage');JukeboxAdmin.onNavigation(b.dataset.page);};on('navigationGearBtn','click',openNavigationMenu);
+ on('posHomeShortcut','click',()=>{
+  if(!RemotePos.active||!RemotePos.authenticated)return;
+  document.querySelector('.tab[data-page="posPage"]')?.click();
+  closeNavigationMenu(false);
+ });
+ on('navigationMenuClose','click',()=>closeNavigationMenu());on('navigationMenuBackdrop','click',()=>closeNavigationMenu());for(const b of document.querySelectorAll('[data-nav-page]'))b.addEventListener('click',()=>navigateFromMenu(b.dataset.navPage));on('customerInput','click',toggleCustomerDropdown);
  on('desktopCustomerSearch','focus',renderDesktopCustomerOptions);
  on('desktopCustomerSearch','click',renderDesktopCustomerOptions);
  on('desktopCustomerSearch','input',renderDesktopCustomerOptions);
@@ -1159,6 +1166,7 @@ function resetLockedWorkspace(message){
  closeEmployeeChargeReport(false);
  el('cloudGate').classList.add('hidden');
  el('cloudUserBar').classList.add('hidden');
+ el('posHomeShortcut').classList.add('hidden');
  el('adminLogin').classList.add('hidden');
  el('adminPanel').classList.add('hidden');
  el('trialToggleBtn').classList.add('hidden');
@@ -1245,6 +1253,7 @@ async function createCustomerReportQr(){
  finally{btn.disabled=false;}
 }
 function renderPermissions(){
+ el('posHomeShortcut').classList.toggle('hidden',!(RemotePos.active&&RemotePos.authenticated));
  fillEmployeeCreateCustomers();
  fillEmployeeChargeReportOptions();
  const auth=RemotePos.employee||{};
