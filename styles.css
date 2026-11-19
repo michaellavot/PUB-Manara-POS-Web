@@ -1868,3 +1868,18 @@ body.mobile-nav-compact #mobileNavTrigger[aria-expanded="true"]{
 .mobile-navigation-item.hidden{display:none!important}
 .mobile-navigation-icon{display:inline-grid;place-items:center;flex:0 0 30px;font-size:24px;color:#f3c992}
 .mobile-navigation-icon svg{display:block;width:24px;height:24px}
+
+/* V2.0.40: stable phone selector even if a previously saved tablet/desktop view
+   is active on a narrow phone. The existing desktop and tablet navigation stays intact. */
+body.mobile-nav-compact #globalControlStrip #cloudUserBar{
+ grid-column:6/7!important;grid-row:2!important;
+ height:49px!important;align-self:stretch!important;
+}
+body.mobile-nav-compact #globalControlStrip #cloudUserBar #mobileNavigationControl{
+ display:block!important;width:100%!important;height:49px!important;
+}
+body.mobile-nav-compact #globalControlStrip #cloudUserBar > #posHomeShortcut,
+body.mobile-nav-compact #globalControlStrip #cloudUserBar > #jukeboxOwnerEntry,
+body.mobile-nav-compact #globalControlStrip #cloudUserBar > #navigationGearBtn{
+ display:none!important;
+}
