@@ -99,7 +99,7 @@ const JukeboxAdmin=(()=>{
    actions.append(b);
   };
   if(isCode){
-   const active=o.status==='active'&&canManage;
+   const active=o.status==='active';
    action('◎ הצג קוד',active,()=>recoverCode(o.code_id));
    action('✕ בטל קוד',active,async()=>{
     if(await ask('ביטול קוד','לבטל את הקוד הקיים?',null,true)&&onPage())
