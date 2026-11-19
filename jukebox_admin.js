@@ -12,7 +12,13 @@ const JukeboxAdmin=(()=>{
  function node(tag,text,cls){const x=document.createElement(tag);if(text!==undefined)x.textContent=String(text);if(cls)x.className=cls;return x;}
  function button(text,fn,kind='secondary',label=''){const b=node('button',text,'button '+kind);b.type='button';b.dataset.jbAction='';b.disabled=busy;if(label){b.setAttribute('aria-label',label);b.title=label;}b.addEventListener('click',fn);return b;}
  function message(t,error=false){const el=$('jukeboxMessage');const value=error?t:'';if(el.textContent!==value)el.textContent=value;const cls='status jukebox-message '+(error?'error':'');if(el.className!==cls)el.className=cls;}
- function connection(paired){const el=$('jukeboxConnection');const next=paired===true?'paired':paired===false?'unpaired':'unknown';if(el.dataset.state===next)return;el.dataset.state=next;el.textContent=paired===true?'✓':paired===false?'✕':'…';const label=paired===true?'טאבלט מצומד':paired===false?'אין טאבלט מצומד':'מצב צימוד לא ידוע';el.title=label;el.setAttribute('aria-label',label);}
+ function connection(available){
+  const el=$('jukeboxConnection'),next=available===true?'online':available===false?'offline':'checking';
+  if(el.dataset.state===next)return;
+  el.dataset.state=next;
+  const label=next==='online'?'הטאבלט מחובר ומדווח פעילות':next==='offline'?'טאבלט הג׳וקבוקס אינו מחובר':'בודק את חיבור הג׳וקבוקס';
+  el.title=label;el.setAttribute('aria-label',label);
+ }
  let searchTimer=null,searchAbort=null,searchCache=new Map(),confirmResolve=null;
  function ask(title,description,track=null,danger=false){if(!onPage()||confirmResolve)return Promise.resolve(false);const d=$('jukeboxConfirmDialog');$('jukeboxConfirmTitle').textContent=title;$('jukeboxConfirmText').textContent=description;$('jukeboxConfirmTrack').classList.toggle('hidden',!track);$('jukeboxConfirmTrackTitle').textContent=track?.title||'';$('jukeboxConfirmTrackMeta').textContent=track?[track.channel,track.duration?fmt(track.duration):''].filter(Boolean).join(' · '):'';const img=$('jukeboxConfirmImage');if(track?.thumbnail){img.src=track.thumbnail;img.classList.remove('hidden');}else{img.removeAttribute('src');img.classList.add('hidden');}$('jukeboxConfirmYes').classList.toggle('warning',danger);$('jukeboxConfirmYes').classList.toggle('primary',!danger);d.returnValue='cancel';return new Promise(resolve=>{confirmResolve=resolve;d.showModal();});}
  function finishConfirm(){const d=$('jukeboxConfirmDialog'),resolve=confirmResolve;confirmResolve=null;if(resolve)resolve(d.returnValue==='yes'&&onPage());}
@@ -38,8 +44,39 @@ const JukeboxAdmin=(()=>{
  function renderCustomerChoices(){if(!onPage())return;const host=$('jukeboxCustomerResults'),q=norm($('jukeboxCustomerSearch').value);host.replaceChildren();for(const c of (state.customers||[]).filter(c=>c.active&&customerNameMatches(c.name,q)).slice(0,100)){const b=node('button',c.name,'desktop-customer-option');b.type='button';b.setAttribute('role','option');b.setAttribute('aria-selected',String(selectedCustomer?.id===c.id));b.addEventListener('click',()=>setCustomer(c));host.append(b);}if(!host.children.length)host.append(node('div','לא נמצאו לקוחות','desktop-customer-empty'));host.classList.remove('hidden');$('jukeboxCustomerSearch').setAttribute('aria-expanded','true');}
  function clearPair(){clearTimeout(pairTimer);pairTimer=null;$('jukeboxPairToken').value='';$('jukeboxPairBox').classList.add('hidden');}
  function clearRecovery(){recoveredId=null;$('jukeboxRecoveredValue').textContent='';$('jukeboxRecoveredExpiry').textContent='';$('jukeboxRecoveredCode').classList.add('hidden');}
- function clear(){epoch++;opened=false;systemSettingsSession=false;stopSearch();searchCache.clear();if($('jukeboxConfirmDialog').open)$('jukeboxConfirmDialog').close('cancel');for(const req of requests)req.abort();requests.clear();controller=null;polling=false;mutation++;queueSignature='';deviceSignature='';settingsSignature='';selectedQueueKey=null;snapshot=null;settingsDirty=false;pendingSale=null;keyConfigured=false;keyImportPending=false;saleNotice='';setCustomer(null);setAdvanced(false);apiKey='';clearPair();clearRecovery();for(const id of ['jukeboxQueueDialog','jukeboxEmployeeDialog'])if($(id).open)$(id).close();for(const id of ['jukeboxQueueList','jukeboxQueueDetails','jukeboxQueueActions','jukeboxDevices','jukeboxSearchResults'])$(id).replaceChildren();$('jukeboxSearchQuery').value='';$('jukeboxSearchStatus').textContent='';$('jukeboxSearchKey').value='';$('jukeboxEmployeePerson').value='';$('jukeboxQueueNotice').textContent='';$('jukeboxContent').classList.add('hidden');$('jukeboxSettingsForm').reset();queueTimes.clear();message('');connection(null);setBusy(false);}
- function syncVisibility(){if(!initialized)return;const ok=allowed();$('jukeboxOwnerEntry').classList.toggle('hidden',!ok);$('jukeboxSellBtn').classList.toggle('hidden',!ok);$('jukeboxPage').classList.toggle('hidden',!ok);$('jukeboxSystemSettingsOpen').classList.toggle('hidden',!ok);if(!ok&&opened){const active=$('jukeboxPage').classList.contains('active');clear();if(active)go('posPage');}}
+ function clear(){epoch++;opened=false;systemSettingsSession=false;stopSearch();searchCache.clear();if($('jukeboxConfirmDialog').open)$('jukeboxConfirmDialog').close('cancel');for(const req of requests)req.abort();requests.clear();controller=null;polling=false;mutation++;queueSignature='';deviceSignature='';settingsSignature='';selectedQueueKey=null;snapshot=null;settingsDirty=false;pendingSale=null;keyConfigured=false;keyImportPending=false;saleNotice='';setCustomer(null);setAdvanced(false);apiKey='';clearPair();clearRecovery();for(const id of ['jukeboxQueueDialog','jukeboxEmployeeDialog'])if($(id).open)$(id).close();for(const id of ['jukeboxQueueList','jukeboxQueueDetails','jukeboxQueueActions','jukeboxDevices','jukeboxSearchResults'])$(id).replaceChildren();$('jukeboxSearchQuery').value='';$('jukeboxSearchStatus').textContent='';$('jukeboxSearchKey').value='';$('jukeboxEmployeePerson').value='';$('jukeboxQueueNotice').textContent='';$('jukeboxContent').classList.add('hidden');$('jukeboxSettingsForm').reset();queueTimes.clear();message('');setBusy(false);}
+ let indicatorBusy=false,lastIndicatorRequest=0;
+ async function refreshRecordIndicator(force=false){
+  if(!initialized||!allowed()){connection(null);return;}
+  // Management view already polls the authenticated live snapshot.
+  if(onPage()&&snapshot)return;
+  const now=Date.now();
+  if(indicatorBusy||(!force&&now-lastIndicatorRequest<15000))return;
+  lastIndicatorRequest=now;indicatorBusy=true;
+  const userId=RemotePos.session?.user?.id;
+  let timeout=null;
+  try{
+   RemotePos.assertShift();
+   if(RemotePos.session?.expires_at-Date.now()<75000)await RemotePos.refreshSession();
+   if(!allowed()||RemotePos.session?.user?.id!==userId)return;
+   const abort=new AbortController();
+   timeout=setTimeout(()=>abort.abort(),12000);
+   const response=await fetch(URL,{method:'POST',cache:'no-store',headers:{
+    apikey:KEY,'Content-Type':'application/json',
+    Authorization:'Bearer '+RemotePos.session.access_token
+   },body:JSON.stringify({action:'snapshot',data:{}}),signal:abort.signal});
+   const reply=await response.json().catch(()=>({}));
+   if(!response.ok||reply.ok!==true)throw Error('Jukebox status is unavailable');
+   if(allowed()&&RemotePos.session?.user?.id===userId)
+    connection(reply.result?.player_control?.available===true);
+  }catch{
+   if(allowed()&&RemotePos.session?.user?.id===userId)connection(null);
+  }finally{if(timeout!==null)clearTimeout(timeout);indicatorBusy=false;}
+ }
+ function syncVisibility(){if(!initialized)return;const ok=allowed();$('jukeboxOwnerEntry').classList.toggle('hidden',!ok);$('jukeboxSellBtn').classList.toggle('hidden',!ok);$('jukeboxPage').classList.toggle('hidden',!ok);$('jukeboxSystemSettingsOpen').classList.toggle('hidden',!ok);
+ $('jukeboxConnection').classList.toggle('hidden',!ok);
+ if(ok)refreshRecordIndicator();else connection(null);
+ if(!ok&&opened){const active=$('jukeboxPage').classList.contains('active');clear();if(active)go('posPage');}}
  function closeForLock(){if(!initialized)return;if(opened){clear();go('systemPage');}$('jukeboxPage').classList.add('hidden');}
  function onNavigation(id){if(!initialized)return;
  if(id==='jukeboxPage'){
@@ -50,7 +87,7 @@ const JukeboxAdmin=(()=>{
   setCustomer(state.employeeCharge?linkedEmployeeCustomer():state.selectedCustomer,state.employeeCharge?state.employeeChargePerson:'');
   apiKey='';loadPending();setAdvanced(false);refresh(true);
  }else if(id==='systemPage'&&systemSettingsSession){return;}
- else if(opened){clear();}
+ else if(opened){clear();refreshRecordIndicator(true);}
 }
 function openSystemSettings(){
  if(!initialized||!allowed()||!$('systemPage')?.classList.contains('active'))return;
@@ -86,10 +123,20 @@ function openSystemSettings(){
  function updateClocks(){if(!onPage()||!snapshot)return;const all=snapshot.orders||[],playing=all.find(o=>o.status==='playing');let total=0;for(const o of all){if(o.status==='queued'||o.status==='playing')total+=remaining(o);const cell=queueTimes.get(o.id);if(cell&&cell.textContent!==fmt(remaining(o)))cell.textContent=fmt(remaining(o));} if($('jukeboxQueueTotal').textContent!==fmt(total))$('jukeboxQueueTotal').textContent=fmt(total);if(playing){$('jukeboxNowDetail').textContent='זמן שנותר · '+fmt(remaining(playing));$('jukeboxProgress').value=playing.duration?100*position(playing)/playing.duration:0;} }
  function iconAction(symbol,label,fn,kind='secondary'){const b=button(symbol,fn,kind,label);b.classList.add('jukebox-icon-btn');return b;}
 
- function queueEntries(s){
+ const queueRetentionMs=24*60*60*1000;
+ const retainedQueueStatuses=new Set(['queued','playing','held','failed','pending_approval','active']);
+ function queueEntries(s,now=Date.now()){
   const names=new Map((s?.queue_customers||[]).map(x=>[x.order_id,x]));
   return [...(s?.orders||[]).map(o=>({...o,...names.get(o.id)})),
    ...(s?.pending_codes||[]).map(c=>({...c,codeOnly:true,code_id:c.id,title:'קוד ממתין לבחירת שיר'}))]
+   .filter(o=>{
+    // Only terminal entries expire; waiting, playing, paused or review-required entries remain.
+    if(retainedQueueStatuses.has(o.status))return true;
+    // Prefer playback verification time where present, then original creation timestamp.
+    // When neither is valid, retain the entry rather than risk hiding active data.
+    const at=Date.parse(o.verified_at||o.created_at||'');
+    return !Number.isFinite(at)||now-at<queueRetentionMs;
+   })
    .sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0));
  }
  const queueKey=o=>o.codeOnly?'code:'+o.code_id:'order:'+o.id;
@@ -145,11 +192,12 @@ function openSystemSettings(){
   if(!$('jukeboxQueueDialog').open)$('jukeboxQueueDialog').showModal();
  }
  function queueRows(s){
-  const sig=JSON.stringify([(s.orders||[]).map(o=>[o.id,o.code_id,o.title,o.duration,o.status,o.is_test,o.created_at]),s.queue_customers||[],s.pending_codes||[]]);
+  const now=Date.now(),all=queueEntries(s,now);
+  // Re-evaluate age each minute even when queue data did not change.
+  const sig=JSON.stringify([Math.floor(now/60000),all.map(o=>[o.id,o.code_id,o.title,o.duration,o.status,o.is_test,o.created_at,o.verified_at,o.customer_name]),s.queue_customers||[]]);
   if(sig===queueSignature)return;
   queueSignature=sig;
   const host=$('jukeboxQueueList');host.replaceChildren();queueTimes.clear();
-  const all=queueEntries(s);
   const active=all.filter(o=>['queued','playing','held','failed','pending_approval','active'].includes(o.status));
   $('jukeboxQueueCount').textContent=String(active.length);
   for(const o of all){
@@ -184,7 +232,7 @@ function openSystemSettings(){
  async function recoverCode(id){if(!onPage()||busy||!$('jukeboxQueueDialog').open)return;setBusy(true);const e=epoch;try{const r=await api('snapshot',{recover_code_id:id});if(e!==epoch||!$('jukeboxQueueDialog').open)return;if(!/^\d{4}$/.test(r?.code||''))throw Error('jukebox_operation_failed');recoveredId=id;$('jukeboxRecoveredValue').textContent=r.code;$('jukeboxRecoveredExpiry').textContent='תקף עד '+new Date(r.expires_at).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});$('jukeboxRecoveredCode').classList.remove('hidden');$('jukeboxQueueNotice').textContent='זהו הקוד הקיים — לא נוצר חיוב נוסף.';}catch(err){$('jukeboxQueueNotice').textContent=errors[err.message]||'הקוד אינו זמין.';}finally{if(e===epoch)setBusy(false);}}
  function renderPower(){const s=snapshot?.settings||{},c=snapshot?.player_control||{},on=s.player_enabled!==false;const b=$('jukeboxPowerBtn');b.disabled=busy||!snapshot;b.textContent=on?'כבה נגן':'הפעל נגן';b.classList.toggle('warning',on);b.classList.toggle('primary',!on);$('jukeboxPowerStatus').textContent=!snapshot?'ממתין לשרת':!on?'הנגן כבוי':c.autoplay_blocked&&c.available?'נדרשת לחיצה חד־פעמית בטאבלט לאפשר שמע':!c.available?'הפעלה מוגדרת · ממתין לטאבלט':c.power===false?'ממתין לאישור הטאבלט':c.state==='playing'||c.state==='guest'?'הנגן פעיל · מתנגן':s.paused?'הנגן פעיל · מושהה':'הנגן פעיל';}
  function renderTransport(){const s=snapshot?.settings||{},playing=(snapshot?.orders||[]).find(o=>o.status==='playing'),control=snapshot?.player_control||{},count=(snapshot?.items||[]).filter(i=>i.playlist_id===s.active_playlist&&!i.archived_at).length,seedMode=(snapshot?.playlists||[]).some(p=>p.id===s.active_playlist&&p.is_temporary);$('jukeboxPauseBtn').textContent=s.paused?'▶ המשך':'⏸ השהה';$('jukeboxPauseBtn').disabled=busy||!snapshot||!s.enabled;const available=!busy&&s.enabled&&s.player_enabled!==false&&control.available===true&&count>0&&!playing;$('jukeboxPrevBtn').disabled=!available||(!seedMode&&count<2);$('jukeboxNextBtn').disabled=!available||(!seedMode&&count<2);$('jukeboxStopBtn').disabled=!available;$('jukeboxTransportNote').textContent=playing?'שיר לקוח מתנגן. דילוג ועצירה חסומים.':!control.available?'ממתין לדיווח מהטאבלט.':seedMode?'רקע מתמשך לפי השיר שנבחר.':count>0?'':'בחר שיר רקע ביוטיוב.';renderPower();}
- function render(s,force=false){if(!onPage())return;snapshot=s;snapshotAt=Date.now();$('jukeboxContent').classList.remove('hidden');const settings=s.settings||{},maintenance=Date.parse(settings.maintenance_until||'')>Date.now(),devices=s.devices||[],playing=(s.orders||[]).find(o=>o.status==='playing'),control=s.player_control||{},track=(s.items||[]).find(i=>i.id===control.item_id&&!i.archived_at),seed=(s.items||[]).find(i=>i.playlist_id===settings.active_playlist&&!i.archived_at);connection(devices.some(d=>!d.revoked_at));$('jukeboxMaintenanceBanner').classList.toggle('hidden',!maintenance);
+ function render(s,force=false){if(!onPage())return;snapshot=s;snapshotAt=Date.now();$('jukeboxContent').classList.remove('hidden');const settings=s.settings||{},maintenance=Date.parse(settings.maintenance_until||'')>Date.now(),devices=s.devices||[],playing=(s.orders||[]).find(o=>o.status==='playing'),control=s.player_control||{},track=(s.items||[]).find(i=>i.id===control.item_id&&!i.archived_at),seed=(s.items||[]).find(i=>i.playlist_id===settings.active_playlist&&!i.archived_at);connection(s.player_control?.available===true);$('jukeboxMaintenanceBanner').classList.toggle('hidden',!maintenance);
   keyConfigured=s.youtube_configured===true;keyImportPending=s.youtube_import_pending===true;if(advancedOpen)$('jukeboxKeyStatus').textContent=keyStatus();renderSale();
   if(selectedCustomer&&!state.customers.some(c=>c.id===selectedCustomer.id&&c.active))setCustomer(null);
   const actual=control.available&&control.state!=='idle'&&track;
@@ -218,7 +266,7 @@ function openSystemSettings(){
   $('jukeboxPairBtn').addEventListener('click',async()=>{if(await ask('צימוד טאבלט','ליצור אסימון צימוד חדש לטאבלט?'))run(async()=>{const r=await api('pair');if(!/^[0-9]{6}$/.test(r?.pair_token||''))throw Error('jukebox_operation_failed');clearPair();$('jukeboxPairToken').value=r.pair_token;$('jukeboxPairBox').classList.remove('hidden');pairTimer=setTimeout(clearPair,300000);});});
   $('jukeboxCopyPair').addEventListener('click',async()=>{if(!onPage()||!$('jukeboxPairToken').value)return;try{await navigator.clipboard.writeText($('jukeboxPairToken').value);}catch{$('jukeboxPairToken').focus();$('jukeboxPairToken').select();}});
   $('jukeboxUnlockBtn').addEventListener('click',()=>run(()=>api('unlock')));$('jukeboxRevokeBtn').addEventListener('click',async()=>{if(await ask('ביטול צימוד','לבטל את צימוד הטאבלט?',null,true))run(()=>api('revoke_device'));});
-  window.addEventListener('pagehide',()=>{if(opened)clear();});setInterval(()=>{if(opened&&!allowed())syncVisibility();else if(onPage()&&!busy)refresh(false);},3000);setInterval(updateClocks,250);syncVisibility();
+  window.addEventListener('pagehide',()=>{if(opened)clear();});setInterval(()=>{if(opened&&!allowed())syncVisibility();else if(onPage()&&!busy)refresh(false);},3000);setInterval(updateClocks,250);setInterval(()=>{if(allowed())refreshRecordIndicator();},15000);syncVisibility();
  }
  return {init,allowed,syncVisibility,onNavigation,openSystemSettings,closeForLock,syncMaintenance};
 })();
