@@ -1518,7 +1518,7 @@ body.desktop-hero-controls #desktopHeroGear .jukebox-gear{width:43px;min-width:4
  background:linear-gradient(140deg,#624226,#2b211a);
  color:#ffe0ac;font-size:25px;box-shadow:inset 0 1px #e9b97366;
 }
-#jukeboxPage .jukebox-sale-eyebrow{font-size:12px;color:#d8b58c;letter-spacing:.2px}
+
 #jukeboxPage .jukebox-sale-panel #jukeboxCustomerSearch{
  background:#0b161c;border:1px solid #c3935e;
  box-shadow:0 0 0 2px #ac774024;color:#fff0d9;
@@ -1596,7 +1596,7 @@ body.desktop-hero-controls #desktopHeroGear .jukebox-gear{width:43px;min-width:4
  #jukeboxPage .jukebox-queue-list{max-height:46dvh}
 }
 @media(max-width:500px){
- #jukeboxPage .jukebox-sale-eyebrow{display:none}
+ 
  #jukeboxPage .jukebox-customer-line{flex-wrap:wrap}
  #jukeboxPage .jukebox-customer-line .employee-charge-button{max-width:100%;flex:1}
  #jukeboxPage .jukebox-queue-detail-fields{grid-template-columns:1fr}
@@ -1623,13 +1623,13 @@ body.desktop-hero-controls #desktopHeroGear .jukebox-gear{width:43px;min-width:4
 #systemPage .system-update-icon[data-update-state="checking"]{background:#453a2b;color:#f6d19f;border-color:#b69a70}
 #systemPage .system-update-icon:hover,#systemPage .system-update-icon:focus-visible{outline:2px solid #eac28a;outline-offset:2px}
 #systemPage .system-visually-hidden{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important;padding:0!important}
-#systemPage .system-main-entry{display:flex;align-items:center;gap:15px;text-align:right;width:100%;min-height:78px;border:1px solid #80603e;border-radius:12px;background:linear-gradient(135deg,#1e2d35,#101a21);color:#edd5b3;padding:13px 17px;cursor:pointer;box-shadow:inset 0 1px 0 #d7a46c1a}
+#systemPage .system-main-entry{display:flex;align-items:center;gap:15px;text-align:right;width:100%;min-height:70px;border:1px solid #80603e;border-radius:12px;background:linear-gradient(135deg,#1e2d35,#101a21);color:#edd5b3;padding:10px 17px;cursor:pointer;box-shadow:inset 0 1px 0 #d7a46c1a}
 #systemPage .system-main-entry:not(.hidden):hover,#systemPage .system-main-entry:focus-visible{border-color:#d2a06a;outline:2px solid #b88a55;outline-offset:1px;background:#283740}
 #systemPage .system-main-entry.hidden{display:none!important}
 #systemPage .system-entry-icon{display:grid;place-items:center;flex:none;width:43px;height:43px;background:#3d2d21;border:1px solid #906941;border-radius:10px;font-size:26px;color:#f6d098}
-#systemPage .system-entry-copy{display:grid;gap:4px;flex:1}
+#systemPage .system-entry-copy{display:flex;align-items:center;flex:1;min-width:0}
 #systemPage .system-entry-copy strong{font-size:18px;color:#f5d7ab}
-#systemPage .system-entry-copy small{font-size:12px;color:#c9b79e;font-weight:400}
+
 #systemPage .system-entry-chevron{font-size:28px;color:#cb9d62}
 #systemPage .system-install-footer{display:flex;justify-content:center;padding:12px 0}
 #systemPage #installBtnSystem{font-size:12px;min-height:32px;padding:5px 12px;color:#d9c3a4;background:#263037;border-color:#6c563c;border-radius:8px}
@@ -1657,7 +1657,7 @@ body.desktop-hero-controls #desktopHeroGear .jukebox-gear{width:43px;min-width:4
 #systemPage #jukeboxAdvanced .jukebox-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 #jukeboxPage .jukebox-settings-hint{color:#d1b18b;font-size:12px}
 @media(max-width:800px){#systemPage #jukeboxAdvanced .jukebox-advanced{grid-template-columns:1fr}}
-@media(max-width:650px){#systemPage .system-settings-row{grid-template-columns:1fr}#systemPage .system-employee-actions{grid-template-columns:1fr}#systemPage .system-main-entry{min-height:65px;padding:11px}#systemPage .system-entry-icon{width:39px;height:39px}#systemPage .system-settings-tile,#systemPage .system-version-tile{min-height:56px}#systemPage .system-advanced-dialog .pos-simple-system-grid{grid-template-columns:1fr}}
+@media(max-width:650px){#systemPage .system-settings-row{grid-template-columns:1fr}#systemPage .system-employee-actions{grid-template-columns:1fr}#systemPage .system-main-entry{min-height:60px;padding:9px 11px}#systemPage .system-entry-icon{width:39px;height:39px}#systemPage .system-settings-tile,#systemPage .system-version-tile{min-height:56px}#systemPage .system-advanced-dialog .pos-simple-system-grid{grid-template-columns:1fr}}
 
 /* Only the compact bottom install action is visible; preserve original PWA event target. */
 #systemPage #installBtn{display:none!important}

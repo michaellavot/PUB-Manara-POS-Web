@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=0.9.29">
   <link rel="icon" href="assets/app_icon_192.png?v=0.9.29">
   <link rel="apple-touch-icon" href="assets/app_icon_192.png?v=0.9.29">
-  <link rel="stylesheet" href="styles.css?v=2.0.35">
+  <link rel="stylesheet" href="styles.css?v=2.0.36">
 <style id="startupScreenCriticalStyle">
 /* Startup must be usable before styles.css and scripts have loaded. */
 #startupScreen{
@@ -243,17 +243,17 @@
     <button id="deviceLayoutBtn" class="button secondary system-settings-tile system-layout-choice" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="deviceLayoutDialog">אוטומטי</button>
     <button id="shareAppQrBtn" class="button secondary system-settings-tile" type="button">▦ שיתוף QR</button>
     <div class="system-version-tile" role="group" aria-label="גרסה ובדיקת עדכונים">
-     <span id="installedVersion" class="system-version-text">V2.0.35</span>
+     <span id="installedVersion" class="system-version-text">V2.0.36</span>
      <button id="checkUpdatesBtn" class="button system-update-icon" data-update-state="unknown" type="button" title="בדוק עדכונים" aria-label="בדוק עדכונים">⟳</button>
      <small id="updateStatus" class="system-visually-hidden" role="status">עדיין לא אומתה גרסה</small>
-     <small id="versionLabel" class="system-visually-hidden">V2.0.35</small>
+     <small id="versionLabel" class="system-visually-hidden">V2.0.36</small>
      <button id="updateBadge" class="update-badge hidden system-visually-hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button>
     </div>
    </div>
   </section>
-  <button id="systemEmployeesOpen" class="system-main-entry" type="button" aria-haspopup="dialog" aria-controls="systemEmployeeDialog"><span class="system-entry-icon" aria-hidden="true">♙</span><span class="system-entry-copy"><strong>עובדים</strong><small>החלפת עובד או יציאה מהקופה</small></span><span class="system-entry-chevron" aria-hidden="true">‹</span></button>
-  <button id="jukeboxSystemSettingsOpen" class="system-main-entry hidden" type="button" aria-haspopup="dialog" aria-controls="jukeboxAdvanced" aria-expanded="false"><span class="system-entry-icon" aria-hidden="true">♫</span><span class="system-entry-copy"><strong>הגדרות ג׳וקבוקס</strong><small>הגדרות נגן, צימוד והרשאות מנהל</small></span><span class="system-entry-chevron" aria-hidden="true">‹</span></button>
-  <button id="systemAdvancedOpen" class="system-main-entry hidden" type="button" aria-haspopup="dialog" aria-controls="newSystemDashboard"><span class="system-entry-icon" aria-hidden="true">⚙</span><span class="system-entry-copy"><strong>ניהול מתקדם</strong><small>ארכיון, גיבויים, Google Drive ותחזוקה</small></span><span class="system-entry-chevron" aria-hidden="true">‹</span></button>
+  <button id="systemEmployeesOpen" class="system-main-entry" type="button" aria-haspopup="dialog" aria-controls="systemEmployeeDialog"><span class="system-entry-icon" aria-hidden="true">♙</span><span class="system-entry-copy"><strong>עובדים</strong></span><span class="system-entry-chevron" aria-hidden="true">‹</span></button>
+  <button id="jukeboxSystemSettingsOpen" class="system-main-entry hidden" type="button" aria-haspopup="dialog" aria-controls="jukeboxAdvanced" aria-expanded="false"><span class="system-entry-icon" aria-hidden="true">♫</span><span class="system-entry-copy"><strong>הגדרות ג׳וקבוקס</strong></span><span class="system-entry-chevron" aria-hidden="true">‹</span></button>
+  <button id="systemAdvancedOpen" class="system-main-entry hidden" type="button" aria-haspopup="dialog" aria-controls="newSystemDashboard"><span class="system-entry-icon" aria-hidden="true">⚙</span><span class="system-entry-copy"><strong>ניהול מתקדם</strong></span><span class="system-entry-chevron" aria-hidden="true">‹</span></button>
   <div class="system-install-footer"><button id="installBtnSystem" class="button secondary" type="button">↓ התקן אפליקציה</button><button id="installBtn" class="button install hidden" type="button">התקן אפליקציה</button></div>
  </div>
  <dialog id="systemEmployeeDialog" class="panel system-dialog system-employee-dialog" aria-labelledby="systemEmployeeTitle" dir="rtl">
@@ -372,7 +372,7 @@
         <p id="jukeboxMaintenanceBanner" class="jukebox-maintenance-banner hidden" role="status">🛠️ מצב תחזוקה D — קודי בדיקה בלבד · ללא חיובי אמת</p>
         <div id="jukeboxContent" class="jukebox-console hidden">
           <section class="panel jukebox-panel jukebox-sale-panel">
-            <div class="panel-head jukebox-sale-heading"><div class="jukebox-sale-heading-title"><span class="jukebox-sale-symbol" aria-hidden="true">♫</span><h2>לקוח וחיוב</h2></div><span class="jukebox-sale-eyebrow">בחירת לקוח · הפקת קוד</span></div>
+            <div class="panel-head jukebox-sale-heading"><div class="jukebox-sale-heading-title"><span class="jukebox-sale-symbol" aria-hidden="true">♫</span><h2>לקוח וחיוב</h2></div></div>
             <div class="jukebox-customer-line">
               <div class="jukebox-customer-wrap">
                 <input id="jukeboxCustomerSearch" class="desktop-customer-search" type="search" placeholder="בחר לקוח..." aria-label="חפש ובחר לקוח" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="jukeboxCustomerResults" aria-expanded="false">
@@ -743,12 +743,12 @@
       <p id="driveRestoreProofMessage" class="small-note" role="status"></p>
     </div>
   </div>
-  <script src="db.js"></script><script src="remote.js?v=2.0.35"></script><script src="xlsx.js"></script><script src="updater.js?v=2.0.35"></script><script src="archive_admin.js?v=2.0.35"></script><script src="legacy_db_import.js?v=2.0.35"></script>
-<script src="backup_manager.js?v=2.0.35"></script>
-<script src="drive_backup.js?v=2.0.35"></script>
-<script src="qrcode.min.js?v=2.0.35"></script>
-<script src="draft_guard.js?v=2.0.35"></script>
-<script src="report_widgets.js?v=2.0.35"></script>
-<script src="jukebox_admin.js?v=2.0.35"></script>
-<script src="app.js?v=2.0.35"></script>
+  <script src="db.js"></script><script src="remote.js?v=2.0.36"></script><script src="xlsx.js"></script><script src="updater.js?v=2.0.36"></script><script src="archive_admin.js?v=2.0.36"></script><script src="legacy_db_import.js?v=2.0.36"></script>
+<script src="backup_manager.js?v=2.0.36"></script>
+<script src="drive_backup.js?v=2.0.36"></script>
+<script src="qrcode.min.js?v=2.0.36"></script>
+<script src="draft_guard.js?v=2.0.36"></script>
+<script src="report_widgets.js?v=2.0.36"></script>
+<script src="jukebox_admin.js?v=2.0.36"></script>
+<script src="app.js?v=2.0.36"></script>
 </body></html>
