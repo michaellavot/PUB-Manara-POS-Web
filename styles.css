@@ -1658,3 +1658,6 @@ body.desktop-hero-controls #desktopHeroGear .jukebox-gear{width:43px;min-width:4
 #jukeboxPage .jukebox-settings-hint{color:#d1b18b;font-size:12px}
 @media(max-width:800px){#systemPage #jukeboxAdvanced .jukebox-advanced{grid-template-columns:1fr}}
 @media(max-width:650px){#systemPage .system-settings-row{grid-template-columns:1fr}#systemPage .system-employee-actions{grid-template-columns:1fr}#systemPage .system-main-entry{min-height:65px;padding:11px}#systemPage .system-entry-icon{width:39px;height:39px}#systemPage .system-settings-tile,#systemPage .system-version-tile{min-height:56px}#systemPage .system-advanced-dialog .pos-simple-system-grid{grid-template-columns:1fr}}
+
+/* Only the compact bottom install action is visible; preserve original PWA event target. */
+#systemPage #installBtn{display:none!important}
