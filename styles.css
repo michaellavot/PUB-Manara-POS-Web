@@ -1713,3 +1713,37 @@ body.desktop-hero-controls #desktopHeroGear #navigationGearBtn{width:43px;min-wi
 
 /* Keep the POS shortcut as a register icon; legacy gear-menu pseudo-content is gear-only. */
 body:not(.desktop-hero-controls) .global-control-strip #cloudUserBar #posHomeShortcut::after{content:none!important}
+
+/* V2.0.35: clear single rotating music note and consistent RTL navigation order. */
+#cloudConnectionStatus .jukebox-record-indicator .jb-note-on{
+ transform-origin:50% 50%;transform-box:view-box;will-change:transform;
+}
+#cloudConnectionStatus .jukebox-record-indicator[data-state="online"] .jb-note-on{
+ animation:jb-note-spin 2.5s linear infinite;
+}
+#cloudConnectionStatus .jukebox-record-indicator .jb-note-broken{
+ transform:none;animation:none;
+}
+body.desktop-hero-controls #desktopHeroGear{
+ direction:rtl;display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:6px;
+}
+body:not(.desktop-hero-controls) #cloudUserBar{
+ direction:rtl;
+}
+#cloudUserBar .pos-home-shortcut svg{width:28px;height:28px;stroke:none;}
+body.desktop-hero-controls #desktopHeroGear #posHomeShortcut,
+body.desktop-hero-controls #desktopHeroGear #navigationGearBtn,
+body.desktop-hero-controls #desktopHeroGear #jukeboxOpenBtn{
+ width:43px;min-width:43px;height:43px;min-height:43px;
+}
+@media (max-width:730px){
+ body:not(.desktop-hero-controls) .global-control-strip #cloudUserBar{
+  direction:rtl;flex-direction:row;flex-wrap:nowrap;
+ }
+ body:not(.desktop-hero-controls) .global-control-strip #cloudUserBar #posHomeShortcut svg{
+  width:28px;height:28px;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ #cloudConnectionStatus .jukebox-record-indicator[data-state="online"] .jb-note-on{animation:none;}
+}

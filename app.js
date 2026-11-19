@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.0.34';
+const APP_VERSION='2.0.35';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -865,8 +865,10 @@ function arrangeDesktopHeaderControls(){
   if(gear.parentElement!==userBar)userBar.append(gear);
  }
  const jbEntry=el('jukeboxOwnerEntry'),home=el('posHomeShortcut');
- if(jbEntry&&gear.nextElementSibling!==jbEntry)gear.after(jbEntry);
- if(home&&jbEntry&&jbEntry.nextElementSibling!==home)jbEntry.after(home);
+ const navHost=desktop?left:userBar;
+ // Re-parent only the existing buttons, preserving listeners and authentication.
+ // RTL visual order: register (right), Jukebox (middle), settings (left).
+ navHost.append(home,jbEntry,gear);
  document.body.classList.toggle('desktop-hero-controls',desktop);
 }
 function applyLayoutMode(mode){
