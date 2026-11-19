@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=0.9.29">
   <link rel="icon" href="assets/app_icon_192.png?v=0.9.29">
   <link rel="apple-touch-icon" href="assets/app_icon_192.png?v=0.9.29">
-  <link rel="stylesheet" href="styles.css?v=2.0.37">
+  <link rel="stylesheet" href="styles.css?v=2.0.38">
 <style id="startupScreenCriticalStyle">
 /* Startup must be usable before styles.css and scripts have loaded. */
 #startupScreen{
@@ -100,7 +100,7 @@
         
         <div class="work-grid">
           <section class="panel product-panel"><span class="small-note hidden" id="productCounter" aria-hidden="true"></span><div id="categories" class="category-grid"></div><div class="spark-strip" aria-hidden="true"><span class="spark-diamond"></span></div><div class="product-visual-region"><div id="products" class="products-grid"></div></div></section>
-          <section class="panel bill-panel"><div id="desktopBillingControls" class="desktop-billing-controls" aria-label="בחירת לקוח וסוג חיוב"></div><span class="bill-tag hidden" id="billTag" aria-hidden="true"></span><div class="bill-table-wrap"><table class="bill-table"><thead><tr><th>פריט</th><th>כמות</th><th>מחיר</th></tr></thead><tbody id="billBody"><tr><td colspan="3" class="empty">אין פריטים בחיוב</td></tr></tbody></table></div><div class="total-block" id="totalBlock"><span>סה״כ לתשלום</span><strong id="total">0 ₪</strong></div><button id="chargeBtn" class="button charge" type="button"><span class="charge-button-label">✓ חייב</span><img class="charge-button-beer-gif" src="assets/beer_icon.gif" alt="" aria-hidden="true"></button><button id="jukeboxSellBtn" class="button secondary jukebox-sell hidden" type="button">♫ שיר בג׳וקבוקס</button><div class="bill-actions"><button class="button secondary" id="removeSelectedBtn">מחק שורה</button><button class="button secondary" id="undoBtn">בטל אחרון</button><button class="button warning" id="clearBtn">נקה חיוב</button><button class="button secondary" id="refundBtn">זיכוי עסקה</button></div><div class="status" id="status" role="status"></div></section>
+          <section class="panel bill-panel"><div id="desktopBillingControls" class="desktop-billing-controls" aria-label="בחירת לקוח וסוג חיוב"></div><span class="bill-tag hidden" id="billTag" aria-hidden="true"></span><div class="bill-table-wrap"><table class="bill-table"><thead><tr><th>פריט</th><th>כמות</th><th>מחיר</th></tr></thead><tbody id="billBody"><tr><td colspan="3" class="empty">אין פריטים בחיוב</td></tr></tbody></table></div><div class="total-block" id="totalBlock"><span>סה״כ לתשלום</span><strong id="total">0 ₪</strong></div><div id="posChargeRow" class="pos-charge-row"><button id="chargeBtn" class="button charge" type="button"><span class="charge-button-label">✓ חייב</span><img class="charge-button-beer-gif" src="assets/beer_icon.gif" alt="" aria-hidden="true"></button><button id="jukeboxSellBtn" class="button secondary jukebox-quick-button hidden" type="button" aria-label="בחירת לקוח והנפקת קוד שיר בג׳וקבוקס" title="הנפקת קוד לג׳וקבוקס" aria-haspopup="dialog" aria-controls="jukeboxSaleDialog">♫</button></div><div class="bill-actions"><button class="button secondary" id="removeSelectedBtn">מחק שורה</button><button class="button secondary" id="undoBtn">בטל אחרון</button><button class="button warning" id="clearBtn">נקה חיוב</button><button class="button secondary" id="refundBtn">זיכוי עסקה</button></div><div class="status" id="status" role="status"></div></section>
         </div>
       </section>
       <section id="managePage" class="page">
@@ -243,10 +243,10 @@
     <button id="deviceLayoutBtn" class="button secondary system-settings-tile system-layout-choice" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="deviceLayoutDialog">אוטומטי</button>
     <button id="shareAppQrBtn" class="button secondary system-settings-tile" type="button">▦ שיתוף QR</button>
     <div class="system-version-tile" role="group" aria-label="גרסה ובדיקת עדכונים">
-     <span id="installedVersion" class="system-version-text">V2.0.37</span>
+     <span id="installedVersion" class="system-version-text">V2.0.38</span>
      <button id="checkUpdatesBtn" class="button system-update-icon" data-update-state="unknown" type="button" title="בדוק עדכונים" aria-label="בדוק עדכונים">⟳</button>
      <small id="updateStatus" class="system-visually-hidden" role="status">עדיין לא אומתה גרסה</small>
-     <small id="versionLabel" class="system-visually-hidden">V2.0.37</small>
+     <small id="versionLabel" class="system-visually-hidden">V2.0.38</small>
      <button id="updateBadge" class="update-badge hidden system-visually-hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button>
     </div>
    </div>
@@ -371,20 +371,7 @@
         <p id="jukeboxMessage" class="status jukebox-message" role="status" aria-live="polite"></p>
         <p id="jukeboxMaintenanceBanner" class="jukebox-maintenance-banner hidden" role="status">🛠️ מצב תחזוקה D — קודי בדיקה בלבד · ללא חיובי אמת</p>
         <div id="jukeboxContent" class="jukebox-console hidden">
-          <section class="panel jukebox-panel jukebox-sale-panel">
-            <div class="panel-head jukebox-sale-heading"><div class="jukebox-sale-heading-title"><span class="jukebox-sale-symbol" aria-hidden="true">♫</span><h2>לקוח וחיוב</h2></div></div>
-            <div class="jukebox-customer-line">
-              <div class="jukebox-customer-wrap">
-                <input id="jukeboxCustomerSearch" class="desktop-customer-search" type="search" placeholder="בחר לקוח..." aria-label="חפש ובחר לקוח" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="jukeboxCustomerResults" aria-expanded="false">
-                <div id="jukeboxCustomerResults" class="desktop-customer-options hidden" role="listbox" aria-label="לקוחות"></div>
-              </div>
-              <button id="jukeboxEmployeeCharge" class="button employee-charge-button" type="button" aria-haspopup="dialog">חיוב על עובד</button>
-            </div>
-            <p id="jukeboxSaleCustomer" class="jukebox-selected-customer visually-hidden-label">לא נבחר לקוח</p>
-            <button id="jukeboxSaleConfirm" class="button primary" type="button" disabled>צור קוד לשיר · חיוב לאחר ניגון</button>
-            <button id="jukeboxAbandonSale" class="button secondary hidden" type="button">בטל הזמנה שלא הושלמה</button><div id="jukeboxIssuedCode" class="jukebox-recovered hidden" role="status"><span>קוד לבחירת שיר</span><strong id="jukeboxIssuedValue" dir="ltr"></strong><small id="jukeboxIssuedExpiry"></small></div>
-            <p id="jukeboxSaleNotice" class="small-note hidden" role="status" aria-live="polite"></p>
-          </section>
+          
           <section class="panel jukebox-panel jukebox-player-panel">
             <div class="panel-head"><h2>מתנגן עכשיו</h2><span id="jukeboxPlayerMode" class="chip">—</span></div>
             <strong id="jukeboxNow" class="jukebox-now">ממתין לניגון</strong>
@@ -414,7 +401,7 @@
 
         </div>
 
-        <dialog id="jukeboxConfirmDialog" class="panel jukebox-confirm-dialog" aria-labelledby="jukeboxConfirmTitle" dir="rtl"><form method="dialog"><div class="panel-head"><h2 id="jukeboxConfirmTitle">אישור פעולה</h2></div><div id="jukeboxConfirmTrack" class="jukebox-confirm-track hidden"><img id="jukeboxConfirmImage" class="hidden" alt=""><strong id="jukeboxConfirmTrackTitle"></strong><small id="jukeboxConfirmTrackMeta"></small></div><p id="jukeboxConfirmText"></p><div class="jukebox-confirm-actions"><button id="jukeboxConfirmYes" class="button primary" value="yes" type="submit">אשר</button><button class="button secondary" value="cancel" type="submit" autofocus>ביטול</button></div></form></dialog>
+        
         <dialog id="jukeboxQueueDialog" class="panel jukebox-queue-dialog" aria-labelledby="jukeboxQueueTitle" dir="rtl">
           <div class="panel-head"><h2 id="jukeboxQueueTitle">פרטי שיר ופעולות</h2><button id="jukeboxQueueClose" class="button secondary jukebox-icon-btn" type="button" aria-label="סגור">✕</button></div>
           <div id="jukeboxQueueDetails" class="jukebox-queue-details"></div>
@@ -422,13 +409,35 @@
           <p id="jukeboxQueueNotice" class="small-note" role="status" aria-live="polite"></p>
           <div id="jukeboxRecoveredCode" class="jukebox-recovered hidden" role="status"><span>הקוד הקיים</span><strong id="jukeboxRecoveredValue" dir="ltr"></strong><small id="jukeboxRecoveredExpiry"></small></div>
         </dialog>
-        <dialog id="jukeboxEmployeeDialog" class="panel jukebox-employee-dialog" aria-labelledby="jukeboxEmployeeTitle">
-          <div class="panel-head"><h2 id="jukeboxEmployeeTitle">חיוב על עובד</h2><button id="jukeboxEmployeeClose" class="button secondary jukebox-icon-btn" type="button" aria-label="סגור">✕</button></div>
-          <form id="jukeboxEmployeeForm" class="jukebox-search-form"><label>שם האדם שעבורו החיוב<input id="jukeboxEmployeePerson" class="field" maxlength="100" required autocomplete="off"></label><p id="jukeboxEmployeeNote" class="small-note"></p><button class="button primary" type="submit">אשר</button></form>
-        </dialog>
+        
       </section>
     </main>
   </div>
+
+  <!-- V2.0.38: shared Jukebox sale workflow outside the player dashboard. -->
+  <dialog id="jukeboxSaleDialog" class="panel jukebox-sale-dialog jukebox-quick-dialog" aria-label="לקוח וחיוב בג׳וקבוקס" dir="rtl">
+<div class="jukebox-quick-head"><button id="jukeboxQuickClose" type="button" class="button secondary jukebox-quick-close" aria-label="סגור חלונית חיוב ג׳וקבוקס" title="סגור">✕</button></div>
+<section class="panel jukebox-panel jukebox-sale-panel">
+            <div class="panel-head jukebox-sale-heading"><div class="jukebox-sale-heading-title"><span class="jukebox-sale-symbol" aria-hidden="true">♫</span><h2>לקוח וחיוב</h2></div></div>
+            <div class="jukebox-customer-line">
+              <div class="jukebox-customer-wrap">
+                <input id="jukeboxCustomerSearch" class="desktop-customer-search" type="search" placeholder="בחר לקוח..." aria-label="חפש ובחר לקוח" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="jukeboxCustomerResults" aria-expanded="false">
+                <div id="jukeboxCustomerResults" class="desktop-customer-options hidden" role="listbox" aria-label="לקוחות"></div>
+              </div>
+              <button id="jukeboxEmployeeCharge" class="button employee-charge-button" type="button" aria-haspopup="dialog">חיוב על עובד</button>
+            </div>
+            <p id="jukeboxSaleCustomer" class="jukebox-selected-customer visually-hidden-label">לא נבחר לקוח</p>
+            <button id="jukeboxSaleConfirm" class="button primary" type="button" disabled>צור קוד לשיר · חיוב לאחר ניגון</button>
+            <button id="jukeboxAbandonSale" class="button secondary hidden" type="button">בטל הזמנה שלא הושלמה</button><div id="jukeboxIssuedCode" class="jukebox-recovered hidden" role="status"><span>קוד לבחירת שיר</span><strong id="jukeboxIssuedValue" dir="ltr"></strong><small id="jukeboxIssuedExpiry"></small></div>
+            <p id="jukeboxSaleNotice" class="small-note hidden" role="status" aria-live="polite"></p>
+          </section>
+<p id="jukeboxQuickMessage" class="status jukebox-quick-message hidden" role="status" aria-live="polite"></p>
+</dialog>
+<dialog id="jukeboxConfirmDialog" class="panel jukebox-confirm-dialog" aria-labelledby="jukeboxConfirmTitle" dir="rtl"><form method="dialog"><div class="panel-head"><h2 id="jukeboxConfirmTitle">אישור פעולה</h2></div><div id="jukeboxConfirmTrack" class="jukebox-confirm-track hidden"><img id="jukeboxConfirmImage" class="hidden" alt=""><strong id="jukeboxConfirmTrackTitle"></strong><small id="jukeboxConfirmTrackMeta"></small></div><p id="jukeboxConfirmText"></p><div class="jukebox-confirm-actions"><button id="jukeboxConfirmYes" class="button primary" value="yes" type="submit">אשר</button><button class="button secondary" value="cancel" type="submit" autofocus>ביטול</button></div></form></dialog>
+<dialog id="jukeboxEmployeeDialog" class="panel jukebox-employee-dialog" aria-labelledby="jukeboxEmployeeTitle">
+          <div class="panel-head"><h2 id="jukeboxEmployeeTitle">חיוב על עובד</h2><button id="jukeboxEmployeeClose" class="button secondary jukebox-icon-btn" type="button" aria-label="סגור">✕</button></div>
+          <form id="jukeboxEmployeeForm" class="jukebox-search-form"><label>שם האדם שעבורו החיוב<input id="jukeboxEmployeePerson" class="field" maxlength="100" required autocomplete="off"></label><p id="jukeboxEmployeeNote" class="small-note"></p><button class="button primary" type="submit">אשר</button></form>
+        </dialog>
 
   <!-- V2.0.11: Customer-specific report and QR dialogs, outside the general report page -->
   <div id="customerMovementsModal" class="employee-picker-overlay customer-action-modal hidden" role="dialog" aria-modal="true" aria-labelledby="customerMovementsTitle" dir="rtl">
@@ -743,12 +752,12 @@
       <p id="driveRestoreProofMessage" class="small-note" role="status"></p>
     </div>
   </div>
-  <script src="db.js"></script><script src="remote.js?v=2.0.37"></script><script src="xlsx.js"></script><script src="updater.js?v=2.0.37"></script><script src="archive_admin.js?v=2.0.37"></script><script src="legacy_db_import.js?v=2.0.37"></script>
-<script src="backup_manager.js?v=2.0.37"></script>
-<script src="drive_backup.js?v=2.0.37"></script>
-<script src="qrcode.min.js?v=2.0.37"></script>
-<script src="draft_guard.js?v=2.0.37"></script>
-<script src="report_widgets.js?v=2.0.37"></script>
-<script src="jukebox_admin.js?v=2.0.37"></script>
-<script src="app.js?v=2.0.37"></script>
+  <script src="db.js"></script><script src="remote.js?v=2.0.38"></script><script src="xlsx.js"></script><script src="updater.js?v=2.0.38"></script><script src="archive_admin.js?v=2.0.38"></script><script src="legacy_db_import.js?v=2.0.38"></script>
+<script src="backup_manager.js?v=2.0.38"></script>
+<script src="drive_backup.js?v=2.0.38"></script>
+<script src="qrcode.min.js?v=2.0.38"></script>
+<script src="draft_guard.js?v=2.0.38"></script>
+<script src="report_widgets.js?v=2.0.38"></script>
+<script src="jukebox_admin.js?v=2.0.38"></script>
+<script src="app.js?v=2.0.38"></script>
 </body></html>
