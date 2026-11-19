@@ -1602,3 +1602,7 @@ body.desktop-hero-controls #desktopHeroGear .jukebox-gear{width:43px;min-width:4
  #jukeboxPage .jukebox-queue-detail-fields{grid-template-columns:1fr}
  #jukeboxPage .jukebox-queue-item{padding:9px}
 }
+
+/* V2.0.31: six-digit Jukebox pairing display, owner-only. */
+#jukeboxPage #jukeboxPairToken{font-variant-numeric:tabular-nums;letter-spacing:.28em;font-size:clamp(19px,2.4vw,30px);font-weight:800;text-align:center;color:#ffe1af;background:#101c22;border-color:#bb8d55;min-height:52px}
+#jukeboxPage #jukeboxCopyPair{min-height:52px}
