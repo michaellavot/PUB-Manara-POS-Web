@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=0.9.29">
   <link rel="icon" href="assets/app_icon_192.png?v=0.9.29">
   <link rel="apple-touch-icon" href="assets/app_icon_192.png?v=0.9.29">
-  <link rel="stylesheet" href="styles.css?v=2.0.36">
+  <link rel="stylesheet" href="styles.css?v=2.0.37">
 <style id="startupScreenCriticalStyle">
 /* Startup must be usable before styles.css and scripts have loaded. */
 #startupScreen{
@@ -105,8 +105,8 @@
       </section>
       <section id="managePage" class="page">
         <div class="catalog-launchers">
-          <button type="button" class="catalog-launch-button panel" id="openProductManager"><span class="catalog-launch-icon" aria-hidden="true">🍺</span><strong>ניהול מוצרים</strong><span>הוספה, עריכה, חיפוש ומחיקה מרובה</span></button>
-          <button type="button" class="catalog-launch-button panel" id="openCustomerManager"><span class="catalog-launch-icon" aria-hidden="true">👥</span><strong>ניהול לקוחות</strong><span>הוספה, עריכה, חיפוש ומחיקה מרובה</span></button>
+          <button type="button" class="catalog-launch-button panel" id="openProductManager"><span class="catalog-launch-icon" aria-hidden="true">🍺</span><strong>ניהול מוצרים</strong></button>
+          <button type="button" class="catalog-launch-button panel" id="openCustomerManager"><span class="catalog-launch-icon" aria-hidden="true">👥</span><strong>ניהול לקוחות</strong></button>
         </div>
         <div id="manageCatalogModal" class="catalog-manager-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="catalogManagerTitle">
           <section class="catalog-manager-panel panel">
@@ -175,9 +175,9 @@
               <div class="catalog-manager-table"><table class="data-table"><thead><tr><th>בחר</th><th>משקה</th><th>מחיר</th><th>מצב</th><th>פעולות</th></tr></thead><tbody id="manageProducts"></tbody></table></div>
             </div>
             <div id="customerManagerContent" class="catalog-manager-content hidden">
-              <div class="catalog-manager-subhead"><button class="button secondary inactive-toggle" type="button" id="showInactiveCustomersBtn" aria-pressed="false">הצג לא פעילים</button><span class="small-note">לקוחות בהיסטוריית אמת ניתנים להשבתה בלבד</span></div>
+              <div class="catalog-manager-subhead"><button class="button secondary inactive-toggle" type="button" id="showInactiveCustomersBtn" aria-pressed="false">הצג לא פעילים</button></div>
               <form id="customerForm" class="inline-form"><input class="field" name="name" placeholder="שם לקוח" required><button class="button primary" type="submit">הוסף לקוח</button></form>
-              <div class="customer-directory-tools"><span class="small-note">לחיצה כפולה לפתיחת כרטיס · בנייד לחיצה אחת</span><button id="customerBulkModeBtn" type="button" class="button secondary hidden" aria-pressed="false">בחירה מרובה</button></div>
+              <div class="customer-directory-tools"><button id="customerBulkModeBtn" type="button" class="button secondary hidden" aria-pressed="false">בחירה מרובה</button></div>
               <div id="manageCustomers" class="customer-directory" role="list" aria-label="רשימת לקוחות"></div>
             </div>
             <div id="customerDetailCard" class="customer-detail-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="customerDetailTitle" dir="rtl">
@@ -201,7 +201,7 @@
         </div>
         <div class="panel admin-box hidden" id="ownerAdminBox"><div class="panel-head"><h2>ניהול מערכת</h2>
          <button id="adminEntryBtn" type="button" class="button primary hidden">פתח ניהול מערכת</button></div>
-         <p class="small-note">הרשאות בעלים, מצב תחזוקה, ניהול עובדים ושינויים רגישים נפתחים רק לאחר אימות המייל והסיסמה האישיים שלך.</p>
+         
          <div id="adminPanel" class="hidden">
            <div class="admin-panel-header"><strong>ניהול מתקדם פעיל</strong><button type="button" class="button secondary" id="adminLockBtn">נעל ניהול מערכת</button></div>
             <h3>הוספת עובד</h3>
@@ -243,10 +243,10 @@
     <button id="deviceLayoutBtn" class="button secondary system-settings-tile system-layout-choice" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="deviceLayoutDialog">אוטומטי</button>
     <button id="shareAppQrBtn" class="button secondary system-settings-tile" type="button">▦ שיתוף QR</button>
     <div class="system-version-tile" role="group" aria-label="גרסה ובדיקת עדכונים">
-     <span id="installedVersion" class="system-version-text">V2.0.36</span>
+     <span id="installedVersion" class="system-version-text">V2.0.37</span>
      <button id="checkUpdatesBtn" class="button system-update-icon" data-update-state="unknown" type="button" title="בדוק עדכונים" aria-label="בדוק עדכונים">⟳</button>
      <small id="updateStatus" class="system-visually-hidden" role="status">עדיין לא אומתה גרסה</small>
-     <small id="versionLabel" class="system-visually-hidden">V2.0.36</small>
+     <small id="versionLabel" class="system-visually-hidden">V2.0.37</small>
      <button id="updateBadge" class="update-badge hidden system-visually-hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button>
     </div>
    </div>
@@ -380,22 +380,22 @@
               </div>
               <button id="jukeboxEmployeeCharge" class="button employee-charge-button" type="button" aria-haspopup="dialog">חיוב על עובד</button>
             </div>
-            <p id="jukeboxSaleCustomer" class="jukebox-selected-customer">לא נבחר לקוח</p>
+            <p id="jukeboxSaleCustomer" class="jukebox-selected-customer visually-hidden-label">לא נבחר לקוח</p>
             <button id="jukeboxSaleConfirm" class="button primary" type="button" disabled>צור קוד לשיר · חיוב לאחר ניגון</button>
             <button id="jukeboxAbandonSale" class="button secondary hidden" type="button">בטל הזמנה שלא הושלמה</button><div id="jukeboxIssuedCode" class="jukebox-recovered hidden" role="status"><span>קוד לבחירת שיר</span><strong id="jukeboxIssuedValue" dir="ltr"></strong><small id="jukeboxIssuedExpiry"></small></div>
-            <p id="jukeboxSaleNotice" class="small-note" role="status">בחר לקוח, הפק קוד. חיוב יירשם לאחר ניגון מאומת.</p>
+            <p id="jukeboxSaleNotice" class="small-note hidden" role="status" aria-live="polite"></p>
           </section>
           <section class="panel jukebox-panel jukebox-player-panel">
             <div class="panel-head"><h2>מתנגן עכשיו</h2><span id="jukeboxPlayerMode" class="chip">—</span></div>
             <strong id="jukeboxNow" class="jukebox-now">ממתין לניגון</strong>
-            <p id="jukeboxNowDetail" class="small-note"></p><progress id="jukeboxProgress" class="jukebox-progress" value="0" max="100" aria-label="התקדמות ניגון"></progress>
+            <p id="jukeboxNowDetail" class="small-note visually-hidden-label"></p><progress id="jukeboxProgress" class="jukebox-progress" value="0" max="100" aria-label="התקדמות ניגון"></progress>
             <div class="jukebox-transport">
               <button id="jukeboxPrevBtn" class="button secondary" type="button" disabled aria-label="הקודם">⏮ הקודם</button>
               <button id="jukeboxPauseBtn" class="button primary" type="button" data-jb-action>⏸ השהה</button>
               <button id="jukeboxNextBtn" class="button secondary" type="button" disabled aria-label="הבא">⏭ הבא</button>
               <button id="jukeboxStopBtn" class="button secondary" type="button" disabled>⏹ עצור</button>
             </div>
-            <p id="jukeboxTransportNote" class="small-note"></p>
+            <p id="jukeboxTransportNote" class="small-note visually-hidden-label"></p>
           </section>
           <section class="panel jukebox-panel jukebox-background-panel">
             <div class="panel-head"><h2>מוזיקת רקע</h2></div>
@@ -407,7 +407,7 @@
           <section class="panel jukebox-panel jukebox-queue-panel" aria-labelledby="jukeboxQueueHeading">
             <div class="panel-head jukebox-queue-heading"><h2 id="jukeboxQueueHeading">תור השירים</h2><span id="jukeboxQueueCount" class="chip" aria-label="מספר פריטים פעילים">0</span></div>
             <div class="jukebox-queue-meta"><span>משך התור שנותר</span><strong id="jukeboxQueueTotal" dir="ltr">00:00</strong></div>
-            <p class="jukebox-queue-hint">לחץ על שיר לצפייה בפרטים ובפעולות הזמינות</p>
+            
             <div id="jukeboxQueueList" class="jukebox-queue-list" role="list" aria-label="רשימת השירים וקודי ההזמנה"></div>
           </section>
 
@@ -743,12 +743,12 @@
       <p id="driveRestoreProofMessage" class="small-note" role="status"></p>
     </div>
   </div>
-  <script src="db.js"></script><script src="remote.js?v=2.0.36"></script><script src="xlsx.js"></script><script src="updater.js?v=2.0.36"></script><script src="archive_admin.js?v=2.0.36"></script><script src="legacy_db_import.js?v=2.0.36"></script>
-<script src="backup_manager.js?v=2.0.36"></script>
-<script src="drive_backup.js?v=2.0.36"></script>
-<script src="qrcode.min.js?v=2.0.36"></script>
-<script src="draft_guard.js?v=2.0.36"></script>
-<script src="report_widgets.js?v=2.0.36"></script>
-<script src="jukebox_admin.js?v=2.0.36"></script>
-<script src="app.js?v=2.0.36"></script>
+  <script src="db.js"></script><script src="remote.js?v=2.0.37"></script><script src="xlsx.js"></script><script src="updater.js?v=2.0.37"></script><script src="archive_admin.js?v=2.0.37"></script><script src="legacy_db_import.js?v=2.0.37"></script>
+<script src="backup_manager.js?v=2.0.37"></script>
+<script src="drive_backup.js?v=2.0.37"></script>
+<script src="qrcode.min.js?v=2.0.37"></script>
+<script src="draft_guard.js?v=2.0.37"></script>
+<script src="report_widgets.js?v=2.0.37"></script>
+<script src="jukebox_admin.js?v=2.0.37"></script>
+<script src="app.js?v=2.0.37"></script>
 </body></html>

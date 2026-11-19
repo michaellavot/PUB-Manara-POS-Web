@@ -145,7 +145,7 @@ body.staff-mode #adminPanel{display:none!important}
 @media(max-width:730px){.product-panel{height:auto;min-height:565px}.work-grid{min-height:0}}
 /* V0.9.11: accessible, larger catalog management dialog. */
 .catalog-launchers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;flex:none;margin-bottom:14px}
-.catalog-launch-button{display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:145px;gap:10px;cursor:pointer;color:var(--text);text-align:center}
+.catalog-launch-button{display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:118px;gap:8px;cursor:pointer;color:var(--text);text-align:center}
 .catalog-launch-button:hover{border-color:var(--gold);filter:brightness(1.1)}
 .catalog-launch-button strong{font-size:22px;color:var(--pale)}
 .catalog-launch-button span:last-child{font-size:13px;color:var(--muted)}
@@ -169,7 +169,7 @@ body.staff-mode #adminPanel{display:none!important}
 .catalog-manager-table .data-table td{font-size:15px;padding:12px 9px}
 .catalog-manager-table .data-table th{font-size:14px;padding:12px 9px}
 #catalogManagerMessage{min-height:18px}
-@media(max-width:650px){.catalog-launchers{grid-template-columns:1fr}.catalog-launch-button{min-height:95px}.catalog-manager-panel{height:96dvh}.catalog-manager-overlay{padding:5px}.catalog-manager-controls{gap:8px}.catalog-manager-header h2{font-size:19px}}
+@media(max-width:650px){.catalog-launchers{grid-template-columns:1fr}.catalog-launch-button{min-height:88px}.catalog-manager-panel{height:96dvh}.catalog-manager-overlay{padding:5px}.catalog-manager-controls{gap:8px}.catalog-manager-header h2{font-size:19px}}
 
 /* V0.9.12: use one reliable viewport scroll owner on tablet/mobile.
    Keep category, drink and bill lists independently scrollable. */
@@ -342,7 +342,7 @@ html,body{
  .page.active{height:auto;min-height:0}
  #managePage{gap:12px}
  #managePage .catalog-launchers{gap:12px;margin-bottom:0}
- #managePage .catalog-launch-button{min-height:108px;gap:5px;padding:14px}
+ #managePage .catalog-launch-button{min-height:94px;gap:7px;padding:12px}
  #managePage .catalog-launch-icon{font-size:24px}
  #managePage .catalog-launch-button strong{font-size:20px}
  #managePage #ownerAdminBox,#managePage #staffAdminBox,#managePage #auditPanel{flex:none;height:auto;min-height:0;margin-top:0}
@@ -364,7 +364,7 @@ body[data-layout-mode="mobile"] .work-grid>.panel{height:auto;min-height:440px;f
 body[data-layout-mode="mobile"] .product-panel{min-height:565px!important}
 body[data-layout-mode="mobile"] .category-grid,body[data-layout-mode="mobile"] .products-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 body[data-layout-mode="mobile"] .catalog-launchers{grid-template-columns:1fr}
-body[data-layout-mode="mobile"] .catalog-launch-button{min-height:95px}
+body[data-layout-mode="mobile"] .catalog-launch-button{min-height:88px}
 body[data-layout-mode="mobile"] .system-grid,body[data-layout-mode="mobile"] .manage-grid{grid-template-columns:1fr}
 body[data-layout-mode="mobile"] .report-controls{grid-template-columns:1fr 1fr}
 body[data-layout-mode="mobile"] .toolbar{flex-wrap:nowrap}
@@ -382,7 +382,7 @@ body[data-layout-mode="desktop"] .work-grid{display:grid;grid-template-columns:m
 body[data-layout-mode="desktop"] .manage-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 body[data-layout-mode="desktop"] .system-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 body[data-layout-mode="desktop"] .catalog-launchers{grid-template-columns:repeat(2,minmax(0,1fr))}
-body[data-layout-mode="desktop"] #managePage .catalog-launch-button{min-height:108px}
+body[data-layout-mode="desktop"] #managePage .catalog-launch-button{min-height:94px}
 body[data-layout-mode="desktop"] #managePage #ownerAdminBox,body[data-layout-mode="desktop"] #managePage #auditPanel{height:auto;min-height:0;flex:none}
 body[data-layout-mode="desktop"] #managePage #adminPanel>.scroll-table{max-height:310px;overflow:auto;flex:none}
 body[data-layout-mode="desktop"] #managePage #auditPanel .audit-table{max-height:340px;min-height:100px;flex:none}
@@ -1747,3 +1747,6 @@ body.desktop-hero-controls #desktopHeroGear #jukeboxOpenBtn{
 @media(prefers-reduced-motion:reduce){
  #cloudConnectionStatus .jukebox-record-indicator[data-state="online"] .jb-note-on{animation:none;}
 }
+
+/* V2.0.37: hide only visual helper text; keep live element IDs and accessible status. */
+.visually-hidden-label{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}
