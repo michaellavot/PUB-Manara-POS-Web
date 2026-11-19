@@ -6,7 +6,7 @@ const JukeboxAdmin=(()=>{
  const KEY='sb_publishable_c4yDW12R7D3SZej11VNPpg_ZI_CiHC-';
  const errors={owner_required:'נדרש אימות בעלים מחדש בקופה.',owner_or_action_denied:'הפעולה אינה זמינה או אינה מורשית.',action_disabled:'הפעולה אינה זמינה.',invalid_payload:'הפרטים אינם תקינים.',jukebox_operation_failed:'פעולת הג׳וקבוקס נכשלה. נסה שוב.',jukebox_unavailable:'שרת הג׳וקבוקס אינו זמין כרגע.'};
  const labels={queued:'בתור',playing:'מתנגן',held:'מושהה',failed:'נכשל',completed:'הושלם',verified:'נוגן ואומת',cancelled:'בוטל',pending_approval:'דורש בדיקה · ללא חיוב',expired:'פג תוקף',active:'ממתין לבחירת שיר'};
- let initialized=false,epoch=0,busy=false,controller=null,snapshot=null,settingsDirty=false,pairTimer=null,opened=false,searchGeneration=0,selectedCustomer=null,employeePerson='',apiKey='',advancedOpen=false,snapshotAt=0,queueTimes=new Map(),recoveredId=null,pendingSale=null,keyConfigured=false,keyImportPending=false,saleNotice='',issuedCode=null,polling=false,mutation=0,queueSignature='',deviceSignature='',settingsSignature='',requests=new Set();
+ let initialized=false,epoch=0,busy=false,controller=null,snapshot=null,settingsDirty=false,pairTimer=null,opened=false,searchGeneration=0,selectedCustomer=null,employeePerson='',apiKey='',advancedOpen=false,snapshotAt=0,queueTimes=new Map(),recoveredId=null,pendingSale=null,keyConfigured=false,keyImportPending=false,saleNotice='',issuedCode=null,polling=false,mutation=0,selectedQueueKey=null,queueSignature='',deviceSignature='',settingsSignature='',requests=new Set();
  function allowed(){const u=RemotePos.employee||{};return RemotePos.active===true&&RemotePos.authenticated===true&&u.active===true&&u.is_owner===true&&u.owner_terminal===true&&u.pin_login===true&&Number(RemotePos.session?.pos_valid_until)>Date.now();}
  const onPage=()=>opened&&$('jukeboxPage')?.classList.contains('active')&&allowed();
  function node(tag,text,cls){const x=document.createElement(tag);if(text!==undefined)x.textContent=String(text);if(cls)x.className=cls;return x;}
@@ -38,7 +38,7 @@ const JukeboxAdmin=(()=>{
  function renderCustomerChoices(){if(!onPage())return;const host=$('jukeboxCustomerResults'),q=norm($('jukeboxCustomerSearch').value);host.replaceChildren();for(const c of (state.customers||[]).filter(c=>c.active&&customerNameMatches(c.name,q)).slice(0,100)){const b=node('button',c.name,'desktop-customer-option');b.type='button';b.setAttribute('role','option');b.setAttribute('aria-selected',String(selectedCustomer?.id===c.id));b.addEventListener('click',()=>setCustomer(c));host.append(b);}if(!host.children.length)host.append(node('div','לא נמצאו לקוחות','desktop-customer-empty'));host.classList.remove('hidden');$('jukeboxCustomerSearch').setAttribute('aria-expanded','true');}
  function clearPair(){clearTimeout(pairTimer);pairTimer=null;$('jukeboxPairToken').value='';$('jukeboxPairBox').classList.add('hidden');}
  function clearRecovery(){recoveredId=null;$('jukeboxRecoveredValue').textContent='';$('jukeboxRecoveredExpiry').textContent='';$('jukeboxRecoveredCode').classList.add('hidden');}
- function clear(){epoch++;opened=false;stopSearch();searchCache.clear();if($('jukeboxConfirmDialog').open)$('jukeboxConfirmDialog').close('cancel');for(const req of requests)req.abort();requests.clear();controller=null;polling=false;mutation++;queueSignature='';deviceSignature='';settingsSignature='';snapshot=null;settingsDirty=false;pendingSale=null;keyConfigured=false;keyImportPending=false;saleNotice='';setCustomer(null);setAdvanced(false);apiKey='';clearPair();clearRecovery();for(const id of ['jukeboxQueueDialog','jukeboxEmployeeDialog'])if($(id).open)$(id).close();for(const id of ['jukeboxQueue','jukeboxDevices','jukeboxSearchResults'])$(id).replaceChildren();$('jukeboxSearchQuery').value='';$('jukeboxSearchStatus').textContent='';$('jukeboxSearchKey').value='';$('jukeboxEmployeePerson').value='';$('jukeboxQueueNotice').textContent='';$('jukeboxContent').classList.add('hidden');$('jukeboxSettingsForm').reset();queueTimes.clear();message('');connection(null);setBusy(false);}
+ function clear(){epoch++;opened=false;stopSearch();searchCache.clear();if($('jukeboxConfirmDialog').open)$('jukeboxConfirmDialog').close('cancel');for(const req of requests)req.abort();requests.clear();controller=null;polling=false;mutation++;queueSignature='';deviceSignature='';settingsSignature='';selectedQueueKey=null;snapshot=null;settingsDirty=false;pendingSale=null;keyConfigured=false;keyImportPending=false;saleNotice='';setCustomer(null);setAdvanced(false);apiKey='';clearPair();clearRecovery();for(const id of ['jukeboxQueueDialog','jukeboxEmployeeDialog'])if($(id).open)$(id).close();for(const id of ['jukeboxQueueList','jukeboxQueueDetails','jukeboxQueueActions','jukeboxDevices','jukeboxSearchResults'])$(id).replaceChildren();$('jukeboxSearchQuery').value='';$('jukeboxSearchStatus').textContent='';$('jukeboxSearchKey').value='';$('jukeboxEmployeePerson').value='';$('jukeboxQueueNotice').textContent='';$('jukeboxContent').classList.add('hidden');$('jukeboxSettingsForm').reset();queueTimes.clear();message('');connection(null);setBusy(false);}
  function syncVisibility(){if(!initialized)return;const ok=allowed();$('jukeboxOwnerEntry').classList.toggle('hidden',!ok);$('jukeboxSellBtn').classList.toggle('hidden',!ok);$('jukeboxPage').classList.toggle('hidden',!ok);if(!ok&&opened){const active=$('jukeboxPage').classList.contains('active');clear();if(active)go('posPage');}}
  function closeForLock(){if(!initialized)return;if(opened){clear();go('systemPage');}$('jukeboxPage').classList.add('hidden');}
  function onNavigation(id){if(!initialized)return;if(id==='jukeboxPage'){if(!allowed()){clear();$('jukeboxPage').classList.add('hidden');return;}if(opened)return;opened=true;$('jukeboxPage').classList.remove('hidden');setCustomer(state.employeeCharge?linkedEmployeeCustomer():state.selectedCustomer,state.employeeCharge?state.employeeChargePerson:'');apiKey='';loadPending();setAdvanced(false);refresh(true);}else if(opened){clear();}}
@@ -59,27 +59,121 @@ const JukeboxAdmin=(()=>{
   return reply.result;
  }
  async function api(action,data={}){if(!onPage())throw Error('owner_required');RemotePos.assertShift();const e=epoch,original=RemotePos.session?.user?.id;if(RemotePos.session.expires_at-Date.now()<75000)await RemotePos.refreshSession();if(!onPage()||e!==epoch||RemotePos.session?.user?.id!==original)throw Error('owner_required');const abort=new AbortController();controller=abort;requests.add(abort);const timer=setTimeout(()=>abort.abort(),22000);try{const response=await fetch(URL,{method:'POST',cache:'no-store',headers:{apikey:KEY,'Content-Type':'application/json',Authorization:'Bearer '+RemotePos.session.access_token},body:JSON.stringify({action,data}),signal:abort.signal});const result=await response.json().catch(()=>({}));if(!onPage()||e!==epoch||RemotePos.session?.user?.id!==original)throw Error('owner_required');if(!response.ok||result.ok!==true)throw Error(result.error||'jukebox_unavailable');return result.result;}finally{clearTimeout(timer);requests.delete(abort);if(controller===abort)controller=null;}}
- function setBusy(value){if(value)mutation++;busy=value;for(const b of $('jukeboxPage').querySelectorAll('[data-jb-action]'))b.disabled=value;renderTransport();renderSale();}
+ function setBusy(value){if(value)mutation++;busy=value;for(const b of $('jukeboxPage').querySelectorAll('[data-jb-action]'))b.disabled=value;
+  if(selectedQueueKey&&$('jukeboxQueueDialog')?.open){const entry=queueEntries(snapshot).find(o=>queueKey(o)===selectedQueueKey);if(entry)queueDetails(entry);}
+  renderTransport();renderSale();}
  function row(host,title,detail,actions=[]){const div=node('div',undefined,'jukebox-row'),label=node('div',title,'jukebox-row-label');if(detail)label.append(node('small',detail));div.append(label);if(actions.length){const controls=node('div',undefined,'jukebox-actions');for(const [t,fn,kind] of actions)controls.append(button(t,fn,kind));div.append(controls);}host.append(div);}
  const fmt=n=>{n=Math.max(0,Math.ceil(Number(n)||0));const h=Math.floor(n/3600),m=Math.floor(n/60)%60,s=n%60;return (h?h+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');};
  function position(o){const s=snapshot,p=s?.guest_progress;if(o.status!=='playing'||p?.order_id!==o.id)return 0;const base=Number(p.position)||0;const at=Date.parse(p.sample_at||''),progress=Date.parse(p.progress_at||'');const running=s.settings?.enabled&&!s.settings?.paused&&!p.invalid&&Number.isFinite(at)&&Number.isFinite(progress)&&at-progress<3000&&Date.now()-snapshotAt<6500;return Math.min(Number(o.duration)||0,base+(running?Math.max(0,Math.min(5,(Date.now()-at)/1000)):0));}
  function remaining(o){return Math.max(0,(Number(o.duration)||0)-position(o));}
  function updateClocks(){if(!onPage()||!snapshot)return;const all=snapshot.orders||[],playing=all.find(o=>o.status==='playing');let total=0;for(const o of all){if(o.status==='queued'||o.status==='playing')total+=remaining(o);const cell=queueTimes.get(o.id);if(cell&&cell.textContent!==fmt(remaining(o)))cell.textContent=fmt(remaining(o));} if($('jukeboxQueueTotal').textContent!==fmt(total))$('jukeboxQueueTotal').textContent=fmt(total);if(playing){$('jukeboxNowDetail').textContent='זמן שנותר · '+fmt(remaining(playing));$('jukeboxProgress').value=playing.duration?100*position(playing)/playing.duration:0;} }
  function iconAction(symbol,label,fn,kind='secondary'){const b=button(symbol,fn,kind,label);b.classList.add('jukebox-icon-btn');return b;}
- function queueRows(s){const sig=JSON.stringify([(s.orders||[]).map(o=>[o.id,o.code_id,o.title,o.duration,o.status,o.is_test,o.created_at]),s.queue_customers||[],s.pending_codes||[]]);if(sig===queueSignature)return;queueSignature=sig;const host=$('jukeboxQueue');host.replaceChildren();queueTimes.clear();const names=new Map((s.queue_customers||[]).map(x=>[x.order_id,x]));const all=[...(s.orders||[]).map(o=>({...o,...names.get(o.id)})),...(s.pending_codes||[]).map(c=>({...c,codeOnly:true,code_id:c.id,title:'טרם נבחר שיר'}))].sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0));const active=all.filter(o=>['queued','playing','held','failed','pending_approval','active'].includes(o.status));$('jukeboxQueueCount').textContent=String(active.length);for(const o of all){const tr=node('tr'),customer=node('td',o.customer_name?(o.person_name?o.customer_name+' · '+o.person_name:o.customer_name):'—'),title=node('td',o.title||'—'),duration=node('td',o.codeOnly?'—':fmt(remaining(o)),'jukebox-time'),st=node('td'),pill=node('span',(labels[o.status]||o.status)+(o.is_test?' · D':''),'jukebox-status-pill'),td=node('td'),controls=node('div',undefined,'jukebox-actions');pill.dataset.state=o.status;st.append(pill);tr.append(customer,title,duration,st,td);if(!o.codeOnly)queueTimes.set(o.id,duration);
-  if(o.codeOnly&&o.status==='active'){controls.append(iconAction('✓','שחזור קוד קיים',()=>recoverCode(o.code_id)));controls.append(iconAction('✕','בטל קוד',async()=>{if(await ask('ביטול קוד','לבטל את הקוד הקיים?',null,true))run(()=>api('configure',{cancel_code_id:o.code_id}));},'warning'));}
-  else if(!o.codeOnly&&(o.is_test||names.has(o.id))){if(o.status==='queued')controls.append(iconAction('Ⅱ','השהה',()=>run(()=>api('hold',{id:o.id}))));if(o.status==='held')controls.append(iconAction('▶','חדש לסוף התור',()=>run(()=>api('release',{id:o.id}))));if(['failed','pending_approval'].includes(o.status))controls.append(iconAction('▶','נגן שוב לפי החלטת מנהל',async()=>{if(await ask('ניסיון ניגון נוסף','להחזיר את השיר לתור? לא יירשם חיוב עד לניגון מאומת.',null,true))run(()=>api('retry',{id:o.id}));}));if(['queued','held','failed','pending_approval'].includes(o.status))controls.append(iconAction('✕','בטל שיר',async()=>{if(await ask('ביטול שיר','לבטל את השיר '+o.title+'?',null,true))run(()=>api('cancel',{id:o.id}));},'warning'));}
-  if(!controls.children.length)controls.append(node('span','—','small-note'));td.append(controls);host.append(tr);}
-  if(!all.length){const tr=node('tr'),td=node('td','אין שירים או קודים בתור.','small-note');td.colSpan=5;tr.append(td);host.append(tr);}
+
+ function queueEntries(s){
+  const names=new Map((s?.queue_customers||[]).map(x=>[x.order_id,x]));
+  return [...(s?.orders||[]).map(o=>({...o,...names.get(o.id)})),
+   ...(s?.pending_codes||[]).map(c=>({...c,codeOnly:true,code_id:c.id,title:'קוד ממתין לבחירת שיר'}))]
+   .sort((a,b)=>Date.parse(b.created_at||0)-Date.parse(a.created_at||0));
+ }
+ const queueKey=o=>o.codeOnly?'code:'+o.code_id:'order:'+o.id;
+ const queueCustomer=o=>o.customer_name?(o.person_name?o.customer_name+' · '+o.person_name:o.customer_name):'לקוח לא ידוע';
+ function queueDetails(o){
+  const host=$('jukeboxQueueDetails'),actions=$('jukeboxQueueActions');
+  host.replaceChildren();actions.replaceChildren();
+  if(!o)return;
+  const isCode=o.codeOnly===true,canManage=o.is_test===true||(snapshot?.queue_customers||[]).some(x=>x.order_id===o.id);
+  const head=node('div',undefined,'jukebox-queue-detail-heading');
+  head.append(node('strong',o.title||'—','jukebox-queue-detail-title'));
+  const st=node('span',(labels[o.status]||o.status)+(o.is_test?' · D':''),'jukebox-status-pill');st.dataset.state=o.status;head.append(st);host.append(head);
+  const grid=node('div',undefined,'jukebox-queue-detail-fields');
+  for(const [caption,value] of [['לקוח',queueCustomer(o)],['משך שיר',isCode?'טרם נבחר':fmt(o.duration)],['מצב',labels[o.status]||o.status]]){
+   const cell=node('div',undefined,'jukebox-queue-detail-field');cell.append(node('small',caption),node('b',value));grid.append(cell);
+  }
+  host.append(grid);
+  const action=(label,enabled,handler,warning=false)=>{
+   const b=node('button',label,'button '+(warning?'warning':'secondary')+' jukebox-queue-action');
+   b.type='button';b.disabled=busy||!enabled;
+   b.setAttribute('aria-disabled',String(b.disabled));
+   if(!enabled)b.title='הפעולה אינה זמינה במצב השיר הנוכחי';
+   b.addEventListener('click',()=>{if(!onPage()||busy||b.disabled)return;handler();});
+   actions.append(b);
+  };
+  if(isCode){
+   const active=o.status==='active'&&canManage;
+   action('◎ הצג קוד',active,()=>recoverCode(o.code_id));
+   action('✕ בטל קוד',active,async()=>{
+    if(await ask('ביטול קוד','לבטל את הקוד הקיים?',null,true)&&onPage())
+     run(()=>api('configure',{cancel_code_id:o.code_id}));
+   },true);
+  }else{
+   action('Ⅱ השהה',canManage&&o.status==='queued',()=>run(()=>api('hold',{id:o.id})));
+   action('▶ חדש בתור',canManage&&o.status==='held',()=>run(()=>api('release',{id:o.id})));
+   action('↻ נגן שוב',canManage&&['failed','pending_approval'].includes(o.status),async()=>{
+    if(await ask('ניסיון ניגון נוסף','להחזיר את השיר לתור? לא יירשם חיוב עד לניגון מאומת.',null,true)&&onPage())
+     run(()=>api('retry',{id:o.id}));
+   });
+   action('✕ בטל שיר',canManage&&['queued','held','failed','pending_approval'].includes(o.status),async()=>{
+    if(await ask('ביטול שיר','לבטל את השיר '+o.title+'?',null,true)&&onPage())
+     run(()=>api('cancel',{id:o.id}));
+   },true);
+  }
+ }
+ function openQueueActions(key){
+  if(!onPage()||busy)return;
+  const o=queueEntries(snapshot).find(x=>queueKey(x)===key);
+  if(!o)return;
+  selectedQueueKey=key;clearRecovery();
+  $('jukeboxQueueNotice').textContent='';
+  queueDetails(o);
+  if(!$('jukeboxQueueDialog').open)$('jukeboxQueueDialog').showModal();
+ }
+ function queueRows(s){
+  const sig=JSON.stringify([(s.orders||[]).map(o=>[o.id,o.code_id,o.title,o.duration,o.status,o.is_test,o.created_at]),s.queue_customers||[],s.pending_codes||[]]);
+  if(sig===queueSignature)return;
+  queueSignature=sig;
+  const host=$('jukeboxQueueList');host.replaceChildren();queueTimes.clear();
+  const all=queueEntries(s);
+  const active=all.filter(o=>['queued','playing','held','failed','pending_approval','active'].includes(o.status));
+  $('jukeboxQueueCount').textContent=String(active.length);
+  for(const o of all){
+   const key=queueKey(o),item=node('button',undefined,'jukebox-queue-item');
+   item.type='button';item.dataset.jbAction='';item.disabled=busy;item.dataset.state=o.status;
+   if(o.status==='playing')item.classList.add('is-playing');
+   const primary=node('span',undefined,'jukebox-queue-item-primary');
+   primary.append(node('strong',o.title||'—','jukebox-queue-item-title'));
+   const meta=node('span',undefined,'jukebox-queue-item-meta');
+   meta.append(node('span',queueCustomer(o),'jukebox-queue-customer'));
+   const duration=node('span',undefined,'jukebox-queue-time');
+   duration.append(node('small',o.status==='playing'?'נותרו':'משך'));
+   const clock=node('b',o.codeOnly?'—':fmt(remaining(o)));
+   duration.append(clock);meta.append(duration);primary.append(meta);
+   const st=node('span',(labels[o.status]||o.status)+(o.is_test?' · D':''),'jukebox-status-pill');st.dataset.state=o.status;
+   const stateWrap=node('span',undefined,'jukebox-queue-item-state');stateWrap.append(st);
+   if(o.status==='playing')stateWrap.append(node('span','♫ מתנגן כעת','jukebox-queue-playing-label'));
+   item.append(primary,stateWrap);
+   item.setAttribute('aria-label',[o.title,queueCustomer(o),o.codeOnly?'ממתין לבחירת שיר':fmt(o.duration),labels[o.status]||o.status].join(' · '));
+   item.addEventListener('click',()=>openQueueActions(key));
+   host.append(item);
+   if(!o.codeOnly)queueTimes.set(o.id,clock);
+  }
+  if(!all.length)host.append(node('p','התור ריק כרגע. שירים שיתווספו יוצגו כאן.','jukebox-queue-empty'));
+  if(selectedQueueKey&&$('jukeboxQueueDialog').open){
+   const selected=all.find(o=>queueKey(o)===selectedQueueKey);
+   if(selected)queueDetails(selected);
+   else $('jukeboxQueueDialog').close();
+  }
   if(recoveredId&&!all.some(o=>o.codeOnly&&o.code_id===recoveredId&&o.status==='active'))clearRecovery();
  }
  async function recoverCode(id){if(!onPage()||busy||!$('jukeboxQueueDialog').open)return;setBusy(true);const e=epoch;try{const r=await api('snapshot',{recover_code_id:id});if(e!==epoch||!$('jukeboxQueueDialog').open)return;if(!/^\d{4}$/.test(r?.code||''))throw Error('jukebox_operation_failed');recoveredId=id;$('jukeboxRecoveredValue').textContent=r.code;$('jukeboxRecoveredExpiry').textContent='תקף עד '+new Date(r.expires_at).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});$('jukeboxRecoveredCode').classList.remove('hidden');$('jukeboxQueueNotice').textContent='זהו הקוד הקיים — לא נוצר חיוב נוסף.';}catch(err){$('jukeboxQueueNotice').textContent=errors[err.message]||'הקוד אינו זמין.';}finally{if(e===epoch)setBusy(false);}}
  function renderPower(){const s=snapshot?.settings||{},c=snapshot?.player_control||{},on=s.player_enabled!==false;const b=$('jukeboxPowerBtn');b.disabled=busy||!snapshot;b.textContent=on?'כבה נגן':'הפעל נגן';b.classList.toggle('warning',on);b.classList.toggle('primary',!on);$('jukeboxPowerStatus').textContent=!snapshot?'ממתין לשרת':!on?'הנגן כבוי':c.autoplay_blocked&&c.available?'נדרשת לחיצה חד־פעמית בטאבלט לאפשר שמע':!c.available?'הפעלה מוגדרת · ממתין לטאבלט':c.power===false?'ממתין לאישור הטאבלט':c.state==='playing'||c.state==='guest'?'הנגן פעיל · מתנגן':s.paused?'הנגן פעיל · מושהה':'הנגן פעיל';}
  function renderTransport(){const s=snapshot?.settings||{},playing=(snapshot?.orders||[]).find(o=>o.status==='playing'),control=snapshot?.player_control||{},count=(snapshot?.items||[]).filter(i=>i.playlist_id===s.active_playlist&&!i.archived_at).length,seedMode=(snapshot?.playlists||[]).some(p=>p.id===s.active_playlist&&p.is_temporary);$('jukeboxPauseBtn').textContent=s.paused?'▶ המשך':'⏸ השהה';$('jukeboxPauseBtn').disabled=busy||!snapshot||!s.enabled;const available=!busy&&s.enabled&&s.player_enabled!==false&&control.available===true&&count>0&&!playing;$('jukeboxPrevBtn').disabled=!available||(!seedMode&&count<2);$('jukeboxNextBtn').disabled=!available||(!seedMode&&count<2);$('jukeboxStopBtn').disabled=!available;$('jukeboxTransportNote').textContent=playing?'שיר לקוח מתנגן. דילוג ועצירה חסומים.':!control.available?'ממתין לדיווח מהטאבלט.':seedMode?'רקע מתמשך לפי השיר שנבחר.':count>0?'':'בחר שיר רקע ביוטיוב.';renderPower();}
  function render(s,force=false){if(!onPage())return;snapshot=s;snapshotAt=Date.now();$('jukeboxContent').classList.remove('hidden');const settings=s.settings||{},maintenance=Date.parse(settings.maintenance_until||'')>Date.now(),devices=s.devices||[],playing=(s.orders||[]).find(o=>o.status==='playing'),control=s.player_control||{},track=(s.items||[]).find(i=>i.id===control.item_id&&!i.archived_at),seed=(s.items||[]).find(i=>i.playlist_id===settings.active_playlist&&!i.archived_at);connection(devices.some(d=>!d.revoked_at));$('jukeboxMaintenanceBanner').classList.toggle('hidden',!maintenance);
-  $('jukeboxSalePrice').textContent=settings.price==null?'מחיר לא הוגדר':Number(settings.price).toFixed(2)+' ₪ לשיר';keyConfigured=s.youtube_configured===true;keyImportPending=s.youtube_import_pending===true;if(advancedOpen)$('jukeboxKeyStatus').textContent=keyStatus();renderSale();
+  keyConfigured=s.youtube_configured===true;keyImportPending=s.youtube_import_pending===true;if(advancedOpen)$('jukeboxKeyStatus').textContent=keyStatus();renderSale();
   if(selectedCustomer&&!state.customers.some(c=>c.id===selectedCustomer.id&&c.active))setCustomer(null);
-  const actual=control.available&&control.state!=='idle'&&track;$('jukeboxPlayerMode').textContent=settings.player_enabled===false?'כבוי':settings.paused?'מושהה':playing?'שיר לקוח':settings.enabled?'רקע':'כבוי';$('jukeboxNow').textContent=playing?.title||(actual?(control.title||track.title):seed?.title||'ממתין לניגון');$('jukeboxNowDetail').textContent=playing?'זמן שנותר · '+fmt(remaining(playing)):actual?'מוזיקת רקע · '+fmt(Math.max(0,Number(control.duration)-Number(control.position)))+' נותרו':seed?'ממתין לניגון בטאבלט':'בחר שיר רקע';$('jukeboxProgress').value=playing&&playing.duration?100*position(playing)/playing.duration:actual&&control.duration?100*Number(control.position)/Number(control.duration):0;
+  const actual=control.available&&control.state!=='idle'&&track;
+  const mode=settings.player_enabled===false?'off':settings.paused?'paused':playing?'guest':settings.enabled?'background':'off';
+  $('jukeboxPlayerMode').dataset.mode=mode;
+  $('jukeboxPlayerMode').textContent=mode==='guest'?'שיר לקוח':mode==='background'?'מוזיקת רקע':mode==='paused'?'מושהה':'כבוי';$('jukeboxNow').textContent=playing?.title||(actual?(control.title||track.title):seed?.title||'ממתין לניגון');$('jukeboxNowDetail').textContent=playing?'זמן שנותר · '+fmt(remaining(playing)):actual?'מוזיקת רקע · '+fmt(Math.max(0,Number(control.duration)-Number(control.position)))+' נותרו':seed?'ממתין לניגון בטאבלט':'בחר שיר רקע';$('jukeboxProgress').value=playing&&playing.duration?100*position(playing)/playing.duration:actual&&control.duration?100*Number(control.position)/Number(control.duration):0;
   const settingsSig=JSON.stringify([settings.enabled,settings.is_open,settings.paused,settings.price]);if(!settingsDirty&&(force||settingsSig!==settingsSignature)){$('jukeboxEnabled').checked=settings.enabled===true;$('jukeboxIsOpen').checked=settings.is_open===true;$('jukeboxPaused').checked=settings.paused===true;$('jukeboxPrice').value=settings.price??'';settingsSignature=settingsSig;}const activeDevices=devices.filter(x=>!x.revoked_at),deviceSig=JSON.stringify(activeDevices.map(d=>[d.id,d.name]));if(deviceSig!==deviceSignature){deviceSignature=deviceSig;const d=$('jukeboxDevices');d.replaceChildren();for(const dev of activeDevices)row(d,dev.name||'טאבלט','מצומד');if(!d.children.length)d.append(node('p','אין טאבלט מצומד.','small-note'));}queueRows(s);renderTransport();updateClocks();
  }
  function handleError(e,expected){if(expected!==epoch||!opened)return;if(e?.message==='owner_required'){if(RemotePos.employee)RemotePos.employee={...RemotePos.employee,is_owner:false};clear();$('jukeboxPage').classList.add('hidden');go('systemPage');renderPermissions();return;}const msg=errors[e?.message]||'לא ניתן להשלים את הפעולה. בדוק את החיבור ונסה שוב.';message(msg,true);if($('jukeboxQueueDialog').open)$('jukeboxQueueNotice').textContent=msg;}
@@ -98,7 +192,7 @@ const JukeboxAdmin=(()=>{
   document.addEventListener('click',e=>{if(!e.target.closest('.jukebox-customer-wrap'))closeCustomer();});
   $('jukeboxEmployeeCharge').addEventListener('click',()=>{if(!onPage())return;const c=linkedEmployeeCustomer();$('jukeboxEmployeeNote').textContent=c?'חשבון עובד: '+c.name:'לא קושר חשבון לקוח פעיל לעובד בניהול עובדים.';$('jukeboxEmployeePerson').value=employeePerson;$('jukeboxEmployeeDialog').showModal();$('jukeboxEmployeePerson').focus();});
   $('jukeboxEmployeeClose').addEventListener('click',()=>$('jukeboxEmployeeDialog').close());$('jukeboxEmployeeForm').addEventListener('submit',e=>{e.preventDefault();const c=linkedEmployeeCustomer(),name=$('jukeboxEmployeePerson').value.normalize('NFKC').trim().replace(/\s+/g,' ');if(!c||!name||name.length>100){$('jukeboxEmployeeNote').textContent=!c?'נדרש חשבון עובד פעיל.':'יש להזין שם עד 100 תווים.';return;}setCustomer(c,name);$('jukeboxEmployeeDialog').close();});
-  $('jukeboxQueueOpen').addEventListener('click',()=>{if(onPage()){$('jukeboxQueueNotice').textContent='';$('jukeboxQueueDialog').showModal();updateClocks();}});$('jukeboxQueueClose').addEventListener('click',()=>$('jukeboxQueueDialog').close());$('jukeboxQueueDialog').addEventListener('close',clearRecovery);
+  $('jukeboxQueueClose').addEventListener('click',()=>$('jukeboxQueueDialog').close());$('jukeboxQueueDialog').addEventListener('close',()=>{selectedQueueKey=null;clearRecovery();});
   $('jukeboxPowerBtn').addEventListener('click',async()=>{if(!snapshot||busy)return;const on=snapshot.settings?.player_enabled!==false;if(on&&!await ask('כיבוי נגן','לכבות את הנגן בטאבלט? שיר לקוח שלא הושלם יעבור לבדיקה ללא חיוב.',null,true))return;if(onPage())run(()=>api('configure',{player_enabled:!on}));});$('jukeboxPauseBtn').addEventListener('click',()=>{if(snapshot?.settings?.enabled)run(()=>api('configure',{paused:!snapshot.settings.paused}));});for(const [id,cmd] of [['jukeboxPrevBtn','previous'],['jukeboxNextBtn','next'],['jukeboxStopBtn','stop']])$(id).addEventListener('click',()=>{if(!$(id).disabled)run(()=>api('configure',{background_command:cmd}));});
   $('jukeboxSearchForm').addEventListener('submit',e=>{e.preventDefault();searchYoutube();});$('jukeboxSearchQuery').addEventListener('input',scheduleSearch);$('jukeboxConfirmDialog').addEventListener('close',finishConfirm);
   $('jukeboxSaveKey').addEventListener('click',()=>{if(!onPage()||!advancedOpen||busy)return;const key=$('jukeboxSearchKey').value.trim();if(!/^[A-Za-z0-9_-]{20,100}$/.test(key)){$('jukeboxKeyStatus').textContent='מפתח לא תקין.';return;}run(async()=>{await api('configure',{youtube_api_key:key});apiKey=key;searchCache.clear();$('jukeboxSearchKey').value='';try{localStorage.removeItem('jukebox-dev-key');}catch{};});});

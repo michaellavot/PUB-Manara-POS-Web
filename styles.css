@@ -1485,3 +1485,120 @@ body.desktop-hero-controls #desktopHeroGear .jukebox-gear{width:43px;min-width:4
 /* V2.0.29 — Jukebox synchronized maintenance mode. */
 #jukeboxPage .jukebox-maintenance-banner{display:block;border:1px solid #b5874a;border-radius:10px;background:#40301e;color:#ffdeaa;text-align:center;padding:10px 12px;margin:8px 0;font-weight:700;letter-spacing:.1px}
 #jukeboxPage .jukebox-maintenance-banner.hidden{display:none}
+
+/* V2.0.30 — Jukebox operator dashboard, no changes to POS sales logic. */
+#jukeboxPage .jukebox-console{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ grid-template-areas:"sale sale" "player player" "background queue";
+ gap:12px;
+ align-items:stretch;
+}
+#jukeboxPage .jukebox-console .jukebox-sale-panel{grid-area:sale}
+#jukeboxPage .jukebox-console .jukebox-player-panel{grid-area:player}
+#jukeboxPage .jukebox-console .jukebox-background-panel{grid-area:background;min-width:0}
+#jukeboxPage .jukebox-console .jukebox-queue-panel{grid-area:queue;min-width:0}
+#jukeboxPage .jukebox-sale-panel{
+ position:relative;isolation:isolate;overflow:visible;
+ border:1.5px solid #a77a49;
+ background:radial-gradient(ellipse at 96% 0%,rgba(184,120,53,.15),transparent 45%),linear-gradient(145deg,#182730,#101b20);
+ box-shadow:inset 0 1px 0 #e1b57e55,0 0 0 1px #5b3b2170,0 6px 18px #07050540;
+}
+#jukeboxPage .jukebox-sale-panel::before{
+ content:"";position:absolute;inset:0 14px auto;height:3px;border-radius:0 0 5px 5px;
+ background:linear-gradient(90deg,transparent,#b98145 19%,#f0c78e 51%,#b98145 81%,transparent);
+ pointer-events:none;
+}
+#jukeboxPage .jukebox-sale-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+#jukeboxPage .jukebox-sale-heading-title{display:flex;align-items:center;gap:10px}
+#jukeboxPage .jukebox-sale-heading-title h2{font-size:clamp(21px,2vw,28px);color:#ffe2b5}
+#jukeboxPage .jukebox-sale-symbol{
+ display:grid;place-items:center;width:42px;height:42px;flex:none;
+ border:1px solid #bb8851;border-radius:12px;
+ background:linear-gradient(140deg,#624226,#2b211a);
+ color:#ffe0ac;font-size:25px;box-shadow:inset 0 1px #e9b97366;
+}
+#jukeboxPage .jukebox-sale-eyebrow{font-size:12px;color:#d8b58c;letter-spacing:.2px}
+#jukeboxPage .jukebox-sale-panel #jukeboxCustomerSearch{
+ background:#0b161c;border:1px solid #c3935e;
+ box-shadow:0 0 0 2px #ac774024;color:#fff0d9;
+}
+#jukeboxPage .jukebox-sale-panel #jukeboxCustomerSearch:focus{
+ outline:2px solid #dca66b;outline-offset:1px;
+}
+#jukeboxPage .jukebox-sale-panel #jukeboxSaleConfirm{min-height:52px;font-size:clamp(15px,1.5vw,19px);font-weight:750;border-color:#c59459}
+#jukeboxPage .jukebox-player-panel{border-color:#745238}
+#jukeboxPage #jukeboxPlayerMode[data-mode=guest]{border-color:#8fbb8d;background:#20392f;color:#caefd3}
+#jukeboxPage #jukeboxPlayerMode[data-mode=background]{border-color:#a78153;background:#3d2b1c;color:#f5d8aa}
+#jukeboxPage #jukeboxPlayerMode[data-mode=paused]{border-color:#bb8553;background:#4c3320;color:#ffe0b0}
+#jukeboxPage .jukebox-player-panel .jukebox-now{font-size:clamp(21px,2vw,30px)}
+#jukeboxPage .jukebox-queue-heading{display:flex;justify-content:space-between;align-items:center}
+#jukeboxPage .jukebox-queue-meta{
+ display:flex;justify-content:space-between;align-items:center;gap:10px;
+ border:1px solid #56432f;background:#151e22;border-radius:9px;padding:10px 12px;
+ color:#d9ba94;font-size:13px;
+}
+#jukeboxPage .jukebox-queue-meta strong{font-size:17px;font-variant-numeric:tabular-nums;color:#ffe0ae}
+#jukeboxPage .jukebox-queue-hint{margin:0;color:#bca78b;font-size:12px}
+#jukeboxPage .jukebox-queue-list{display:grid;gap:8px;max-height:min(440px,52dvh);overflow-y:auto;overscroll-behavior:contain;padding:1px 1px 5px}
+#jukeboxPage .jukebox-queue-item{
+ display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;
+ gap:9px;width:100%;min-width:0;text-align:right;padding:10px 12px;
+ border:1px solid #614936;border-radius:10px;
+ background:linear-gradient(130deg,#1e2c33,#111c20);color:#ead7b9;
+ cursor:pointer;transition:border-color .15s,background .15s,box-shadow .15s;
+}
+#jukeboxPage .jukebox-queue-item:hover,#jukeboxPage .jukebox-queue-item:focus-visible{
+ border-color:#c39864;background:linear-gradient(130deg,#2b3940,#19272e);outline:2px solid #8e633d;outline-offset:1px;
+}
+#jukeboxPage .jukebox-queue-item:disabled{opacity:.65;cursor:wait}
+#jukeboxPage .jukebox-queue-item-primary{display:grid;min-width:0;gap:6px}
+#jukeboxPage .jukebox-queue-item-title{
+ font-size:14px;line-height:1.4;color:#f4dfbf;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;unicode-bidi:plaintext;
+}
+#jukeboxPage .jukebox-queue-item-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;color:#c5b19a;font-size:12px}
+#jukeboxPage .jukebox-queue-customer{min-width:0;overflow-wrap:anywhere}
+#jukeboxPage .jukebox-queue-time{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+#jukeboxPage .jukebox-queue-time b{font-size:12px;font-variant-numeric:tabular-nums;direction:ltr}
+#jukeboxPage .jukebox-queue-item-state{display:flex;align-items:flex-end;justify-content:center;gap:5px;flex-direction:column}
+#jukeboxPage .jukebox-queue-item .jukebox-status-pill{font-size:11px;padding:3px 7px;white-space:normal;text-align:center}
+#jukeboxPage .jukebox-queue-item.is-playing{
+ border-color:#c68e55;border-inline-start:5px solid #e2ae6e;
+ background:linear-gradient(115deg,#49321f,#29343a 74%);
+ box-shadow:inset 0 0 0 1px #b8824d55,0 0 10px #b27a3b22;
+}
+#jukeboxPage .jukebox-queue-item.is-playing .jukebox-queue-item-title{color:#fff0d4}
+#jukeboxPage .jukebox-queue-playing-label{color:#ffdc9f;font-size:11px;font-weight:750;white-space:nowrap}
+#jukeboxPage .jukebox-queue-empty{
+ text-align:center;padding:24px 12px;border:1px dashed #6d573d;border-radius:10px;
+ color:#cbb89c;font-size:13px;margin:0;
+}
+#jukeboxPage .jukebox-queue-dialog{width:min(490px,calc(100vw - 24px));max-width:calc(100vw - 24px);padding:18px}
+#jukeboxPage .jukebox-queue-details{display:grid;gap:13px;margin:9px 0 17px}
+#jukeboxPage .jukebox-queue-detail-heading{display:flex;align-items:start;justify-content:space-between;gap:10px}
+#jukeboxPage .jukebox-queue-detail-title{font-size:clamp(16px,1.5vw,20px);color:#f4d5a9;overflow-wrap:anywhere}
+#jukeboxPage .jukebox-queue-detail-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#jukeboxPage .jukebox-queue-detail-field{
+ display:grid;gap:5px;padding:10px;border:1px solid #65513b;border-radius:9px;
+ background:#101a20;min-width:0;overflow-wrap:anywhere;
+}
+#jukeboxPage .jukebox-queue-detail-field small{color:#ac9981}
+#jukeboxPage .jukebox-queue-detail-field b{font-size:13px;color:#f0d7b2}
+#jukeboxPage .jukebox-queue-action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#jukeboxPage .jukebox-queue-action{min-height:44px;white-space:normal}
+#jukeboxPage .jukebox-queue-action:disabled{
+ opacity:.37;filter:grayscale(.65);cursor:not-allowed;box-shadow:none;
+}
+#jukeboxPage .jukebox-queue-action:not(:disabled):focus-visible{outline:2px solid #f1c991;outline-offset:2px}
+#jukeboxPage .jukebox-queue-dialog #jukeboxQueueNotice:empty{display:none}
+@media(max-width:850px){
+ #jukeboxPage .jukebox-console{grid-template-columns:minmax(0,1fr);grid-template-areas:"sale" "player" "background" "queue"}
+ #jukeboxPage .jukebox-queue-list{max-height:46dvh}
+}
+@media(max-width:500px){
+ #jukeboxPage .jukebox-sale-eyebrow{display:none}
+ #jukeboxPage .jukebox-customer-line{flex-wrap:wrap}
+ #jukeboxPage .jukebox-customer-line .employee-charge-button{max-width:100%;flex:1}
+ #jukeboxPage .jukebox-queue-detail-fields{grid-template-columns:1fr}
+ #jukeboxPage .jukebox-queue-item{padding:9px}
+}
