@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=0.9.29">
   <link rel="icon" href="assets/app_icon_192.png?v=0.9.29">
   <link rel="apple-touch-icon" href="assets/app_icon_192.png?v=0.9.29">
-  <link rel="stylesheet" href="styles.css?v=2.0.32">
+  <link rel="stylesheet" href="styles.css?v=2.0.33">
 <style id="startupScreenCriticalStyle">
 /* Startup must be usable before styles.css and scripts have loaded. */
 #startupScreen{
@@ -74,7 +74,10 @@
     <section id="globalControlStrip" class="customer-strip panel customer-choice-bar global-control-strip">
       <div class="customer-select-wrap" id="customerSelectWrap"><button id="customerInput" type="button" class="button customer-main-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="customerDropdown"><span id="customerSelectedText">לקוח</span><span aria-hidden="true">⌄</span></button><div id="desktopCustomerSelect" class="desktop-customer-select"><input id="desktopCustomerSearch" class="field desktop-customer-search" type="search" placeholder="חפש לקוח..." aria-label="חיפוש לקוח" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="desktopCustomerOptions" aria-expanded="false"><div id="desktopCustomerOptions" class="desktop-customer-options hidden" role="listbox" aria-label="בחר לקוח"></div></div></div>
       <button id="employeeChargeToggle" type="button" class="button employee-charge-button" aria-haspopup="dialog" aria-controls="employeeChargeNameModal">חיוב על עובד</button>
-      <span id="cloudConnectionStatus" class="cloud-connection-indicator" data-connection="checking" role="status" aria-live="polite" title="בודק חיבור לשרת"><span class="cloud-connection-dot" aria-hidden="true"></span><span id="cloudConnectionText">בודק חיבור…</span></span><span id="clock" class="chip">--:--</span>
+      <span id="cloudConnectionStatus" class="cloud-connection-indicator" data-connection="checking" role="status" aria-live="polite" title="בודק חיבור לשרת"><span class="cloud-connection-dot" aria-hidden="true"></span><span id="cloudConnectionText">בודק חיבור…</span><span id="jukeboxConnection" class="jukebox-record-indicator hidden" data-state="checking" role="img" aria-label="בודק חיבור לטאבלט הג׳וקבוקס" title="בודק חיבור לטאבלט הג׳וקבוקס">
+ <svg class="jb-disc-on" viewBox="0 0 32 32" width="24" height="24" aria-hidden="true" focusable="false"><circle cx="16" cy="16" r="13" fill="#23342c" stroke="#79c794" stroke-width="2"/><circle cx="16" cy="16" r="9" fill="none" stroke="#86a899" stroke-width="1"/><circle cx="16" cy="16" r="6" fill="none" stroke="#587968" stroke-width="1"/><path d="M16 3V8" stroke="#d4ffb2" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="16" r="3.5" fill="#cf995c"/><circle cx="16" cy="16" r="1.3" fill="#1b2727"/></svg>
+ <svg class="jb-disc-broken" viewBox="0 0 32 32" width="24" height="24" aria-hidden="true" focusable="false"><path d="M15 3 A13 13 0 0 0 6.3 25.7 L13.5 21 L10.8 16 L17 12 L15 3Z" fill="#443034" stroke="#e08b83" stroke-width="1.7" stroke-linejoin="round"/><path d="M19.2 4 A13 13 0 0 1 22.1 27 L17.5 23.1 L20 18.1 L16.9 14.5 Z" fill="#443034" stroke="#e08b83" stroke-width="1.7" stroke-linejoin="round"/><circle cx="14.5" cy="16.8" r="2" fill="#d19c84"/><path d="M16.7 14.5 L13.5 21" fill="none" stroke="#f7c4af" stroke-width="1.4"/></svg>
+ </span></span><span id="clock" class="chip">--:--</span>
       <span id="cloudUserBar" class="hidden"><span id="cloudUser"></span><button id="navigationGearBtn" type="button" class="button ghost navigation-gear" aria-label="פתח תפריט ניווט" aria-haspopup="dialog" aria-expanded="false" aria-controls="navigationMenu" title="תפריט ניווט">⚙</button><span id="jukeboxOwnerEntry" class="jukebox-gear-entry hidden"><button id="jukeboxOpenBtn" type="button" class="button ghost jukebox-gear" aria-label="ניהול ג׳וקבוקס" title="ניהול ג׳וקבוקס">♫</button></span></span>
     </section>
     <main>
@@ -225,10 +228,10 @@
     <button id="deviceLayoutBtn" class="button secondary system-settings-tile system-layout-choice" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="deviceLayoutDialog">אוטומטי</button>
     <button id="shareAppQrBtn" class="button secondary system-settings-tile" type="button">▦ שיתוף QR</button>
     <div class="system-version-tile" role="group" aria-label="גרסה ובדיקת עדכונים">
-     <span id="installedVersion" class="system-version-text">V2.0.32</span>
+     <span id="installedVersion" class="system-version-text">V2.0.33</span>
      <button id="checkUpdatesBtn" class="button system-update-icon" data-update-state="unknown" type="button" title="בדוק עדכונים" aria-label="בדוק עדכונים">⟳</button>
      <small id="updateStatus" class="system-visually-hidden" role="status">עדיין לא אומתה גרסה</small>
-     <small id="versionLabel" class="system-visually-hidden">V2.0.32</small>
+     <small id="versionLabel" class="system-visually-hidden">V2.0.33</small>
      <button id="updateBadge" class="update-badge hidden system-visually-hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button>
     </div>
    </div>
@@ -350,10 +353,6 @@
 </section>
 
       <section id="jukeboxPage" class="page hidden" aria-label="ג׳וקבוקס">
-        <div class="panel jukebox-compact-head">
-          <span id="jukeboxConnection" class="jukebox-pair-indicator" data-state="unknown" role="status" aria-label="בודק צימוד" title="בודק צימוד">…</span>
-          <span class="jukebox-settings-hint">הגדרות הג׳וקבוקס נמצאות במסך מערכת ועדכון</span>
-        </div>
         <p id="jukeboxMessage" class="status jukebox-message" role="status" aria-live="polite"></p>
         <p id="jukeboxMaintenanceBanner" class="jukebox-maintenance-banner hidden" role="status">🛠️ מצב תחזוקה D — קודי בדיקה בלבד · ללא חיובי אמת</p>
         <div id="jukeboxContent" class="jukebox-console hidden">
@@ -730,12 +729,12 @@
       <p id="driveRestoreProofMessage" class="small-note" role="status"></p>
     </div>
   </div>
-  <script src="db.js"></script><script src="remote.js?v=2.0.32"></script><script src="xlsx.js"></script><script src="updater.js?v=2.0.32"></script><script src="archive_admin.js?v=2.0.32"></script><script src="legacy_db_import.js?v=2.0.32"></script>
-<script src="backup_manager.js?v=2.0.32"></script>
-<script src="drive_backup.js?v=2.0.32"></script>
-<script src="qrcode.min.js?v=2.0.32"></script>
-<script src="draft_guard.js?v=2.0.32"></script>
-<script src="report_widgets.js?v=2.0.32"></script>
-<script src="jukebox_admin.js?v=2.0.32"></script>
-<script src="app.js?v=2.0.32"></script>
+  <script src="db.js"></script><script src="remote.js?v=2.0.33"></script><script src="xlsx.js"></script><script src="updater.js?v=2.0.33"></script><script src="archive_admin.js?v=2.0.33"></script><script src="legacy_db_import.js?v=2.0.33"></script>
+<script src="backup_manager.js?v=2.0.33"></script>
+<script src="drive_backup.js?v=2.0.33"></script>
+<script src="qrcode.min.js?v=2.0.33"></script>
+<script src="draft_guard.js?v=2.0.33"></script>
+<script src="report_widgets.js?v=2.0.33"></script>
+<script src="jukebox_admin.js?v=2.0.33"></script>
+<script src="app.js?v=2.0.33"></script>
 </body></html>

@@ -1661,3 +1661,17 @@ body.desktop-hero-controls #desktopHeroGear .jukebox-gear{width:43px;min-width:4
 
 /* Only the compact bottom install action is visible; preserve original PWA event target. */
 #systemPage #installBtn{display:none!important}
+
+/* V2.0.33: cloud and Jukebox status icons share the existing cloud indicator. */
+#cloudConnectionStatus{gap:5px;padding:3px 6px;min-height:29px;box-sizing:border-box}
+#cloudConnectionStatus #cloudConnectionText{display:none!important}
+#cloudConnectionStatus .jukebox-record-indicator{width:24px;height:24px;flex:0 0 24px;min-width:24px;display:inline-grid;place-items:center;position:relative;line-height:0;user-select:none}
+#cloudConnectionStatus .jukebox-record-indicator.hidden{display:none!important}
+#cloudConnectionStatus .jukebox-record-indicator svg{width:24px;height:24px;display:block}
+#cloudConnectionStatus .jukebox-record-indicator .jb-disc-broken{display:none}
+#cloudConnectionStatus .jukebox-record-indicator[data-state="online"] .jb-disc-on{animation:jb-record-rotate 2.6s linear infinite;filter:drop-shadow(0 0 3px rgba(73,205,116,.65))}
+#cloudConnectionStatus .jukebox-record-indicator[data-state="offline"] .jb-disc-on{display:none}
+#cloudConnectionStatus .jukebox-record-indicator[data-state="offline"] .jb-disc-broken{display:block;filter:drop-shadow(0 0 3px rgba(227,85,75,.65))}
+#cloudConnectionStatus .jukebox-record-indicator[data-state="checking"] .jb-disc-on{animation:none;filter:grayscale(1) brightness(.85);opacity:.75}
+@keyframes jb-record-rotate{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){#cloudConnectionStatus .jukebox-record-indicator[data-state="online"] .jb-disc-on{animation:none}}
