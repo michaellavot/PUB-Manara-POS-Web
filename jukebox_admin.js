@@ -124,14 +124,14 @@ function openSystemSettings(){
  function iconAction(symbol,label,fn,kind='secondary'){const b=button(symbol,fn,kind,label);b.classList.add('jukebox-icon-btn');return b;}
 
  const queueRetentionMs=24*60*60*1000;
- const retainedQueueStatuses=new Set(['queued','playing','held','failed','pending_approval','active']);
+ const terminalQueueStatuses=new Set(['completed','verified','cancelled','expired']);
  function queueEntries(s,now=Date.now()){
   const names=new Map((s?.queue_customers||[]).map(x=>[x.order_id,x]));
   return [...(s?.orders||[]).map(o=>({...o,...names.get(o.id)})),
    ...(s?.pending_codes||[]).map(c=>({...c,codeOnly:true,code_id:c.id,title:'קוד ממתין לבחירת שיר'}))]
    .filter(o=>{
     // Only terminal entries expire; waiting, playing, paused or review-required entries remain.
-    if(retainedQueueStatuses.has(o.status))return true;
+    if(!terminalQueueStatuses.has(o.status))return true;
     // Prefer playback verification time where present, then original creation timestamp.
     // When neither is valid, retain the entry rather than risk hiding active data.
     const at=Date.parse(o.verified_at||o.created_at||'');
@@ -266,7 +266,7 @@ function openSystemSettings(){
   $('jukeboxPairBtn').addEventListener('click',async()=>{if(await ask('צימוד טאבלט','ליצור אסימון צימוד חדש לטאבלט?'))run(async()=>{const r=await api('pair');if(!/^[0-9]{6}$/.test(r?.pair_token||''))throw Error('jukebox_operation_failed');clearPair();$('jukeboxPairToken').value=r.pair_token;$('jukeboxPairBox').classList.remove('hidden');pairTimer=setTimeout(clearPair,300000);});});
   $('jukeboxCopyPair').addEventListener('click',async()=>{if(!onPage()||!$('jukeboxPairToken').value)return;try{await navigator.clipboard.writeText($('jukeboxPairToken').value);}catch{$('jukeboxPairToken').focus();$('jukeboxPairToken').select();}});
   $('jukeboxUnlockBtn').addEventListener('click',()=>run(()=>api('unlock')));$('jukeboxRevokeBtn').addEventListener('click',async()=>{if(await ask('ביטול צימוד','לבטל את צימוד הטאבלט?',null,true))run(()=>api('revoke_device'));});
-  window.addEventListener('pagehide',()=>{if(opened)clear();});setInterval(()=>{if(opened&&!allowed())syncVisibility();else if(onPage()&&!busy)refresh(false);},3000);setInterval(updateClocks,250);setInterval(()=>{if(allowed())refreshRecordIndicator();},15000);syncVisibility();
+  window.addEventListener('pagehide',()=>{if(opened)clear();});setInterval(()=>{if(opened&&!allowed())syncVisibility();else if(onPage()&&!busy)refresh(false);},3000);setInterval(updateClocks,250);setInterval(()=>{if(allowed())refreshRecordIndicator();else if(!$('jukeboxConnection').classList.contains('hidden'))syncVisibility();},15000);syncVisibility();
  }
  return {init,allowed,syncVisibility,onNavigation,openSystemSettings,closeForLock,syncMaintenance};
 })();
