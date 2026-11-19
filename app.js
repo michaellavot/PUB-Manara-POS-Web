@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.0.38';
+const APP_VERSION='2.0.39';
 const DEFAULT_PRODUCTS=[
  ['בירה 15',15],['בירה 10',10],['בירה 20',20],['בריזר',20],
  ['וודקה (ערבוב)',25],['ויסקי (ערבוב)',25],['ערק (ערבוב)',25],["ג'ין (ערבוב)",25],['טקילה (ערבוב)',25],
@@ -870,6 +870,9 @@ function arrangeDesktopHeaderControls(){
  // RTL visual order: register (right), Jukebox (middle), settings (left).
  navHost.append(home,jbEntry,gear);
  document.body.classList.toggle('desktop-hero-controls',desktop);
+ const phone=!desktop&&(mode==='mobile'||(mode==='auto'&&window.innerWidth<=730));
+ document.body.classList.toggle('mobile-nav-compact',phone);
+ if(!phone)closeMobileNavigation(false);
 }
 function applyLayoutMode(mode){
  if(!LAYOUT_OPTIONS.includes(mode))mode='auto';
@@ -907,6 +910,25 @@ function closeLayoutDialog(){
  el('deviceLayoutDialog').classList.add('hidden');
  el('deviceLayoutBtn').setAttribute('aria-expanded','false');
 }
+function openMobileNavigation(){
+ if(!document.body.classList.contains('mobile-nav-compact')||!RemotePos.active||!RemotePos.authenticated||el('cloudUserBar').classList.contains('hidden'))return;
+ el('mobileNavJukebox').classList.toggle('hidden',!JukeboxAdmin.allowed());
+ const popup=el('mobileNavigationPopup');
+ popup.classList.remove('hidden');
+ el('mobileNavTrigger').setAttribute('aria-expanded','true');
+ popup.querySelector('.mobile-navigation-item:not(.hidden)')?.focus();
+}
+function closeMobileNavigation(restoreFocus=true){
+ const popup=el('mobileNavigationPopup');
+ const open=!popup.classList.contains('hidden');
+ popup.classList.add('hidden');
+ el('mobileNavTrigger').setAttribute('aria-expanded','false');
+ if(open&&restoreFocus&&document.body.classList.contains('mobile-nav-compact'))el('mobileNavTrigger').focus();
+}
+function toggleMobileNavigation(){
+ if(el('mobileNavigationPopup').classList.contains('hidden'))openMobileNavigation();
+ else closeMobileNavigation();
+}
 function openNavigationMenu(){
  if(!RemotePos.authenticated||!RemotePos.active)return;
  el('navigationMenu').classList.remove('hidden');
@@ -916,7 +938,7 @@ function openNavigationMenu(){
 function closeNavigationMenu(restoreFocus=true){
  el('navigationMenu').classList.add('hidden');
  el('navigationGearBtn').setAttribute('aria-expanded','false');
- if(restoreFocus&&!el('cloudUserBar').classList.contains('hidden'))el('navigationGearBtn').focus();
+ if(restoreFocus&&!el('cloudUserBar').classList.contains('hidden'))(document.body.classList.contains('mobile-nav-compact')?el('mobileNavTrigger'):el('navigationGearBtn')).focus();
 }
 function navigateFromMenu(page){
  const allowed=['posPage','managePage','reportsPage','systemPage'];
@@ -959,7 +981,13 @@ function events(){
  });
  on('systemAdvancedClose','click',()=>el('newSystemDashboard').close());
  on('jukeboxSystemSettingsOpen','click',()=>JukeboxAdmin.openSystemSettings());
- on('deviceLayoutBtn','click',openLayoutDialog);on('deviceLayoutClose','click',closeLayoutDialog);on('deviceLayoutBackdrop','click',closeLayoutDialog);for(const btn of document.querySelectorAll('[data-layout-choice]'))btn.addEventListener('click',()=>saveLayoutMode(btn.dataset.layoutChoice));for(const b of document.querySelectorAll('.tab'))b.onclick=()=>{if(b.dataset.page==='jukeboxPage'&&!JukeboxAdmin.allowed())return;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));if(b.dataset.page==='reportsPage'&&RemotePos.active){renderReport();renderEmployeeChargeReport();}if(b.dataset.page==='systemPage'&&RemotePos.active&&RemotePos.employee?.owner_terminal===true){BackupManager.refresh();DriveBackup.refresh(true);}el('globalControlStrip').classList.toggle('not-pos-page',b.dataset.page!=='posPage');JukeboxAdmin.onNavigation(b.dataset.page);};on('navigationGearBtn','click',openNavigationMenu);
+ on('deviceLayoutBtn','click',openLayoutDialog);on('deviceLayoutClose','click',closeLayoutDialog);on('deviceLayoutBackdrop','click',closeLayoutDialog);for(const btn of document.querySelectorAll('[data-layout-choice]'))btn.addEventListener('click',()=>saveLayoutMode(btn.dataset.layoutChoice));for(const b of document.querySelectorAll('.tab'))b.onclick=()=>{if(b.dataset.page==='jukeboxPage'&&!JukeboxAdmin.allowed())return;closeMobileNavigation(false);document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.page));if(b.dataset.page==='reportsPage'&&RemotePos.active){renderReport();renderEmployeeChargeReport();}if(b.dataset.page==='systemPage'&&RemotePos.active&&RemotePos.employee?.owner_terminal===true){BackupManager.refresh();DriveBackup.refresh(true);}el('globalControlStrip').classList.toggle('not-pos-page',b.dataset.page!=='posPage');JukeboxAdmin.onNavigation(b.dataset.page);};on('navigationGearBtn','click',openNavigationMenu);
+ on('mobileNavTrigger','click',toggleMobileNavigation);
+ on('mobileNavPos','click',()=>{closeMobileNavigation(false);if(RemotePos.active&&RemotePos.authenticated)document.querySelector('.tab[data-page="posPage"]')?.click();});
+ on('mobileNavJukebox','click',()=>{if(!JukeboxAdmin.allowed())return;closeMobileNavigation(false);el('jukeboxOpenBtn').click();});
+ on('mobileNavSettings','click',()=>{closeMobileNavigation(false);openNavigationMenu();});
+ document.addEventListener('pointerdown',e=>{if(!el('mobileNavigationControl').contains(e.target))closeMobileNavigation(false);});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('mobileNavigationPopup').classList.contains('hidden')){e.preventDefault();closeMobileNavigation();}});
  on('posHomeShortcut','click',()=>{
   if(!RemotePos.active||!RemotePos.authenticated)return;
   document.querySelector('.tab[data-page="posPage"]')?.click();
@@ -1152,6 +1180,7 @@ async function employeeSignOut(){
  }finally{button.disabled=false;}
 }
 function resetLockedWorkspace(message){
+ closeMobileNavigation(false);
  JukeboxAdmin.syncVisibility();
  DriveBackup.syncVisibility();
  DraftGuard.ready=false;DraftGuard.blocked=false;

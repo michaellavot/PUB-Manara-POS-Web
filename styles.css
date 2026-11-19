@@ -1792,3 +1792,79 @@ body.desktop-hero-controls #desktopHeroGear #jukeboxOpenBtn{
 #jukeboxEmployeeDialog{width:min(430px,calc(100vw - 26px));max-width:calc(100vw - 26px)}
 #jukeboxEmployeeDialog .jukebox-icon-btn{width:36px;min-width:36px;height:36px;min-height:36px;padding:0}
 @media(max-width:480px){#jukeboxSaleDialog .jukebox-customer-line{flex-wrap:wrap}#jukeboxSaleDialog .employee-charge-button{flex:1;max-width:100%}}
+
+/* V2.0.39 — phone-only navigation: two rows and a three-dot selector. */
+.mobile-navigation-control{display:none}
+body.mobile-nav-compact #globalControlStrip{
+ display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr));
+ grid-template-rows:minmax(36px,auto) minmax(49px,auto)!important;
+ align-items:stretch!important;column-gap:7px;row-gap:10px;
+ height:auto;min-height:0;padding:11px 9px;margin:8px 12px 10px;
+ position:relative;z-index:80;overflow:visible;
+}
+body.mobile-nav-compact #globalControlStrip #cloudConnectionStatus{
+ grid-column:1/4;grid-row:1;align-self:stretch;justify-self:stretch;
+ width:100%;max-width:none;min-width:0;padding:5px 6px;
+}
+body.mobile-nav-compact #globalControlStrip #clock{
+ grid-column:4/7;grid-row:1;align-self:stretch;justify-self:stretch;
+ display:flex;align-items:center;justify-content:center;
+ width:100%;max-width:none;min-width:0;min-height:36px;
+ padding:5px 4px;order:initial;white-space:nowrap;
+}
+body.mobile-nav-compact #globalControlStrip .customer-select-wrap{
+ grid-column:1/4;grid-row:2;min-width:0;max-width:none;width:100%;
+}
+body.mobile-nav-compact #globalControlStrip .customer-main-button{
+ width:100%;height:100%;min-height:49px;padding:8px 10px;
+ font-size:clamp(15px,4vw,19px);
+}
+body.mobile-nav-compact #globalControlStrip #employeeChargeToggle{
+ grid-column:4/6;grid-row:2;min-width:0;width:100%;min-height:49px;
+ padding:8px 5px;font-size:clamp(11px,3vw,14px);
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+body.mobile-nav-compact #globalControlStrip #cloudUserBar{
+ grid-column:6/7;grid-row:2;align-self:stretch;justify-self:stretch;
+ display:flex!important;align-items:stretch;justify-content:stretch;
+ flex-wrap:nowrap;position:relative;z-index:4;
+ width:100%;min-width:0;max-width:none;height:49px;gap:0!important;
+}
+body.mobile-nav-compact #globalControlStrip #cloudUserBar.hidden{display:none!important}
+body.mobile-nav-compact #cloudUserBar #cloudUser,
+body.mobile-nav-compact #cloudUserBar #posHomeShortcut,
+body.mobile-nav-compact #cloudUserBar #jukeboxOwnerEntry,
+body.mobile-nav-compact #cloudUserBar #navigationGearBtn{display:none!important}
+body.mobile-nav-compact #cloudUserBar #mobileNavigationControl{
+ display:block;position:relative;width:100%;height:49px;min-width:0;
+}
+body.mobile-nav-compact #cloudUserBar #mobileNavTrigger{
+ width:100%;height:49px;min-height:49px;padding:0!important;
+ display:grid;place-items:center;border:1px solid #b58a53;
+ border-radius:11px;background:linear-gradient(140deg,#2a3940,#17232a);
+ color:#f2d5a7;font-size:30px;font-weight:800;line-height:1;cursor:pointer;
+}
+body.mobile-nav-compact #mobileNavTrigger[aria-expanded="true"]{
+ border-color:#ebc28a;background:#61452e;
+}
+.mobile-navigation-popup{
+ position:absolute;top:calc(100% + 8px);left:0;right:auto;
+ width:min(216px,calc(100vw - 30px));min-width:175px;
+ z-index:120;padding:7px;display:grid;gap:5px;direction:rtl;
+ border:1px solid #af8150;border-radius:13px;
+ background:linear-gradient(145deg,#203039,#111a20);box-shadow:0 12px 32px #000b;
+}
+.mobile-navigation-popup.hidden{display:none!important}
+.mobile-navigation-item{
+ display:flex;align-items:center;justify-content:flex-start;
+ width:100%;min-height:47px;padding:7px 10px;gap:12px;text-align:right;
+ border:1px solid #72563a;border-radius:9px;
+ background:linear-gradient(130deg,#293840,#19242b);
+ color:#ffe0b1;font-size:16px;font-weight:700;cursor:pointer;
+}
+.mobile-navigation-item:hover,.mobile-navigation-item:focus-visible{
+ border-color:#d8a96f;background:#65472f;outline:2px solid #bb8c58;outline-offset:1px;
+}
+.mobile-navigation-item.hidden{display:none!important}
+.mobile-navigation-icon{display:inline-grid;place-items:center;flex:0 0 30px;font-size:24px;color:#f3c992}
+.mobile-navigation-icon svg{display:block;width:24px;height:24px}

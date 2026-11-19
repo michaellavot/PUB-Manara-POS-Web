@@ -1,8 +1,8 @@
-/* PUB Manara POS Web V2.0.38 — network-first, safe offline cache fallback.
+/* PUB Manara POS Web V2.0.39 — network-first, safe offline cache fallback.
    Do not clear IndexedDB or localStorage: they contain the original POS archive.
    Waiting workers activate only after explicit approval through the updater UI. */
-const CACHE='manara-pos-web-v2.0.38-jukebox';
-const PRECACHE=["./","./index.html","./share.html","./qrcode.min.js?v=2.0.38","./styles.css?v=2.0.38","./draft_guard.js?v=2.0.38","./report_widgets.js?v=2.0.38","./app.js?v=2.0.38","./updater.js?v=2.0.38","./db.js","./xlsx.js","./manifest.webmanifest?v=0.9.29","./assets/dark_wood_background.svg","./assets/main_logo.gif","./assets/billing_left_texture.gif","./assets/beer_icon.gif","./assets/app_icon_192.png?v=0.9.29","./assets/app_icon_512.png?v=0.9.29","./assets/app_icon_maskable_192.png?v=0.9.29","./assets/app_icon_maskable_512.png?v=0.9.29","./assets/rubik-variable.ttf","./legacy_db_import.js?v=2.0.38","./remote.js?v=2.0.38","./archive_admin.js?v=2.0.38","./backup_manager.js?v=2.0.38","./drive_backup.js?v=2.0.38","./jukebox_admin.js?v=2.0.38"];
+const CACHE='manara-pos-web-v2.0.39-jukebox';
+const PRECACHE=["./","./index.html","./share.html","./qrcode.min.js?v=2.0.39","./styles.css?v=2.0.39","./draft_guard.js?v=2.0.39","./report_widgets.js?v=2.0.39","./app.js?v=2.0.39","./updater.js?v=2.0.39","./db.js","./xlsx.js","./manifest.webmanifest?v=0.9.29","./assets/dark_wood_background.svg","./assets/main_logo.gif","./assets/billing_left_texture.gif","./assets/beer_icon.gif","./assets/app_icon_192.png?v=0.9.29","./assets/app_icon_512.png?v=0.9.29","./assets/app_icon_maskable_192.png?v=0.9.29","./assets/app_icon_maskable_512.png?v=0.9.29","./assets/rubik-variable.ttf","./legacy_db_import.js?v=2.0.39","./remote.js?v=2.0.39","./archive_admin.js?v=2.0.39","./backup_manager.js?v=2.0.39","./drive_backup.js?v=2.0.39","./jukebox_admin.js?v=2.0.39"];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(PRECACHE)));
 });

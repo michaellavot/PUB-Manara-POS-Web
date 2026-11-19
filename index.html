@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.webmanifest?v=0.9.29">
   <link rel="icon" href="assets/app_icon_192.png?v=0.9.29">
   <link rel="apple-touch-icon" href="assets/app_icon_192.png?v=0.9.29">
-  <link rel="stylesheet" href="styles.css?v=2.0.38">
+  <link rel="stylesheet" href="styles.css?v=2.0.39">
 <style id="startupScreenCriticalStyle">
 /* Startup must be usable before styles.css and scripts have loaded. */
 #startupScreen{
@@ -93,7 +93,21 @@
    <rect x="5.8" y="23.2" width="20.4" height="3.2" rx="0.7" fill="#e1bc86"/>
    <path d="M13 24.8H19" stroke="#493526" stroke-width="1.3" stroke-linecap="round"/>
   </svg>
- </button><span id="jukeboxOwnerEntry" class="jukebox-gear-entry hidden"><button id="jukeboxOpenBtn" type="button" class="button ghost jukebox-gear" aria-label="ניהול ג׳וקבוקס" title="ניהול ג׳וקבוקס">♫</button></span><button id="navigationGearBtn" type="button" class="button ghost navigation-gear" aria-label="פתח תפריט ניווט" aria-haspopup="dialog" aria-expanded="false" aria-controls="navigationMenu" title="תפריט ניווט">⚙</button></span>
+ </button><span id="jukeboxOwnerEntry" class="jukebox-gear-entry hidden"><button id="jukeboxOpenBtn" type="button" class="button ghost jukebox-gear" aria-label="ניהול ג׳וקבוקס" title="ניהול ג׳וקבוקס">♫</button></span><button id="navigationGearBtn" type="button" class="button ghost navigation-gear" aria-label="פתח תפריט ניווט" aria-haspopup="dialog" aria-expanded="false" aria-controls="navigationMenu" title="תפריט ניווט">⚙</button><div id="mobileNavigationControl" class="mobile-navigation-control">
+ <button id="mobileNavTrigger" type="button" class="button ghost mobile-nav-trigger" aria-label="בחר מסך" title="בחר מסך" aria-haspopup="menu" aria-controls="mobileNavigationPopup" aria-expanded="false">⋮</button>
+ <div id="mobileNavigationPopup" class="mobile-navigation-popup hidden" role="menu" aria-label="מעבר בין מסכים">
+  <button id="mobileNavPos" type="button" class="mobile-navigation-item" role="menuitem"><span class="mobile-navigation-icon" aria-hidden="true"><svg viewBox="0 0 32 32" width="24" height="24" aria-hidden="true" focusable="false">
+   <rect x="9" y="3" width="15" height="10" rx="1.8" fill="#b98750" stroke="#f5d9a9" stroke-width="1.3"/>
+   <rect x="11.3" y="5.5" width="10.4" height="5" rx="0.7" fill="#233943"/>
+   <path d="M8 13.5H24.8L28 23.4V27.3H4V23.4L8 13.5Z" fill="#a97745" stroke="#f6d6a8" stroke-width="1.4" stroke-linejoin="round"/>
+   <path d="M9.7 17H13M16 17H19.3M22 17H23.8M8.8 20H12.1M15.1 20H18.4M21.4 20H24.5" fill="none" stroke="#28272a" stroke-width="1.9" stroke-linecap="round"/>
+   <rect x="5.8" y="23.2" width="20.4" height="3.2" rx="0.7" fill="#e1bc86"/>
+   <path d="M13 24.8H19" stroke="#493526" stroke-width="1.3" stroke-linecap="round"/>
+  </svg></span><span>קופה</span></button>
+  <button id="mobileNavJukebox" type="button" class="mobile-navigation-item hidden" role="menuitem"><span class="mobile-navigation-icon" aria-hidden="true">♫</span><span>ג׳וקבוקס</span></button>
+  <button id="mobileNavSettings" type="button" class="mobile-navigation-item" role="menuitem"><span class="mobile-navigation-icon" aria-hidden="true">⚙</span><span>הגדרות</span></button>
+ </div>
+</div></span>
     </section>
     <main>
       <section id="posPage" class="page active">
@@ -243,10 +257,10 @@
     <button id="deviceLayoutBtn" class="button secondary system-settings-tile system-layout-choice" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="deviceLayoutDialog">אוטומטי</button>
     <button id="shareAppQrBtn" class="button secondary system-settings-tile" type="button">▦ שיתוף QR</button>
     <div class="system-version-tile" role="group" aria-label="גרסה ובדיקת עדכונים">
-     <span id="installedVersion" class="system-version-text">V2.0.38</span>
+     <span id="installedVersion" class="system-version-text">V2.0.39</span>
      <button id="checkUpdatesBtn" class="button system-update-icon" data-update-state="unknown" type="button" title="בדוק עדכונים" aria-label="בדוק עדכונים">⟳</button>
      <small id="updateStatus" class="system-visually-hidden" role="status">עדיין לא אומתה גרסה</small>
-     <small id="versionLabel" class="system-visually-hidden">V2.0.38</small>
+     <small id="versionLabel" class="system-visually-hidden">V2.0.39</small>
      <button id="updateBadge" class="update-badge hidden system-visually-hidden" type="button" aria-label="עדכון תוכנה זמין">↓ עדכון זמין <span id="updateBadgeVersion"></span></button>
     </div>
    </div>
@@ -414,7 +428,7 @@
     </main>
   </div>
 
-  <!-- V2.0.38: shared Jukebox sale workflow outside the player dashboard. -->
+  <!-- V2.0.39: shared Jukebox sale workflow outside the player dashboard. -->
   <dialog id="jukeboxSaleDialog" class="panel jukebox-sale-dialog jukebox-quick-dialog" aria-label="לקוח וחיוב בג׳וקבוקס" dir="rtl">
 <div class="jukebox-quick-head"><button id="jukeboxQuickClose" type="button" class="button secondary jukebox-quick-close" aria-label="סגור חלונית חיוב ג׳וקבוקס" title="סגור">✕</button></div>
 <section class="panel jukebox-panel jukebox-sale-panel">
@@ -752,12 +766,12 @@
       <p id="driveRestoreProofMessage" class="small-note" role="status"></p>
     </div>
   </div>
-  <script src="db.js"></script><script src="remote.js?v=2.0.38"></script><script src="xlsx.js"></script><script src="updater.js?v=2.0.38"></script><script src="archive_admin.js?v=2.0.38"></script><script src="legacy_db_import.js?v=2.0.38"></script>
-<script src="backup_manager.js?v=2.0.38"></script>
-<script src="drive_backup.js?v=2.0.38"></script>
-<script src="qrcode.min.js?v=2.0.38"></script>
-<script src="draft_guard.js?v=2.0.38"></script>
-<script src="report_widgets.js?v=2.0.38"></script>
-<script src="jukebox_admin.js?v=2.0.38"></script>
-<script src="app.js?v=2.0.38"></script>
+  <script src="db.js"></script><script src="remote.js?v=2.0.39"></script><script src="xlsx.js"></script><script src="updater.js?v=2.0.39"></script><script src="archive_admin.js?v=2.0.39"></script><script src="legacy_db_import.js?v=2.0.39"></script>
+<script src="backup_manager.js?v=2.0.39"></script>
+<script src="drive_backup.js?v=2.0.39"></script>
+<script src="qrcode.min.js?v=2.0.39"></script>
+<script src="draft_guard.js?v=2.0.39"></script>
+<script src="report_widgets.js?v=2.0.39"></script>
+<script src="jukebox_admin.js?v=2.0.39"></script>
+<script src="app.js?v=2.0.39"></script>
 </body></html>
